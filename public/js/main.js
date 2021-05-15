@@ -656,6 +656,31 @@ onstart.push(() => {
                         messageUserDiv.innerText = username + ":";
                         if ('text' in message) {
                             messageMessageDiv.innerHTML = markupParser.makeHtml(message.text);
+                            messageMessageDiv.oncontextmenu = (e) => {
+                                e.preventDefault();
+                                var list = [];
+                                if (message.userid === iam || hasPerm('changeMessage')) {
+                                    list.push(
+                                        {
+                                            text: 'Edit Message',
+                                            callback: () => {
+                                                //TODO
+                                            }
+                                        });
+                                }
+                                if (hasPerm('removeMessage')) {
+                                    list.push(
+                                        {
+                                            text: 'Delete Message',
+                                            callback: () => {
+                                                //TODO
+                                            }
+                                        }
+                                    )
+                                }
+                                showContextMenu(list, mouseX(e), mouseY(e));
+
+                            }
                         }
                         messageDiv.appendChild(messageUserDiv);
                         messageDiv.appendChild(messageMessageDiv);

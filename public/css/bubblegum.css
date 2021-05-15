@@ -446,4 +446,8 @@ video {
   background-color: lightpink;
 }
 
+.message:hover {
+  background-color: lightgreen;
+}
+
 /*# sourceMappingURL=bubblegum.css.map */
