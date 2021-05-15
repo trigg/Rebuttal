@@ -1,0 +1,8 @@
+node_modules
+cert.pem
+key.pem
+yarn.lock
+package-lock.json
+data.json
+config.json
+public/uploads

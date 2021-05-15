@@ -1,0 +1,23 @@
+
+$col1: lavender;
+$col2: lightcyan;
+
+body {
+    font-family: 'Brush Script MT', cursive;
+}
+
+@import "include/app.scss";
+@import "include/settings.scss";
+@import "include/video.scss";
+@import "include/custom-select.scss";
+@import "include/text.scss";
+
+.room:hover{
+    background-color: lightpink;
+}
+.user:hover{
+    background-color: lightpink;
+}
+.contextmenuitem:hover{
+    background-color: lightpink;
+}

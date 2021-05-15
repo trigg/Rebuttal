@@ -1,0 +1,42 @@
+
+.popupsettings, .popupserver, .popupinvite{
+    display:none;
+    position: relative;
+    z-index: 1;
+    left:0px;
+    width:100vw;
+    top:0px;
+    height:100vh;
+    align-items: center;
+    justify-content: center;
+}
+.settings, .server, .invite{
+    min-width: 400px;
+    min-height: 600px;
+    background-color: $col1;
+    border-radius: 50px;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+}
+.settingbutton, .serverbutton{
+    position: absolute;
+    bottom:0px;
+    right:0px;
+    z-index:4;
+    display:flex;
+}
+.tablist {
+    display:flex;
+}
+.tab{
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    border: 2px solid #394a6d;
+    padding: 4px;
+}
+
+#createroomform, #createuserform{
+    display:flex;
+    flex-direction: column;
+}

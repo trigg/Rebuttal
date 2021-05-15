@@ -1,0 +1,67 @@
+
+$col1: black;
+$col2: black;
+
+body {
+    font-family: monospace;
+    color:white;
+}
+
+
+
+@import "include/app.scss";
+@import "include/settings.scss";
+@import "include/video.scss";
+@import "include/custom-select.scss";
+@import "include/text.scss";
+
+.userlist {
+    border-left: 1px solid #394a6d;
+}
+
+.roomlist {
+    border-right: 1px solid #394a6d;
+}
+
+.login{
+    border: 1px solid #394a6d;
+}
+input[type=text], input[type=password] {
+    background-color: black;
+    border: 1px solid #394a6d;
+    color: white;
+    text-decoration: none;
+    margin: 4px 2px;
+    cursor: pointer;
+}
+input[type=button], input[type=submit], input[type=reset] {
+    background-color: black;
+    border: 1px solid #394a6d;
+    color: white;
+    text-decoration: none;
+    margin: 4px 2px;
+    cursor: pointer;
+}
+.custom-select__trigger {
+    background-color: black;
+    color: white;
+}
+.custom-options {
+    background-color: black;
+}
+.custom-option {
+    color:white;
+}
+.custom-option:hover{
+    color: yellow;
+}
+.custom-option:selected {
+    color: black;
+    background-color: yellow;
+}
+.arrow::before{
+    background-color: white;
+}
+.arrow::after{
+    background-color: white;
+}

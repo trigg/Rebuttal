@@ -1,0 +1,19 @@
+{
+  "name": "rebuttal",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodejs index.js"
+  },
+  "author": "",
+  "license": "GPL-3.0-or-later",
+  "dependencies": {
+    "buffer-image-size": "^0.6.4",
+    "express": "^4.17.1",
+    "mysql": "^2.18.1",
+    "socket.io": "^4.0.2",
+    "uuid": "^8.3.2",
+    "ws": "^7.4.5"
+  }
+}

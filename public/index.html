@@ -1,0 +1,211 @@
+<html>
+
+<head>
+    <title>Rebuttal Webapp</title>
+    <script src="/js/bootstrap.js"></script>
+    <script src="/js/core.js"></script>
+    <script src="/js/config.js"></script>
+    <script src="/js/settings.js"></script>
+    <script src="/js/main.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/showdown@1.9.1/dist/showdown.min.js"></script>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+    <div class='app' id='app'>
+        <div class='contextmenuouter'>
+            <div class='contextmenu' id='contextmenu' style='display:none'>
+
+            </div>
+        </div>
+        <div class='settingbutton'>
+            <img id='toggleWebcam' data-src='webcamoff.png' alt='Toggle Webcam' />
+            <img id='toggleMute' data-src='micon.png' alt='Toggle Microphone' />
+            <img id='toggleScreenShare' data-src='screenon.png' alt='Share Screen' />
+            <img id='hangup' data-src='hangup.png' alt='Leave Chat' />
+            <img data-src='settingbutton.png' id='settingbutton' alt='Client settings' />
+            <img data-src='settingbutton.png' id='serverbutton' alt='Server settings' />
+        </div>
+        <div class='window loginwindow' id='loginWindow'>
+            <form id='login' class='login' action='javascript:void(0);'>
+                <div class='loginlogodiv'><img src='' alt='' class='loginlogo' id='loginlogo' /></div>
+                <div class='logintitle' id='logintitle'></div>
+                <input type='text' placeholder='Email' id='loginEmail' />
+                <input type='text' placeholder='Email (again)' id='loginEmail2' />
+                <input type='text' placeholder='Username' id='loginUser' />
+                <input type='password' placeholder='Password' id='loginPassword' />
+                <input type='password' placeholder='Password (again)' id='loginPassword2' />
+                <div id='loginReply'></div>
+                <input type='submit' value='Log in' id='loginButton' />
+            </form>
+        </div>
+        <div class='window appwindow' id='appWindow' style='display:none'>
+            <div class='roomlist' id='appRoomList'></div>
+            <div class='coreview' id='appCoreView'></div>
+            <div class='userlist' id='appUserList'></div>
+        </div>
+        <div class='popup popupinvite' id='popupinvite' style='display:none'>
+            <div class='invite' id='invite'>
+                <form id='inviteuserform'>
+                    <select id='inviteusergroup'>
+                    </select>
+                    <div id='inviteuserreply'></div>
+                    <input type='submit' value='Create Invite' />
+                </form>
+            </div>
+        </div>
+        <div class='popup popupserver' id='popupserver' style='display:none'>
+            <div class='server' id='server'>
+                <div class='servertablist tablist'>
+                    <div class='servertab tab' id='servertabcreateroom' data-link='serverpanecreateroom'>Create room
+                    </div>
+                    <div class='servertab tab' id='servertabcreateuser' data-link='serverpanecreateuser'>Create user
+                    </div>
+                </div>
+                <div class='serverpane' id='serverpanecreateroom'>
+                    <form id='createroomform'>
+                        <input type='text' id='createroomname' placeholder="Room name" />
+                        <select id='createroomtype'>
+                            <option value='voice'>voice</option>
+                            <option value='text'>text</option>
+                        </select>
+                        <input type='submit' value='Create Room' />
+                    </form>
+                </div>
+                <div class='serverpane' id='serverpanecreateuser'>
+                    <form id='createuserform'>
+                        <input type='text' id='createusername' placeholder="User name" />
+                        <input type='text' id='createuseremail' placeholder="User email" />
+                        <select id='createusergroup'>
+                        </select>
+                        <input type='submit' value='Create User' />
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class='popup popupsettings' id='popupsettings' style='display:none'>
+            <div class='settings' id='settings'>
+                <div class='settingstablist tablist'>
+                    <span class='settingstab tab' id='settingstabappearance'
+                        data-link='settingspaneappearance'>Appearance</span>
+                    <span class='settingstab tab' id='settingstabinput' data-link='settingspaneinput'>Input
+                        Devices</span>
+                    <span class='settingstab tab' id='settingstaboutput' data-link='settingspaneoutput'>Output
+                        Devices</span>
+                    <span class='settingstab tab' id='settingstabstreaming'
+                        data-link='settingspanestreaming'>Streaming</span>
+                </div>
+                <div class='settingspane' id='settingspaneinput'>
+                    <div class='settingsdevicesmic'>
+                        <h4>Microphone</h4>
+                        <div>
+                            <label for='settingsmicdevice'>Device</label>
+                            <div id="settingsmicdevice" class="custom-select-wrapper">
+                                <div class="custom-select">
+                                    <div class="custom-select__trigger"><span></span>
+                                        <div class="arrow"></div>
+                                    </div>
+                                    <div class="custom-options" data-id='settingsmicdevice' id='settingsmicdevicelist'>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                        <div>
+                            <input type='checkbox' id='settingNoiseSupress' />
+                            <label for='settingNoiseSupress'>Use Noise Supression</label>
+                        </div>
+                        <div>
+                            <input type='checkbox' id='settingEchoCancellation' />
+                            <label for='settingEchoCancellation'>Use Echo Cancellation</label>
+                        </div>
+
+                        <input type="range" min="16" max="128" value="24" class='slider' id='settingBitrate' />
+                        <label for='settingBitrate'>
+                            Audio bitrate</label>
+                    </div>
+                    <div class='settingsdevicesvideo'>
+                        <label for='settingscamdevice'>Device</label>
+                        <div id="settingscamdevice" class="custom-select-wrapper">
+                            <div class="custom-select">
+                                <div class="custom-select__trigger"><span></span>
+                                    <div class="arrow"></div>
+                                </div>
+                                <div class="custom-options" data-id='settingscamdevice' id='settingscamdevicelist'>
+
+                                </div>
+                            </div>
+                        </div>
+                        <input type="checkbox" id='settingFlipWebcam' />
+                        <label for='settingFlipWebcam'>Flip local webcam</label>
+                    </div>
+                </div>
+                <div class='settingspane' id='settingspaneoutput'>
+                    <div class='settingsdevicesaudio'>
+                        <label for='settingsaudio'>Device</label>
+                        <div id="settingsaudio" class="custom-select-wrapper">
+                            <div class="custom-select">
+                                <div class="custom-select__trigger"><span></span>
+                                    <div class="arrow"></div>
+                                </div>
+                                <div class="custom-options" data-id='settingsaudio' id='settingsaudiolist'>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class='settingspane' id='settingspanestreaming'>
+                    <div class='settingsdevicesstream'>
+                        <h4>Streaming</h4>
+
+                    </div>
+                </div>
+                <div class='settingspane' id='settingspaneappearance'>
+                    <div>
+                        <label for='settingstheme'>Theme</label>
+                        <div id="settingstheme" class="custom-select-wrapper">
+                            <div class="custom-select">
+                                <div class="custom-select__trigger"><span></span>
+                                    <div class="arrow"></div>
+                                </div>
+                                <div class="custom-options" data-id='settingstheme' id='settingsthemelist'>
+
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div>
+                        <label for='settingsfont'>Font</label>
+                        <div id="settingsfont" class="custom-select-wrapper">
+                            <div class="custom-select">
+                                <div class="custom-select__trigger"><span>Serif</span>
+                                    <div class="arrow"></div>
+                                </div>
+                                <div class="custom-options" data-id='settingsfont' id='settingsfontlist'>
+                                    <span class="custom-option selected" data-value="serif"
+                                        style="font-family: serif;">Serif</span>
+                                    <span class="custom-option" data-value="mono" style="font-family: mono;">Mono</span>
+                                    <span class="custom-option" data-value="monospace"
+                                        style="font-family: monospace;">Monospace</span>
+                                    <span class="custom-option" data-value="cursive"
+                                        style="font-family: cursive;">Cursive</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
