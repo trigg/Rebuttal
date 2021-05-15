@@ -22,7 +22,7 @@
 .chatroominputtext{
     flex-grow:1;
     border:unset;
-    background-color: lightcyan;
+    background-color: $col2;
     resize:none;
     outline: none;   
 }
@@ -52,7 +52,7 @@
 .messageurl{
     border-radius: 10px;
     padding: 5px;
-    border: 1px lavender solid;
+    border: 1px $col1 solid;
 }
 .chatroominputdraganddropouter{
     display:flex;

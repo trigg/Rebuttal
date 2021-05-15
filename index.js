@@ -83,6 +83,14 @@ const sendToAll = (clients, message, ownsocket) => {
     })
 }
 
+const sendToRoom = (roomid, message) => {
+    Object.values(connections).forEach(client => {
+        if (client.currentRoom === roomid) {
+            sendTo(client, message);
+        }
+    })
+}
+
 const sendUpdateUsers = () => {
     sendToAll(connections, {
         type: 'updateUsers',
@@ -226,7 +234,9 @@ wss.on("connection", ws => {
             permissionName,
             messageid,
             userid,
-            signUp
+            signUp,
+            audio,
+            video
         } = data;
         switch (type) {
             case 'invite':
@@ -530,6 +540,11 @@ wss.on("connection", ws => {
                     }
                 } else {
                     sendTo(ws, { type: 'error', message: 'Permission denied "setUserGroup"' });
+                }
+                break;
+            case "chatdev":
+                if (ws.currentRoom) {
+                    sendToRoom(ws.currentRoom, { type: 'chatdev', video, audio, userid: ws.id });
                 }
                 break;
             case 'fileupload':

@@ -6,7 +6,7 @@
   "scripts": {
     "start": "nodejs index.js"
   },
-  "author": "",
+  "author": "trigg",
   "license": "GPL-3.0-or-later",
   "dependencies": {
     "buffer-image-size": "^0.6.4",

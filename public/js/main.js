@@ -222,7 +222,7 @@ onstart.push(() => {
             textRoom.innerText = room.name;
 
             room.userlist.forEach((user) => {
-                var elementUser = div({ className: 'user' });
+                var elementUser = div({ className: 'user', id: 'user-' + user.id });
                 var textUser = div({ className: 'usertext' });
                 var imageUser = img({ className: 'userimg', src: 'avatar.png' });
                 textUser.innerText = user.name;
@@ -304,10 +304,22 @@ onstart.push(() => {
                 }
             });
         },
+        "chatdev": (data) => {
+            var { audio, video, userid } = data;
+            var am = document.getElementById("noaudio-" + userid);
+            var vm = document.getElementById("novideo-" + userid);
+            if (am && vm) {
+                am.style.display = audio ? "none" : "flex";
+                vm.style.display = video ? "none" : "flex";
+            }
+        },
         "joinRoom": (data) => {
             const { userid, roomid } = data;
             if (userid === iam) {
                 currentView = roomid;
+            }
+            if (currentView) {
+                updateDeviceState();
             }
         },
         "updateText": (data) => {
@@ -554,11 +566,24 @@ onstart.push(() => {
             room.userlist.forEach((user) => {
 
                 // Create a Video element for voice chat
-                var divid = div({ className: 'videodiv' });
+                var divid = div({ className: 'videodiv', id: 'videodiv-' + user.id });
                 var video = document.createElement('video');
                 video.setAttribute('autoPlay', true);
                 video.setAttribute('playsInline', true);
                 video.setAttribute('id', 'video-' + user.id);
+
+                var audiometer = document.createElement('meter');
+                audiometer.high = 0.15;
+                audiometer.max = 0.5;
+                audiometer.value = 0;
+                audiometer.id = 'meter-' + user.id;
+                audiometer.className = "videometer";
+                var novid = img({ src: 'webcamoff.png', id: "novideo-" + user.id, className: "videonovideo" });
+                var noaud = img({ src: 'micoff.png', id: "noaudio-" + user.id, className: "videonoaudio" });
+                divid.appendChild(audiometer);
+                divid.appendChild(novid);
+                divid.appendChild(noaud);
+
                 divid.appendChild(video);
                 voiceDiv.appendChild(divid);
                 if (user.livestate) {
@@ -599,7 +624,9 @@ onstart.push(() => {
                         startCall(user.id);
                     }
                 }
-
+                if (video.srcObject) {
+                    prepareSoundReader(video.srcObject, user.id, audiometer);
+                }
 
             });
             if (count > 0) {
@@ -908,6 +935,25 @@ onstart.push(() => {
                 ele2.srcObject = stream;
             }
         }
+        if (ele && ele.srcObject) {
+            prepareSoundReader(ele.srcObject, userid, document.getElementById('meter-' + userid));
+        }
+    }
+
+    const prepareSoundReader = (src, uuid, meter) => {
+        var sreader = new SoundReader(new AudioContext());
+        sreader.connectToSource(src, function (e) {
+            setInterval(() => {
+                if (sreader.talked) {
+                    document.getElementById('user-' + uuid).classList.add('usertalking');
+                    document.getElementById('videodiv-' + uuid).classList.add('videodivtalking');
+                } else {
+                    document.getElementById('user-' + uuid).classList.remove('usertalking');
+                    document.getElementById('videodiv-' + uuid).classList.remove('videodivtalking');
+                }
+
+            }, 200);
+        });
     }
 
     const cleanupStream = (userid) => {
@@ -1049,6 +1095,9 @@ onstart.push(() => {
                 video.enabled = isWebcam;
             });
         }
+        if (currentView) {
+            updateDeviceState();
+        }
     }
     const toggleScreenShare = () => {
         if (isScreenShare) {
@@ -1086,6 +1135,17 @@ onstart.push(() => {
                 audio.enabled = !isMute;
             });
         }
+        if (currentView) {
+            updateDeviceState();
+        }
+    }
+
+    const updateDeviceState = () => {
+        send({
+            type: 'chatdev',
+            audio: !isMute,
+            video: isWebcam
+        });
     }
 
     const createAudioConstraints = () => {

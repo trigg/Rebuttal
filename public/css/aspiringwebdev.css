@@ -93,6 +93,10 @@ html {
   align-items: center;
 }
 
+.usertalking {
+  color: blue;
+}
+
 .userimg {
   width: 24px;
   height: 24px;
@@ -226,6 +230,10 @@ code {
   right: -3px;
 }
 
+div.videodiv.videodivtalking::after {
+  border: 3px blue solid;
+}
+
 video {
   width: 100%;
   height: 100%;
@@ -239,6 +247,23 @@ video {
   position: relative;
   align-items: center;
   justify-content: center;
+}
+
+.videometer {
+  position: absolute;
+}
+
+.videonovideo {
+  position: absolute;
+  right: 0px;
+  filter: invert(27%) sepia(85%) saturate(7203%) hue-rotate(358deg) brightness(98%) contrast(127%);
+}
+
+.videonoaudio {
+  position: absolute;
+  right: 0px;
+  top: 24px;
+  filter: invert(27%) sepia(85%) saturate(7203%) hue-rotate(358deg) brightness(98%) contrast(127%);
 }
 
 .custom-select-wrapper {
@@ -372,7 +397,7 @@ video {
 .chatroominputtext {
   flex-grow: 1;
   border: unset;
-  background-color: lightcyan;
+  background-color: black;
   resize: none;
   outline: none;
 }
@@ -410,7 +435,7 @@ video {
 .messageurl {
   border-radius: 10px;
   padding: 5px;
-  border: 1px lavender solid;
+  border: 1px black solid;
 }
 
 .chatroominputdraganddropouter {
