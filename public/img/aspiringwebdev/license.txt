@@ -1,0 +1,4 @@
+Icons in this theme are from 
+
+https://github.com/twbs/icons
+
