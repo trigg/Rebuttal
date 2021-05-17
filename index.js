@@ -368,7 +368,11 @@ wss.on("connection", ws => {
                 }
                 storage.addNewMessage(roomid, ws.id, message);
                 var segnum = storage.getTextRoomNewestSegment(roomid);
+
+                // Generally, you have new text. Send a whole chunk replacement
                 sendToAll(connections, { type: 'updateText', roomid: roomid, segment: segnum, messages: storage.getTextForRoom(roomid, segnum) });
+                // Send a notice that this single message has arrived.
+                sendToAll(connections, { type: 'sendMessage', roomid: roomid, message: message })
                 break;
             case "joinroom":
                 // TODO Validate room exists

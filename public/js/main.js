@@ -417,6 +417,17 @@ onstart.push(() => {
             el.onclick = () => {
                 navigator.clipboard.writeText(link).then(() => { }, () => { });
             }
+        },
+        'sendMessage': (data) => {
+            var { roomid, message } = data;
+            if (Notification.permission == 'granted') {
+                if (message.userid === iam) {
+                    return;
+                }
+                var user = getUserByID(message.userid);
+                console.log(message);
+                new Notification(user.name + " : " + message.text);
+            }
         }
     }
 
@@ -509,6 +520,7 @@ onstart.push(() => {
                 if (password) {
                     send({ type: 'login', email, password });
                     startLocalDevices();
+                    Notification.requestPermission();
                 } else {
                     el.loginPassword.focus();
                 }
