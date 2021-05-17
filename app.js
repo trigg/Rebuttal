@@ -19,8 +19,8 @@ function createWindow() {
     win.once('ready-to-show', () => {
         win.webContents.executeJavaScript("customUrl = '" + url + "';console.log('" + url + "'); connect();");
         win.show();
+        win.setAutoHideMenuBar(true);
     });
-    //win.setMenu(null);
 }
 
 app.whenReady().then(() => {
