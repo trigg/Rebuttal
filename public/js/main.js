@@ -105,7 +105,7 @@ onstart.push(() => {
                 if (hasPerm('setUserGroup')) {
                     list.push({ text: 'Change user group', callback: () => { } });
                 }
-                if (hasPerm('removeUser')) {
+                if (hasPerm('removeUser') && user.id !== iam) {
                     list.push({
                         text: 'Delete User', callback: () => {
                             openConfirmContext('Confirm delete ' + user.name, 'DELETE USER', () => {
