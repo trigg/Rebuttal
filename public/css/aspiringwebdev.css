@@ -184,6 +184,24 @@ code {
   flex-direction: column;
 }
 
+.popup {
+  flex-direction: column;
+}
+
+.close {
+  position: relative;
+  width: 100%;
+}
+
+.close:after {
+  content: "×";
+  position: absolute;
+  top: -17px;
+  right: -9px;
+  color: red;
+  font-size: 30px;
+}
+
 .appLiveRoom {
   flex-grow: 0;
   display: flex;

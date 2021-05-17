@@ -1449,10 +1449,11 @@ onstart.push(() => {
         }
         return false;
     }
-    el.toggleWebcam.onclick = () => toggleWebcam();
-    el.toggleScreenShare.onclick = () => toggleScreenShare();
-    el.toggleMute.onclick = () => toggleMuted();
+    el.toggleWebcam.onclick = toggleWebcam;
+    el.toggleScreenShare.onclick = toggleScreenShare;
+    el.toggleMute.onclick = toggleMuted;
     el.hangup.onclick = () => switchRoom(null);
+    el.inviteclose.onclick = hideInvite;
     el.app.addEventListener('dragenter', dragEnter, false);
     el.app.addEventListener('dragover', dragOver, false);
     el.app.addEventListener('dragleave', dragLeave, false);

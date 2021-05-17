@@ -244,6 +244,9 @@ onstart.push(() => {
     setupCheckbox('echocancel', el.settingEchoCancellation, () => { startLocalDevices(); });
 
     el.settingbutton.onclick = toggleSettings;
+    el.settingsclose.onclick = toggleSettings;
+
     el.serverbutton.onclick = toggleServer;
+    el.serverclose.onclick = toggleServer;
 
 });
