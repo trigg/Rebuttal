@@ -43,6 +43,9 @@
     display:flex;
     justify-content: start;
 }
+.message.tagged{
+    background-color: $col1;
+}
 .messageuser{
     font-weight: bold;
 }

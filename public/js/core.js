@@ -23,6 +23,7 @@ var isSettings = false;
 var isServer = false;
 var lastChatYPos = 0;
 var cacheDragAndDropFile = null;
+var cacheUserTagged = [];
 var sharedVideo = null;
 var permissions = [];
 var groups = [];

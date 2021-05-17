@@ -694,6 +694,9 @@ onstart.push(() => {
                         var user = getUserByID(message.userid);
                         var username = user ? user.name : '[deleted user]';
                         var messageDiv = div({ className: 'message' });
+                        if (message.tags && message.tags.includes(iam)) {
+                            messageDiv.classList.add('tagged');
+                        }
                         var messageUserDiv = div({ className: 'messageuser' });
                         var messageMessageDiv = div({ className: 'messagemessage' });
                         messageUserDiv.innerText = username + ":";
@@ -870,10 +873,11 @@ onstart.push(() => {
                         send({
                             type: 'message',
                             roomid: currentView,
-                            message: { text },
+                            message: { text, tags: cacheUserTagged },
                             filename: cacheDragAndDropFile.name,
                             rawfile: split[1]
                         })
+                        cacheUserTagged = [];
                         cacheDragAndDropFile = null;
                         populateRoom();
                     };
@@ -883,8 +887,9 @@ onstart.push(() => {
                     send({
                         type: 'message',
                         roomid: currentView,
-                        message: { text }
+                        message: { text, tags: cacheUserTagged, }
                     })
+                    cacheUserTagged = [];
                     inputtext.focus();
                 }
                 return false;
@@ -918,6 +923,7 @@ onstart.push(() => {
                 endtext = " ";
             }
             text = text.substring(0, autocompletestart) + userList[autocompleteselection].name + endtext;
+            cacheUserTagged.push(userList[autocompleteselection].id);
             inputtext.value = text;
             inputtext.selectionEnd = inputtext.selectionStart = text.length;
             updateAutocomplete(null);

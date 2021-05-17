@@ -234,7 +234,7 @@ wss.on("connection", ws => {
             userid,
             signUp,
             audio,
-            video
+            video,
         } = data;
         switch (type) {
             case 'invite':

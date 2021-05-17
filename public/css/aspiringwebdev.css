@@ -432,6 +432,10 @@ video {
   justify-content: start;
 }
 
+.message.tagged {
+  background-color: black;
+}
+
 .messageuser {
   font-weight: bold;
 }
