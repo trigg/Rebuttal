@@ -44,9 +44,10 @@ onstart.push(() => {
         return d;
     }
 
-    const img = ({ className, id, src }) => {
+    const img = ({ className, id, src, alt }) => {
         var i = document.createElement('img');
         if (className) { i.className = className; }
+        if (alt) { i.setAttribute('alt', alt); }
         if (id) { i.id = id; }
         if (src) {
             i.src = 'img/' + theme + '/' + src;
@@ -87,7 +88,7 @@ onstart.push(() => {
             }
             var elementUser = div({ className: 'user' });
             var textUser = div({ className: 'usertext' });
-            var imageUser = img({ className: 'userimg', src: 'avatar.png' });
+            var imageUser = img({ className: 'userimg', src: 'avatar.svg', alt: '' });
             textUser.innerText = user.name;
             elementUser.appendChild(imageUser);
             elementUser.appendChild(textUser);
@@ -214,9 +215,9 @@ onstart.push(() => {
             var textRoom = div({ className: 'roomtext' });
             var imageRoom
             if (room.type === 'voice') {
-                imageRoom = img({ className: 'roomimg', src: 'vroom.png' });
+                imageRoom = img({ className: 'roomimg', src: 'vroom.svg', alt: 'voice room' });
             } else {
-                imageRoom = img({ className: 'roomimg', src: 'room.png' });
+                imageRoom = img({ className: 'roomimg', src: 'room.svg', alt: 'text room' });
             }
             var usersInRoom = div({ className: 'roomusers' });
             textRoom.innerText = room.name;
@@ -224,7 +225,7 @@ onstart.push(() => {
             room.userlist.forEach((user) => {
                 var elementUser = div({ className: 'user', id: 'user-' + user.id });
                 var textUser = div({ className: 'usertext' });
-                var imageUser = img({ className: 'userimg', src: 'avatar.png' });
+                var imageUser = img({ className: 'userimg', src: 'avatar.svg', alt: 'avatar for ' + user.name });
                 textUser.innerText = user.name;
                 elementUser.appendChild(imageUser);
                 elementUser.appendChild(textUser);
@@ -578,8 +579,8 @@ onstart.push(() => {
                 audiometer.value = 0;
                 audiometer.id = 'meter-' + user.id;
                 audiometer.className = "videometer";
-                var novid = img({ src: 'webcamoff.png', id: "novideo-" + user.id, className: "videonovideo" });
-                var noaud = img({ src: 'micoff.png', id: "noaudio-" + user.id, className: "videonoaudio" });
+                var novid = img({ src: 'webcamoff.svg', id: "novideo-" + user.id, className: "videonovideo", alt: 'has no video stream' });
+                var noaud = img({ src: 'micoff.svg', id: "noaudio-" + user.id, className: "videonoaudio", alt: 'has no audio stream' });
                 divid.appendChild(audiometer);
                 divid.appendChild(novid);
                 divid.appendChild(noaud);
@@ -725,6 +726,7 @@ onstart.push(() => {
                             imgElement.setAttribute('height', message['height']);
                             imgElement.setAttribute('width', message['width']);
                             imgElement.src = message['img'];
+                            imgElement.setAttribute('alt', 'user submitted image');
                             segment.appendChild(imgElement);
                         }
 
@@ -742,6 +744,7 @@ onstart.push(() => {
                 var dragDropImage = document.createElement('img');
                 var close = div({ className: 'chatroominputdraganddropclose' });
                 dragDropImage.className = 'chatroominputdraganddropimg';
+                dragDropImage.setAttribute('alt', 'user submitted image');
                 chatDiv.appendChild(outer);
                 outer.appendChild(dragDropSection);
                 dragDropSection.appendChild(dragDropImage);
@@ -760,8 +763,9 @@ onstart.push(() => {
             var inputtext = document.createElement('textarea');
             var inputbutton = document.createElement('input');
             inputbutton.setAttribute('type', 'image');
-            inputbutton.dataset.src = '/img/' + theme + "/send.png";
-            inputbutton.src = '/img/' + theme + "/send.png";
+            inputbutton.setAttribute('alt', 'Send message');
+            inputbutton.dataset.src = '/img/' + theme + "/send.svg";
+            inputbutton.src = '/img/' + theme + "/send.svg";
             input.className = 'chatroominput';
             inputtext.classList = 'chatroominputtext';
             inputbutton.classList = 'chatroominputbutton';
@@ -1089,7 +1093,7 @@ onstart.push(() => {
 
     const toggleWebcam = () => {
         isWebcam = !isWebcam;
-        changeImg(el.toggleWebcam, isWebcam ? 'webcamon.png' : 'webcamoff.png');
+        changeImg(el.toggleWebcam, isWebcam ? 'webcamon.svg' : 'webcamoff.svg');
         if (localWebcamStream) {
             localWebcamStream.getVideoTracks().forEach((video) => {
                 video.enabled = isWebcam;
@@ -1130,7 +1134,7 @@ onstart.push(() => {
     const toggleMuted = () => {
         if (localWebcamStream) {
             isMute = !isMute
-            changeImg(el.toggleMute, isMute ? 'micoff.png' : 'micon.png');
+            changeImg(el.toggleMute, isMute ? 'micoff.svg' : 'micon.svg');
             localWebcamStream.getAudioTracks().forEach((audio) => {
                 audio.enabled = !isMute;
             });

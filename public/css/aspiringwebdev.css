@@ -130,6 +130,10 @@ code {
   color: greenyellow;
 }
 
+.button {
+  width: 32px;
+}
+
 .popupsettings, .popupserver, .popupinvite {
   display: none;
   position: relative;
