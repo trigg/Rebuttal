@@ -1,4 +1,5 @@
 'use strict';
+
 /**
  * List of parts that need to be globally passed about
  */
@@ -31,6 +32,8 @@ var signUpCode = null;
 var autocompleteing = null;
 var autocompletestart = 0;
 var autocompleteselection = 0;
+var electronMode = false;
+var customUrl = null;
 // Browser storage
 
 var theme = null;
@@ -52,6 +55,7 @@ var getUsersByPartialName;
 var loadMoreText;
 var playToGroup;
 var send;
+var connect;
 
 getUserByID = (id) => {
     var ret = null;
@@ -72,3 +76,5 @@ getUsersByPartialName = (nameFrag) => {
     });
     return ret;
 }
+
+electronMode = /electron/i.test(navigator.userAgent)

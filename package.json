@@ -2,7 +2,7 @@
   "name": "rebuttal",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "start": "nodejs index.js"
   },
@@ -10,6 +10,7 @@
   "license": "GPL-3.0-or-later",
   "dependencies": {
     "buffer-image-size": "^0.6.4",
+    "electron": "^12.0.7",
     "express": "^4.17.1",
     "mysql": "^2.18.1",
     "socket.io": "^4.0.2",

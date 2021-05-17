@@ -1,6 +1,6 @@
 Table of Contents
 =================
-
+   * [Rebuttal Electron App](#rebuttal-electron-app)
    * [Rebuttal webchat](#rebuttal-webchat)
       * [Customisation](#customisation)
          * [Themes](#themes)
@@ -27,6 +27,10 @@ Table of Contents
             * [Touch screens](#touch-screens)
 
 Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
+
+# Rebuttal Electron App
+
+Install this repository and run `electron .` in the root. 
 
 # Rebuttal webchat
 

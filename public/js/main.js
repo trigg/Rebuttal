@@ -251,8 +251,16 @@ onstart.push(() => {
         ws.send(JSON.stringify(message));
     }
 
-    const connect = () => {
-        ws = new WebSocket("wss://" + location.hostname + (location.port ? ':' + location.port : '') + "/ipc");
+    connect = () => {
+        if (!electronMode) {
+            ws = new WebSocket("wss://" + location.hostname + (location.port ? ':' + location.port : '') + "/ipc");
+        } else {
+            if (!customUrl) {
+                return;
+            }
+            ws = new WebSocket(customUrl);
+
+        }
         ws.onmessage = (message) => {
             const data = JSON.parse(message.data);
             if (data['type'] in wsFunc) {
@@ -785,8 +793,8 @@ onstart.push(() => {
             var inputbutton = document.createElement('input');
             inputbutton.setAttribute('type', 'image');
             inputbutton.setAttribute('alt', 'Send message');
-            inputbutton.dataset.src = '/img/' + theme + "/send.svg";
-            inputbutton.src = '/img/' + theme + "/send.svg";
+            inputbutton.dataset.src = 'img/' + theme + "/send.svg";
+            inputbutton.src = 'img/' + theme + "/send.svg";
             input.className = 'chatroominput';
             inputtext.classList = 'chatroominputtext';
             inputbutton.classList = 'chatroominputbutton';
