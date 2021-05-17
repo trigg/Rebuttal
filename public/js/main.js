@@ -89,6 +89,9 @@ onstart.push(() => {
             var elementUser = div({ className: 'user' });
             var textUser = div({ className: 'usertext' });
             var imageUser = img({ className: 'userimg', src: 'avatar.svg', alt: '' });
+            if (user.status) {
+                elementUser.classList.add('useronline');
+            }
             textUser.innerText = user.name;
             elementUser.appendChild(imageUser);
             elementUser.appendChild(textUser);

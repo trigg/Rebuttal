@@ -92,6 +92,10 @@ html {
   align-items: center;
 }
 
+.useronline {
+  color: lightpink;
+}
+
 .usertalking {
   color: lightpink;
 }

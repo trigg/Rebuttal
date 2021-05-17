@@ -93,6 +93,10 @@ html {
   align-items: center;
 }
 
+.useronline {
+  color: blue;
+}
+
 .usertalking {
   color: blue;
 }

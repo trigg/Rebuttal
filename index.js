@@ -9,9 +9,7 @@ const path = require('path');
 const config = require('./config.json');
 const { Readable } = require('stream');
 const sizeOfImage = require('buffer-image-size');
-const { send } = require('process');
 const e = require('express');
-const { group } = require('console');
 
 const app = express();
 
@@ -286,6 +284,14 @@ wss.on("connection", ws => {
 
                 let user = storage.getAccountByLogin(email, password);
                 if (user) {
+                    // Log user out from other sources. Maybe later allow multiple login for one user
+                    // But it is not this day
+                    connections.forEach(conn => {
+                        if (conn.id && conn.id === user.id) {
+                            conn.close();
+                        }
+                    })
+
                     connections[user.id] = ws;
                     ws.name = user.name;
                     ws.id = user.id;
