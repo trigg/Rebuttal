@@ -774,8 +774,11 @@ onstart.push(() => {
                 };
                 reader.readAsDataURL(cacheDragAndDropFile);
             }
+            var autocomplete = div({ className: 'autocomplete', id: 'autocomplete' });
+            chatDiv.appendChild(autocomplete);
             var input = document.createElement('form');
             var inputtext = document.createElement('textarea');
+            inputtext.id = 'inputtext';
             var inputbutton = document.createElement('input');
             inputbutton.setAttribute('type', 'image');
             inputbutton.setAttribute('alt', 'Send message');
@@ -785,14 +788,72 @@ onstart.push(() => {
             inputtext.classList = 'chatroominputtext';
             inputbutton.classList = 'chatroominputbutton';
             inputbutton.setAttribute('value', 'Send');
-            inputtext.onkeypress = (event) => {
-                var key = event.keyCode; // Yeah, I know
-                if (key === 13) {
+
+            inputtext.oninput = (event) => {
+                console.log(event);
+
+                // We've written an @ and not already autocompleteing
+                if ((!autocompleteing) && event.inputType === 'insertText' && event.data === '@') {
+                    autocompleteing = currentView;
+                    autocompletestart = event.target.selectionStart;
+                    autocompleteselection = 0;
+                    return;
+                }
+                // We've moved before the @. Stop autocompleteing
+                if (event.target.selectionStart < autocompletestart) {
+                    autocompleteing = null;
+                    autocompletestart = 0;
+                    autocompleteselection = 0;
+                    return;
+                }
+                // We're currently autocompleteing
+                if (autocompleteing === currentView) {
+                    console.log("Caret : " + event.target.selectionStart + " End : " + event.target.value.length);
+                    var soFar = event.target.value.substring(autocompletestart, event.target.selectionStart);
+                    console.log(soFar);
+                    var userList = getUsersByPartialName(soFar);
+                    updateAutocomplete(userList);
+                }
+            }
+            inputtext.onkeydown = (event) => {
+                if (autocompleteing === currentView) {
+                    console.log(event);
+                    var soFar = event.target.value.substring(autocompletestart, event.target.selectionStart - 1);
+                    var userList = getUsersByPartialName(soFar);
+                    if (event.key === ' ' || event.key === 'Enter' || event.key === 'Tab') {
+                        autoComplete();
+                        return false;
+                    }
+                    if (event.key == 'ArrowUp') {
+                        if (autocompleteselection > 0) {
+                            autocompleteselection--;
+                        }
+                        updateAutocomplete(userList);
+                        return false;
+                    }
+                    if (event.key == 'ArrowDown') {
+                        if (autocompleteselection < (userList.length - 1)) {
+                            autocompleteselection++;
+                        }
+                        updateAutocomplete(userList);
+                        return false;
+                    }
+                    if (event.key == 'Escape') {
+                        autocompleteselection = 0;
+                        autocompleteing = null;
+                        autocompletestart = 0;
+                        updateAutocomplete(null);
+                        return false;
+                    }
+                }
+
+                if (event.key === "Enter") {
                     if (event.shiftKey) {
-                        return;
+                        return true;
                     }
                     event.preventDefault(null);
                     input.onsubmit();
+                    return false;
                 }
             }
             input.onsubmit = (event) => {
@@ -840,6 +901,72 @@ onstart.push(() => {
         el.appCoreView.innerText = '';
         el.appCoreView.appendChild(contents);
         if (after) { after(); }
+    }
+
+    const autoComplete = () => {
+        if (autocompleteing === currentView) {
+            var inputtext = document.getElementById('inputtext');
+            var soFar = inputtext.value.substring(autocompletestart, inputtext.selectionStart - 1);
+            var userList = getUsersByPartialName(soFar);
+
+            // We're done autocompleteing. Did we get anything?
+
+            autocompleteing = null;
+            var text = inputtext.value;
+            var endtext = text.substring(inputtext.selectionStart, text.length);
+            if (endtext.length < 1) {
+                endtext = " ";
+            }
+            text = text.substring(0, autocompletestart) + userList[autocompleteselection].name + endtext;
+            inputtext.value = text;
+            inputtext.selectionEnd = inputtext.selectionStart = text.length;
+            updateAutocomplete(null);
+        }
+    }
+
+    const updateAutocomplete = (userList) => {
+        var count = 0;
+        var ac = document.getElementById('autocomplete')
+        var autocompleteinner = div({ className: 'autocompleteinner', id: 'autocompleteinner' });
+        if (userList === null) {
+            ac.innerText = '';
+            return;
+        }
+        userList.forEach(user => {
+            var d = div({ className: 'autocompleteentry' });
+            if (count === autocompleteselection) {
+                d.classList.add('selected');
+            }
+            var name = div({ className: 'autocompleteentrytext' });
+            var img = document.createElement('img');
+            img.src = user.avatar;
+            img.className = 'userimg';
+
+            name.innerText = user.name;
+            d.appendChild(img);
+            d.appendChild(name);
+
+            d.onmouseenter = function (count2) {
+                return () => {
+                    autocompleteselection = count2;
+                    var aci = document.getElementById('autocompleteinner');
+                    var c = 0;
+                    aci.childNodes.forEach(e => {
+                        if (c == count2) {
+                            e.classList.add('selected');
+                        } else {
+                            e.classList.remove('selected');
+                        }
+                        c++;
+                    });
+                };
+            }(count);
+            d.onclick = autoComplete;
+            autocompleteinner.appendChild(d);
+            count++;
+        })
+        ac.innerText = ''
+        ac.appendChild(autocompleteinner);
     }
 
     const switchRoom = (roomid) => {

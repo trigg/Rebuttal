@@ -27,6 +27,9 @@ var sharedVideo = null;
 var permissions = [];
 var groups = [];
 var signUpCode = null;
+var autocompleteing = null;
+var autocompletestart = 0;
+var autocompleteselection = 0;
 // Browser storage
 
 var theme = null;
@@ -44,6 +47,7 @@ var updateThemesInSettings;
 var updateInputsInSettings;
 var updateOutputsInSettings;
 var getUserByID;
+var getUsersByPartialName;
 var loadMoreText;
 var playToGroup;
 var send;
@@ -55,5 +59,15 @@ getUserByID = (id) => {
             ret = user;
         }
     })
+    return ret;
+}
+
+getUsersByPartialName = (nameFrag) => {
+    var ret = [];
+    userlist.forEach(user => {
+        if (user.name.indexOf(nameFrag) > -1) {
+            ret.push(user);
+        }
+    });
     return ret;
 }

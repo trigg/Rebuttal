@@ -468,6 +468,29 @@ video {
   content: "×";
 }
 
+.autocomplete {
+  position: relative;
+}
+
+.autocompleteinner {
+  position: absolute;
+  bottom: 0px;
+  z-index: 2;
+  border-top: 2px solid #394a6d;
+  background-color: black;
+  width: 100%;
+}
+
+.autocompleteentry {
+  display: flex;
+  flex-direction: row;
+  height: 24px;
+}
+
+.autocompleteentry.selected {
+  background-color: black;
+}
+
 .userlist {
   border-left: 1px solid #394a6d;
 }
