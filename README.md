@@ -30,7 +30,7 @@ Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
 
 # Rebuttal Electron App
 
-Install this repository and run `electron . --url https://path.to/ipc` in the root. 
+Install this repository and run `electron . --url=wss://path.to/ipc` in the root. 
 
 # Rebuttal webchat
 
