@@ -89,7 +89,7 @@ app.post("/webhook/", (req, res) => {
                     url: payload.issue.url
                 }
                 storage.addNewMessage(room.id, message);
-                sendUpdatesMessages(roomid);
+                sendUpdatesMessages(room.id);
                 break;
             case "labeled":
                 m = "Changed labels on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
@@ -101,7 +101,7 @@ app.post("/webhook/", (req, res) => {
                     url: payload.issue.url
                 }
                 storage.addNewMessage(room.id, message);
-                sendUpdatesMessages(roomid);
+                sendUpdatesMessages(room.id);
                 break;
             case "created": // Commented
                 m = "Commented on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
@@ -109,24 +109,26 @@ app.post("/webhook/", (req, res) => {
                     m += payload.comment.body.replaceAll("\r\n", "  \n");
                 }
                 var message = {
+                    type: 'webhook',
                     avatar: payload.sender.avatar_url,
                     username: payload.sender.login,
                     message: m,
                     url: payload.issue.url
                 }
                 storage.addNewMessage(room.id, message);
-                sendUpdatesMessages(roomid);
+                sendUpdatesMessages(room.id);
                 break;
             case "edited":
                 m = "Edited comment on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
                 var message = {
+                    type: 'webhook',
                     avatar: payload.sender.avatar_url,
                     username: payload.sender.login,
                     message: m,
                     url: payload.issue.url
                 }
                 storage.addNewMessage(room.id, message);
-                sendUpdatesMessages(roomid);
+                sendUpdatesMessages(room.id);
             default:
                 console.log(payload);
                 break;
@@ -138,11 +140,14 @@ app.post("/webhook/", (req, res) => {
                 m += "```\n" + commit.message + "\n```\n";
             })
             var message = {
+                type: 'webhook',
                 avatar: payload.sender.avatar_url,
                 username: payload.sender.login,
                 message: m,
                 url: payload.issue.url
             }
+            storage.addNewMessage(room.id, message);
+            sendUpdatesMessages(room.id);
         }
     }
 
