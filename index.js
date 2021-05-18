@@ -54,75 +54,81 @@ app.post("/webhook/", (req, res) => {
     console.log(req.header('x-hub-signiture'));
     var room = getRoomForHash(req.header('x-hub-signiture'));
     if (!room) { res.status(404).end(); }
+    var payload;
     if (req.body.payload) {
-        var payload = JSON.parse(req.body.payload)
-        var m = '';
-        if (payload.action) {
-            switch (payload.action) {
-                case "opened":
-                    m = "Opened Issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
-                    if (payload.issue.body && payload.issue.body !== '') {
-                        m += "  \n" + payload.issue.body;
-                    }
-                    var message = {
-                        type: 'webhook',
-                        avatar: payload.sender.avatar_url,
-                        username: payload.sender.login,
-                        message: m,
-                        url: payload.issue.url
-                    }
-                    break;
-                case "labeled":
-                    m = "Changed labels on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
-                    var message = {
-                        type: 'webhook',
-                        avatar: payload.sender.avatar_url,
-                        username: payload.sender.login,
-                        message: m,
-                        url: payload.issue.url
-                    }
-                    break;
-                case "created": // Commented
-                    m = "Commented on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
-                    if (payload.comment.body) {
-                        m += payload.comment.body.replaceAll("\r\n", "  \n");
-                    }
-                    var message = {
-                        avatar: payload.sender.avatar_url,
-                        username: payload.sender.login,
-                        message: m,
-                        url: payload.issue.url
-                    }
-                    break;
-                case "edited":
-                    m = "Edited comment on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
-                    var message = {
-                        avatar: payload.sender.avatar_url,
-                        username: payload.sender.login,
-                        message: m,
-                        url: payload.issue.url
-                    }
-                default:
-                    console.log(payload);
-                    break;
-            }
-        } else {
-            if (payload.commits) {
-                m = "Pushed commits to " + payload.repository.full_name;
-                payload.commits.forEach(commit => {
-                    m += "```\n" + commit.message + "\n```\n";
-                })
+        payload = JSON.parse(req.body.payload)
+    } else {
+        payload = req.body;
+    }
+    if (!payload) {
+        console.log(req.body);
+        return;
+    }
+    var m = '';
+    if (payload.action) {
+        switch (payload.action) {
+            case "opened":
+                m = "Opened Issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
+                if (payload.issue.body && payload.issue.body !== '') {
+                    m += "  \n" + payload.issue.body;
+                }
+                var message = {
+                    type: 'webhook',
+                    avatar: payload.sender.avatar_url,
+                    username: payload.sender.login,
+                    message: m,
+                    url: payload.issue.url
+                }
+                break;
+            case "labeled":
+                m = "Changed labels on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
+                var message = {
+                    type: 'webhook',
+                    avatar: payload.sender.avatar_url,
+                    username: payload.sender.login,
+                    message: m,
+                    url: payload.issue.url
+                }
+                break;
+            case "created": // Commented
+                m = "Commented on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
+                if (payload.comment.body) {
+                    m += payload.comment.body.replaceAll("\r\n", "  \n");
+                }
                 var message = {
                     avatar: payload.sender.avatar_url,
                     username: payload.sender.login,
                     message: m,
                     url: payload.issue.url
                 }
-            }
+                break;
+            case "edited":
+                m = "Edited comment on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
+                var message = {
+                    avatar: payload.sender.avatar_url,
+                    username: payload.sender.login,
+                    message: m,
+                    url: payload.issue.url
+                }
+            default:
+                console.log(payload);
+                break;
         }
     } else {
-        console.log(req.body);
+        if (payload.commits) {
+            m = "Pushed commits to " + payload.repository.full_name;
+            payload.commits.forEach(commit => {
+                m += "```\n" + commit.message + "\n```\n";
+            })
+            var message = {
+                avatar: payload.sender.avatar_url,
+                username: payload.sender.login,
+                message: m,
+                url: payload.issue.url
+            }
+        }
     }
+
     res.status(200).end();
 });
 
