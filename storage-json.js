@@ -165,14 +165,12 @@ var storage = {
      * 
      * 
      * @param {uuid} roomid 
-     * @param {uuid} userid 
      * @param {object} message 
      */
-    addNewMessage: function (roomid, userid, message) {
+    addNewMessage: function (roomid, message) {
         if (!(roomid in this.storage.messages)) {
             this.storage.messages[roomid] = []
         }
-        message.userid = userid;
         this.storage.messages[roomid].push(message);
         this.save();
     },

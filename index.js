@@ -9,7 +9,6 @@ const path = require('path');
 const config = require('./config.json');
 const { Readable } = require('stream');
 const sizeOfImage = require('buffer-image-size');
-const bodyParser = require('body-parser');
 
 const app = express();
 
@@ -46,10 +45,58 @@ const uploadUri = '/uploads';
 var server = https.createServer(options, app);
 const wss = new WebSocket.Server({ server: server, path: "/ipc" });
 app.use('/', express.static('public'));
-app.use('/webhook/', bodyParser.json());
-
+app.use('/webhook/', express.json());
+app.use('/webhook/', express.urlencoded({
+    extended: true
+}));
 app.post("/webhook/", (req, res) => {
-    console.log(req);
+    console.log(req.headers);
+    if (req.body.payload) {
+        var payload = JSON.parse(req.body.payload)
+        var m = '';
+        switch (payload.action) {
+            case "opened":
+                m = "Opened Issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
+                if (payload.issue.body && payload.issue.body !== '') {
+                    m += "  \n" + payload.issue.body;
+                }
+                var message = {
+                    type: 'webhook',
+                    avatar: payload.sender.avatar_url,
+                    username: payload.sender.login,
+                    message: m,
+                    url: payload.issue.url
+                }
+                break;
+            case "labeled":
+                m = "Changed labels on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
+                var message = {
+                    type: 'webhook',
+                    avatar: payload.sender.avatar_url,
+                    username: payload.sender.login,
+                    message: m,
+                    url: payload.issue.url
+                }
+                break;
+            case "created": // Commented
+                m = "Commented on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
+                if (payload.comment.body) {
+                    m += payload.comment.body.replaceAll("\r\n", "  \n");
+                }
+                var message = {
+                    avatar: payload.sender.avatar_url,
+                    username: payload.sender.login,
+                    message: m,
+                    url: payload.issue.url
+                }
+                break;
+            default:
+                console.log(payload);
+                break;
+        }
+    } else {
+        console.log(req.body);
+    }
     res.status(200).end();
 });
 
@@ -372,7 +419,8 @@ wss.on("connection", ws => {
                         console.log(e);
                     }
                 }
-                storage.addNewMessage(roomid, ws.id, message);
+                message.userid = ws.id;
+                storage.addNewMessage(roomid, message);
                 var segnum = storage.getTextRoomNewestSegment(roomid);
 
                 // Generally, you have new text. Send a whole chunk replacement

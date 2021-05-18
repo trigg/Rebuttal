@@ -700,64 +700,77 @@ onstart.push(() => {
                     var segment = div({ className: 'messagesegment', id: 'messagesegment-' + segmentkey });
 
                     messagelist[currentView][segmentkey].forEach(message => {
-                        var user = getUserByID(message.userid);
-                        var username = user ? user.name : '[deleted user]';
                         var messageDiv = div({ className: 'message' });
-                        if (message.tags && message.tags.includes(iam)) {
-                            messageDiv.classList.add('tagged');
-                        }
                         var messageUserDiv = div({ className: 'messageuser' });
                         var messageMessageDiv = div({ className: 'messagemessage' });
-                        messageUserDiv.innerText = username + ":";
-                        if ('text' in message) {
-                            messageMessageDiv.innerHTML = markupParser.makeHtml(message.text);
-                            messageMessageDiv.oncontextmenu = (e) => {
-                                e.preventDefault();
-                                var list = [];
-                                if (message.userid === iam || hasPerm('changeMessage')) {
-                                    list.push(
-                                        {
-                                            text: 'Edit Message',
-                                            callback: () => {
-                                                //TODO
-                                            }
-                                        });
-                                }
-                                if (hasPerm('removeMessage')) {
-                                    list.push(
-                                        {
-                                            text: 'Delete Message',
-                                            callback: () => {
-                                                //TODO
-                                            }
-                                        }
-                                    )
-                                }
-                                showContextMenu(list, mouseX(e), mouseY(e));
-
-                            }
-                        }
+                        var messageUserImage = document.createElement('img');
+                        var messageUserText = div({ className: 'messageusertext' });
+                        messageUserImage.className = 'messageuserimg userimg';
+                        messageUserDiv.appendChild(messageUserImage);
+                        messageUserDiv.appendChild(messageUserText);
                         messageDiv.appendChild(messageUserDiv);
                         messageDiv.appendChild(messageMessageDiv);
                         segment.appendChild(messageDiv);
-                        if ('url' in message) {
-                            var urlElement = document.createElement('a');
-                            urlElement.className = 'messageurl';
-                            urlElement.setAttribute('href', message.url);
-                            urlElement.innerText = message.url;
-                            segment.appendChild(urlElement);
-                        }
-                        if ('img' in message) {
-                            var imgElement = document.createElement('img');
-                            imgElement.className = 'messageimg';
-                            imgElement.setAttribute('height', message['height']);
-                            imgElement.setAttribute('width', message['width']);
-                            imgElement.src = message['img'];
-                            imgElement.setAttribute('alt', 'user submitted image');
-                            segment.appendChild(imgElement);
-                        }
+                        if (message.type && message.type === 'webhook') {
+                            messageUserDiv.innerText = message.username;
+                            messageUserImage.src = message.avatar;
+                            messageMessageDiv.innerText = message.message;
+                            messageMessageDiv.onclick = () => window.open(message.url, '_blank').focus()
+                        } else {
+                            var user = getUserByID(message.userid);
+                            var username = user ? user.name : '[deleted user]';
+                            if (message.tags && message.tags.includes(iam)) {
+                                messageDiv.classList.add('tagged');
+                            }
+                            messageUserText.innerText = username + ":";
+                            if ('text' in message) {
+                                messageMessageDiv.innerHTML = markupParser.makeHtml(message.text);
+                                messageMessageDiv.oncontextmenu = (e) => {
+                                    e.preventDefault();
+                                    var list = [];
+                                    if (message.userid === iam || hasPerm('changeMessage')) {
+                                        list.push(
+                                            {
+                                                text: 'Edit Message',
+                                                callback: () => {
+                                                    //TODO
+                                                }
+                                            });
+                                    }
+                                    if (hasPerm('removeMessage')) {
+                                        list.push(
+                                            {
+                                                text: 'Delete Message',
+                                                callback: () => {
+                                                    //TODO
+                                                }
+                                            }
+                                        )
+                                    }
+                                    showContextMenu(list, mouseX(e), mouseY(e));
 
+                                }
+                            }
+
+                            if ('url' in message) {
+                                var urlElement = document.createElement('a');
+                                urlElement.className = 'messageurl';
+                                urlElement.setAttribute('href', message.url);
+                                urlElement.innerText = message.url;
+                                segment.appendChild(urlElement);
+                            }
+                            if ('img' in message) {
+                                var imgElement = document.createElement('img');
+                                imgElement.className = 'messageimg';
+                                imgElement.setAttribute('height', message['height']);
+                                imgElement.setAttribute('width', message['width']);
+                                imgElement.src = message['img'];
+                                imgElement.setAttribute('alt', 'user submitted image');
+                                segment.appendChild(imgElement);
+                            }
+                        }
                     });
+
                     //segment.innerHTML = markupParser.makeHtml(text);
                     scrollingDiv.appendChild(segment);
                 });
@@ -1112,7 +1125,6 @@ onstart.push(() => {
                     document.getElementById('user-' + uuid).classList.remove('usertalking');
                     document.getElementById('videodiv-' + uuid).classList.remove('videodivtalking');
                 }
-
             }, 200);
         });
     }
