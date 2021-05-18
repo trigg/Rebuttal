@@ -130,6 +130,17 @@ app.post("/webhook/", (req, res) => {
                 }
                 storage.addNewMessage(room.id, message);
                 sendUpdatesMessages(room.id);
+            case "deleted":
+                m = "Deleted comment on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
+                var message = {
+                    type: 'webhook',
+                    avatar: payload.sender.avatar_url,
+                    username: payload.sender.login,
+                    message: m,
+                    url: payload.issue.url
+                }
+                storage.addNewMessage(room.id, message);
+                sendUpdatesMessages(room.id);
             case "started":
                 m = "Starred " + payload.repository.full_name;
                 var message = {
@@ -147,21 +158,32 @@ app.post("/webhook/", (req, res) => {
                 break;
         }
     } else if (payload.commits) {
-        if (payload.commits) {
-            m = "Pushed commits to " + payload.repository.full_name;
-            payload.commits.forEach(commit => {
-                m += "\n```\n" + commit.message + "\n```";
-            })
-            var message = {
-                type: 'webhook',
-                avatar: payload.sender.avatar_url,
-                username: payload.sender.login,
-                message: m,
-                url: payload.repository.url
-            }
-            storage.addNewMessage(room.id, message);
-            sendUpdatesMessages(room.id);
+        m = "Pushed commits to " + payload.repository.full_name;
+        payload.commits.forEach(commit => {
+            m += "\n```\n" + commit.message + "\n```";
+        })
+        var message = {
+            type: 'webhook',
+            avatar: payload.sender.avatar_url,
+            username: payload.sender.login,
+            message: m,
+            url: payload.repository.url
         }
+        storage.addNewMessage(room.id, message);
+        sendUpdatesMessages(room.id);
+
+    } else if (payload.forkee) {
+        m = "Project " + payload.forkee.full_name + " forked from " + payload.repository.full_name;
+        var message = {
+            type: 'webhook',
+            avatar: payload.sender.avatar_url,
+            username: payload.sender.full_name,
+            message: m,
+            url: payload.forkee.url
+        }
+        storage.addNewMessage(room.id, message);
+        sendUpdatesMessages(room.id);
+
     } else {
         // No idea what it is
         console.log(payload);

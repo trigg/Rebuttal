@@ -920,6 +920,7 @@ onstart.push(() => {
                             filename: cacheDragAndDropFile.name,
                             rawfile: split[1]
                         })
+                        inputtext.value = '';
                         cacheUserTagged = [];
                         cacheDragAndDropFile = null;
                         populateRoom();
@@ -932,6 +933,7 @@ onstart.push(() => {
                         roomid: currentView,
                         message: { text, tags: cacheUserTagged, }
                     })
+                    inputtext.value = '';
                     cacheUserTagged = [];
                     inputtext.focus();
                 }
