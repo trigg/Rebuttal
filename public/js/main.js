@@ -712,7 +712,7 @@ onstart.push(() => {
                         messageDiv.appendChild(messageMessageDiv);
                         segment.appendChild(messageDiv);
                         if (message.type && message.type === 'webhook') {
-                            messageUserDiv.innerText = message.username;
+                            messageUserText.innerText = message.username;
                             messageUserImage.src = message.avatar;
                             messageMessageDiv.innerText = message.message;
                             messageMessageDiv.onclick = () => window.open(message.url, '_blank').focus()
