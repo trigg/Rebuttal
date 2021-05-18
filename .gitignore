@@ -6,3 +6,6 @@ package-lock.json
 data.json
 config.json
 public/uploads
+yarn-error.log
+dist
+*.tgz

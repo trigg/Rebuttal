@@ -9,7 +9,7 @@ const path = require('path');
 const config = require('./config.json');
 const { Readable } = require('stream');
 const sizeOfImage = require('buffer-image-size');
-const e = require('express');
+const bodyParser = require('body-parser');
 
 const app = express();
 
@@ -46,6 +46,12 @@ const uploadUri = '/uploads';
 var server = https.createServer(options, app);
 const wss = new WebSocket.Server({ server: server, path: "/ipc" });
 app.use('/', express.static('public'));
+app.use('/webhook/', bodyParser.json());
+
+app.post("/webhook/", (req, res) => {
+    console.log(req);
+    res.status(200).end();
+});
 
 // Prepare known theme list
 var themelist = [];
