@@ -2,5 +2,6 @@
     "storage": "json",
     "port": 9000,
     "servername": "Rebuttal",
-    "serverimg": "img/bubblegum/avatar.svg"
+    "serverimg": "img/bubblegum/avatar.svg",
+    "gravatarfallback": "monsterid"
 }

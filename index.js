@@ -10,6 +10,7 @@ const config = require('./config.json');
 const { Readable } = require('stream');
 const sizeOfImage = require('buffer-image-size');
 const crypto = require('crypto');
+const gravatar = require('gravatar');
 
 const app = express();
 
@@ -260,11 +261,15 @@ const updateUsers = () => {
         if (!('hidden' in account)) {
             account.hidden = false;
         }
+        if (!('avatar' in account)) {
+            account.avatar = gravatar.url(account.email, { d: config.gravatarfallback });
+        }
         users.push(
             {
                 id: account.id,
                 name: account.name,
                 status: isUserConnected(account.id),
+                avatar: account.avatar,
                 hidden: account.hidden
             }
         );

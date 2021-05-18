@@ -89,7 +89,11 @@ onstart.push(() => {
             }
             var elementUser = div({ className: 'user' });
             var textUser = div({ className: 'usertext' });
-            var imageUser = img({ className: 'userimg', src: 'avatar.svg', alt: '' });
+            var imageUser = document.createElement('img');
+            imageUser.className = "userimg";
+            imageUser.alt = 'avatar for ' + user.name;
+            imageUser.src = user.avatar;
+            textUser.innerText = user.name;
             if (user.status) {
                 elementUser.classList.add('useronline');
             }
@@ -229,7 +233,10 @@ onstart.push(() => {
             room.userlist.forEach((user) => {
                 var elementUser = div({ className: 'user', id: 'user-' + user.id });
                 var textUser = div({ className: 'usertext' });
-                var imageUser = img({ className: 'userimg', src: 'avatar.svg', alt: 'avatar for ' + user.name });
+                var imageUser = document.createElement('img');
+                imageUser.className = "userimg";
+                imageUser.alt = 'avatar for ' + user.name;
+                imageUser.src = user.avatar;
                 textUser.innerText = user.name;
                 elementUser.appendChild(imageUser);
                 elementUser.appendChild(textUser);
