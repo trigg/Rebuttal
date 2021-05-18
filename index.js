@@ -46,14 +46,20 @@ const uploadUri = '/uploads';
 var server = https.createServer(options, app);
 const wss = new WebSocket.Server({ server: server, path: "/ipc" });
 app.use('/', express.static('public'));
-app.use('/webhook/', express.json());
+app.use('/webhook/', express.json({
+    verify: (req, res, buf, encoding) => {
+        if (buf && buf.length) {
+            req.rawBody = buf.toString(encoding || 'utf8');
+        }
+    }
+}));
 app.use('/webhook/', express.urlencoded({
     extended: true
 }));
 app.post("/webhook/", (req, res) => {
     console.log(req.headers);
     console.log(req.header('X-Hub-Signature-256'));
-    var room = getRoomForHash(req.header('X-Hub-Signature-256'));
+    var room = getRoomForHash(req.header('X-Hub-Signature-256'), req.rawBody);
     if (!room) { res.status(404).end(); }
     var payload;
     if (req.body.payload) {
@@ -147,11 +153,14 @@ fs.readdirSync(path.join(__dirname, 'public', 'img'), { withFileTypes: true })
         }
     });
 
-const getRoomForHash = (hash) => {
+const getRoomForHash = (hash, payload) => {
     var r = null;
+
     storage.getAllRooms().forEach(room => {
         if (room.type == 'text') {
-            var roomHash = crypto.createHash('sha256').update(room.id).digest('base64');
+            var hmac = crypto.createHmac('sha256', room.id);
+
+            var roomHash = Buffer.from("sha256=" + hmac.update(payload).digest('hex'), 'utf8')
             console.log(room.name);
             console.log(roomHash + " == " + hash);
             if (roomHash === hash) {
