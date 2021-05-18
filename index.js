@@ -51,6 +51,9 @@ app.use('/webhook/', express.urlencoded({
 }));
 app.post("/webhook/", (req, res) => {
     console.log(req.headers);
+    console.log(req.header('x-hub-signiture'));
+    var room = getRoomForHash(req.header('x-hub-signiture'));
+    if (!room) { res.status(404).end(); }
     if (req.body.payload) {
         var payload = JSON.parse(req.body.payload)
         var m = '';
@@ -137,6 +140,18 @@ fs.readdirSync(path.join(__dirname, 'public', 'img'), { withFileTypes: true })
         }
     });
 
+const getRoomForHash = (hash) => {
+    var r = null;
+    storage.getAllRooms().forEach(room => {
+        var roomHash = crypto.createHash('sha256').update(room.id).digest('hex');
+        console.log(room.name);
+        console.log(roomHash + " == " + hash);
+        if (roomHash === hash) {
+            r = room;
+        }
+    })
+    return r;
+}
 
 const sendToID = (id, message) => {
     Object.values(connections).forEach(client => {
