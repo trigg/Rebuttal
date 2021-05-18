@@ -133,7 +133,7 @@ app.post("/webhook/", (req, res) => {
                 console.log(payload);
                 break;
         }
-    } else {
+    } else if (payload.commits) {
         if (payload.commits) {
             m = "Pushed commits to " + payload.repository.full_name;
             payload.commits.forEach(commit => {
@@ -149,6 +149,9 @@ app.post("/webhook/", (req, res) => {
             storage.addNewMessage(room.id, message);
             sendUpdatesMessages(room.id);
         }
+    } else {
+        // No idea what it is
+        console.log(payload);
     }
 
     res.status(200).end();
