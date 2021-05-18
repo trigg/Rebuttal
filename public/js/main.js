@@ -1139,12 +1139,17 @@ onstart.push(() => {
         var sreader = new SoundReader(new AudioContext());
         sreader.connectToSource(src, function (e) {
             setInterval(() => {
+                var sideuser = document.getElementById('user-' + uuid)
+                var videouser = document.getElementById('videodiv-' + uuid);
+                if (!sideuser) {
+                    sreader.stop();
+                }
                 if (sreader.talked) {
-                    document.getElementById('user-' + uuid).classList.add('usertalking');
-                    document.getElementById('videodiv-' + uuid).classList.add('videodivtalking');
+                    sideuser.classList.add('usertalking');
+                    if (videouser) { videouser.classList.add('videodivtalking'); }
                 } else {
-                    document.getElementById('user-' + uuid).classList.remove('usertalking');
-                    document.getElementById('videodiv-' + uuid).classList.remove('videodivtalking');
+                    sideuser.classList.remove('usertalking');
+                    if (videouser) { videouser.classList.remove('videodivtalking'); }
                 }
             }, 200);
         });
