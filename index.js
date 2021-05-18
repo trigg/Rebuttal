@@ -9,6 +9,7 @@ const path = require('path');
 const config = require('./config.json');
 const { Readable } = require('stream');
 const sizeOfImage = require('buffer-image-size');
+const crypto = require('crypto');
 
 const app = express();
 
