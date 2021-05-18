@@ -144,7 +144,7 @@ app.post("/webhook/", (req, res) => {
                 avatar: payload.sender.avatar_url,
                 username: payload.sender.login,
                 message: m,
-                url: payload.issue.url
+                url: payload.repository.url
             }
             storage.addNewMessage(room.id, message);
             sendUpdatesMessages(room.id);
