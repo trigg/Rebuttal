@@ -71,10 +71,14 @@ video{
     position: absolute;
     right:0px;
     filter: invert(27%) sepia(85%) saturate(7203%) hue-rotate(358deg) brightness(98%) contrast(127%);
+    height:$iconsize;
+    width:$iconsize;
 }
 .videonoaudio{
     position: absolute;
     right:0px;
-    top:24px;
+    height:$iconsize;
+    top: $iconsize;
+    width: $iconsize;
     filter: invert(27%) sepia(85%) saturate(7203%) hue-rotate(358deg) brightness(98%) contrast(127%);
 }

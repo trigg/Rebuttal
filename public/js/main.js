@@ -44,10 +44,11 @@ onstart.push(() => {
         return d;
     }
 
-    const img = ({ className, id, src, alt }) => {
+    const img = ({ className, id, src, alt, title }) => {
         var i = document.createElement('img');
         if (className) { i.className = className; }
         if (alt) { i.setAttribute('alt', alt); }
+        if (title) { i.setAttribute('title', title); }
         if (id) { i.id = id; }
         if (src) {
             i.src = 'img/' + theme + '/' + src;
@@ -602,8 +603,8 @@ onstart.push(() => {
                 audiometer.value = 0;
                 audiometer.id = 'meter-' + user.id;
                 audiometer.className = "videometer";
-                var novid = img({ src: 'webcamoff.svg', id: "novideo-" + user.id, className: "videonovideo", alt: 'has no video stream' });
-                var noaud = img({ src: 'micoff.svg', id: "noaudio-" + user.id, className: "videonoaudio", alt: 'has no audio stream' });
+                var novid = img({ src: 'webcamoff.svg', id: "novideo-" + user.id, className: "videonovideo", alt: 'has no video stream', title: "No video" });
+                var noaud = img({ src: 'micoff.svg', id: "noaudio-" + user.id, className: "videonoaudio", alt: 'has no audio stream', title: "No Audio" });
                 divid.appendChild(audiometer);
                 divid.appendChild(novid);
                 divid.appendChild(noaud);

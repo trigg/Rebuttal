@@ -101,6 +101,12 @@ html {
   color: blue;
 }
 
+.roomimg {
+  width: 24px;
+  height: 24px;
+  border: 0px;
+}
+
 .userimg {
   width: 24px;
   height: 24px;
@@ -283,12 +289,16 @@ video {
   position: absolute;
   right: 0px;
   filter: invert(27%) sepia(85%) saturate(7203%) hue-rotate(358deg) brightness(98%) contrast(127%);
+  height: 24px;
+  width: 24px;
 }
 
 .videonoaudio {
   position: absolute;
   right: 0px;
+  height: 24px;
   top: 24px;
+  width: 24px;
   filter: invert(27%) sepia(85%) saturate(7203%) hue-rotate(358deg) brightness(98%) contrast(127%);
 }
 

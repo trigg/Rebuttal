@@ -90,10 +90,15 @@ html {
 .usertalking{
     color:$highlight;
 }
+.roomimg {
+    width: $iconsize;
+    height: $iconsize;
+    border:0px;
 
+}
 .userimg{
-    width:24px;
-    height:24px;
+    width: $iconsize;
+    height: $iconsize;
     border: 0px;
     border-radius: 12px;
 }
