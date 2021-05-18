@@ -52,8 +52,8 @@ app.use('/webhook/', express.urlencoded({
 }));
 app.post("/webhook/", (req, res) => {
     console.log(req.headers);
-    console.log(req.header('x-hub-signiture'));
-    var room = getRoomForHash(req.header('x-hub-signiture'));
+    console.log(req.header('X-Hub-Signature-256'));
+    var room = getRoomForHash(req.header('X-Hub-Signature-256'));
     if (!room) { res.status(404).end(); }
     var payload;
     if (req.body.payload) {
@@ -150,11 +150,13 @@ fs.readdirSync(path.join(__dirname, 'public', 'img'), { withFileTypes: true })
 const getRoomForHash = (hash) => {
     var r = null;
     storage.getAllRooms().forEach(room => {
-        var roomHash = crypto.createHash('sha256').update(room.id).digest('hex');
-        console.log(room.name);
-        console.log(roomHash + " == " + hash);
-        if (roomHash === hash) {
-            r = room;
+        if (room.type == 'text') {
+            var roomHash = crypto.createHash('sha256').update(room.id).digest('base64');
+            console.log(room.name);
+            console.log(roomHash + " == " + hash);
+            if (roomHash === hash) {
+                r = room;
+            }
         }
     })
     return r;
