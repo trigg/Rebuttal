@@ -70,6 +70,14 @@ onstart.push(() => {
         showContextMenu(list, window.mouseX, window.mouseY);
     }
 
+    const isInVoiceRoom = () => {
+        var room = getRoom(currentView);
+        if (room && room.type === 'voice') {
+            return true;
+        }
+        return false;
+    }
+
     const setUserList = (userList) => {
 
         var elementParent = div({ className: 'userListParent' });
@@ -1029,6 +1037,7 @@ onstart.push(() => {
         // Change our view
         currentView = roomid;
         populateRoom();
+        updateDeviceState();
         // Tell the server
         if (roomid) {
             send({
@@ -1140,13 +1149,13 @@ onstart.push(() => {
     const prepareSoundReader = (src, uuid, meter) => {
         var sreader = new SoundReader(new AudioContext());
         sreader.connectToSource(src, function (e) {
-            setInterval(() => {
+            var timerID = setInterval(() => {
                 var sideuser = document.getElementById('user-' + uuid)
                 var videouser = document.getElementById('videodiv-' + uuid);
                 if (!sideuser) {
                     sreader.stop();
-                }
-                if (sreader.talked) {
+                    clearInterval(timerID);
+                } else if (sreader.talked) {
                     sideuser.classList.add('usertalking');
                     if (videouser) { videouser.classList.add('videodivtalking'); }
                 } else {
@@ -1230,16 +1239,7 @@ onstart.push(() => {
                     ele.srcObject = stream;
                 }
                 localWebcamStream = stream;
-                if (isMute) {
-                    localWebcamStream.getAudioTracks().forEach((audio) => {
-                        audio.enabled = !isMute;
-                    });
-                }
-                if (!isWebcam) {
-                    localWebcamStream.getVideoTracks().forEach((video) => {
-                        video.enabled = isWebcam;
-                    });
-                }
+                updateDeviceState();
 
                 // Any existing PC need the stream
                 replaceAllPeerMedia();
@@ -1290,15 +1290,8 @@ onstart.push(() => {
 
     const toggleWebcam = () => {
         isWebcam = !isWebcam;
-        changeImg(el.toggleWebcam, isWebcam ? 'webcamon.svg' : 'webcamoff.svg');
-        if (localWebcamStream) {
-            localWebcamStream.getVideoTracks().forEach((video) => {
-                video.enabled = isWebcam;
-            });
-        }
-        if (currentView) {
-            updateDeviceState();
-        }
+        updateDeviceState();
+
     }
     const toggleScreenShare = () => {
         if (isScreenShare) {
@@ -1329,25 +1322,44 @@ onstart.push(() => {
             });
     };
     const toggleMuted = () => {
-        if (localWebcamStream) {
-            isMute = !isMute
-            changeImg(el.toggleMute, isMute ? 'micoff.svg' : 'micon.svg');
-            localWebcamStream.getAudioTracks().forEach((audio) => {
-                audio.enabled = !isMute;
-            });
-        }
-        if (currentView) {
-            updateDeviceState();
-        }
+        isMute = !isMute
+        updateDeviceState();
     }
 
     const updateDeviceState = () => {
-        send({
-            type: 'chatdev',
-            audio: !isMute,
-            video: isWebcam
-        });
+        if (isInVoiceRoom()) {
+            send({
+                type: 'chatdev',
+                audio: !isMute,
+                video: isWebcam
+            });
+        }
+        // Set Mic icon
+        changeImg(el.toggleMute, isMute ? 'micoff.svg' : 'micon.svg');
+        // Set Webcam icon
+        changeImg(el.toggleWebcam, isWebcam ? 'webcamon.svg' : 'webcamoff.svg');
+        console.log("AudioStream : " + (!isMute) + " VideoStream : " + isWebcam + " isVideoChat : " + isInVoiceRoom());
+        if (isInVoiceRoom()) {
+            // Set all local audio streams
+            localWebcamStream.getAudioTracks().forEach((audio) => {
+                audio.enabled = !isMute;
+            });
+            // Set all local video streams
+            localWebcamStream.getVideoTracks().forEach((video) => {
+                video.enabled = isWebcam;
+            });
+        } else {
+            // Set all local audio streams
+            localWebcamStream.getAudioTracks().forEach((audio) => {
+                audio.enabled = false;
+            });
+            // Set all local video streams
+            localWebcamStream.getVideoTracks().forEach((video) => {
+                video.enabled = false;
+            });
+        }
     }
+
 
     const createAudioConstraints = () => {
         var deviceId = getConfig('microphonedevice', 'none');
