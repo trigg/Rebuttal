@@ -130,6 +130,15 @@ app.post("/webhook/", (req, res) => {
                 }
                 storage.addNewMessage(room.id, message);
                 sendUpdatesMessages(room.id);
+            case "started":
+                m = "Starred " + payload.repository.full_name;
+                var message = {
+                    type: 'webhook',
+                    avatar: payload.sender.avatar_url,
+                    username: payload.sender.login,
+                    message: m,
+                    url: payload.repository.url
+                }
             default:
                 console.log(payload);
                 break;

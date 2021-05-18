@@ -821,7 +821,7 @@ onstart.push(() => {
             inputtext.id = 'inputtext';
             var lastinput = document.getElementById('inputtext');
             if (lastinput) {
-                inputtext.innerText = lastinput.innerText;
+                inputtext.value = lastinput.value;
                 inputtext.selectionStart = lastinput.selectionStart;
                 inputtext.selectionEnd = lastinput.selectionEnd;
             }
@@ -1505,6 +1505,8 @@ onstart.push(() => {
     el.app.addEventListener('dragover', dragOver, false);
     el.app.addEventListener('dragleave', dragLeave, false);
     el.app.addEventListener('drop', dragDrop, false)
+
+    showdown.setOption('tables', true);
 
     // Connect to WS
     connect();
