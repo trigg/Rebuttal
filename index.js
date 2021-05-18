@@ -138,7 +138,7 @@ app.post("/webhook/", (req, res) => {
         if (payload.commits) {
             m = "Pushed commits to " + payload.repository.full_name;
             payload.commits.forEach(commit => {
-                m += "```\n" + commit.message + "\n```\n";
+                m += "\n```\n" + commit.message + "\n```";
             })
             var message = {
                 type: 'webhook',
