@@ -721,7 +721,7 @@ onstart.push(() => {
                         if (message.type && message.type === 'webhook') {
                             messageUserText.innerText = message.username;
                             messageUserImage.src = message.avatar;
-                            messageMessageDiv.innerText = message.message;
+                            messageMessageDiv.innerHTML = markupParser.makeHtml(message.message);
                             messageMessageDiv.onclick = () => window.open(message.url, '_blank').focus()
                         } else {
                             var user = getUserByID(message.userid);
