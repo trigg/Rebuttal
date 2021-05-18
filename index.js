@@ -139,6 +139,9 @@ app.post("/webhook/", (req, res) => {
                     message: m,
                     url: payload.repository.url
                 }
+                storage.addNewMessage(room.id, message);
+                sendUpdatesMessages(room.id);
+                break;
             default:
                 console.log(payload);
                 break;
