@@ -819,9 +819,12 @@ onstart.push(() => {
             var input = document.createElement('form');
             var inputtext = document.createElement('textarea');
             inputtext.id = 'inputtext';
-            inputtext.innerText = document.getElementById('inputtext').innerText;
-            inputtext.selectionStart = document.getElementById('inputtext').selectionStart;
-            inputtext.selectionEnd = document.getElementById('inputtext').selectionEnd;
+            var lastinput = document.getElementById('inputtext');
+            if (lastinput) {
+                inputtext.innerText = lastinput.innerText;
+                inputtext.selectionStart = lastinput.selectionStart;
+                inputtext.selectionEnd = lastinput.selectionEnd;
+            }
             var inputbutton = document.createElement('input');
             inputbutton.setAttribute('type', 'image');
             inputbutton.setAttribute('alt', 'Send message');
