@@ -57,8 +57,6 @@ app.use('/webhook/', express.urlencoded({
     extended: true
 }));
 app.post("/webhook/", (req, res) => {
-    console.log(req.headers);
-    console.log(req.header('X-Hub-Signature-256'));
     var room = getRoomForHash(req.header('X-Hub-Signature-256'), req.rawBody);
     if (!room) { res.status(404).end(); }
     var payload;
@@ -86,6 +84,7 @@ app.post("/webhook/", (req, res) => {
                     message: m,
                     url: payload.issue.url
                 }
+                storage.addNewMessage(room.id, message);
                 break;
             case "labeled":
                 m = "Changed labels on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
@@ -96,6 +95,7 @@ app.post("/webhook/", (req, res) => {
                     message: m,
                     url: payload.issue.url
                 }
+                storage.addNewMessage(room.id, message);
                 break;
             case "created": // Commented
                 m = "Commented on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
@@ -108,6 +108,7 @@ app.post("/webhook/", (req, res) => {
                     message: m,
                     url: payload.issue.url
                 }
+                storage.addNewMessage(room.id, message);
                 break;
             case "edited":
                 m = "Edited comment on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
@@ -117,6 +118,7 @@ app.post("/webhook/", (req, res) => {
                     message: m,
                     url: payload.issue.url
                 }
+                storage.addNewMessage(room.id, message);
             default:
                 console.log(payload);
                 break;
@@ -159,10 +161,7 @@ const getRoomForHash = (hash, payload) => {
     storage.getAllRooms().forEach(room => {
         if (room.type == 'text') {
             var hmac = crypto.createHmac('sha256', room.id);
-
-            var roomHash = Buffer.from("sha256=" + hmac.update(payload).digest('hex'), 'utf8')
-            console.log(room.name);
-            console.log(roomHash + " == " + hash);
+            var roomHash = Buffer.from("sha256=" + hmac.update(payload).digest('hex'), 'utf8');
             if (roomHash === hash) {
                 r = room;
             }
