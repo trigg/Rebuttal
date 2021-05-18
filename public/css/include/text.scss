@@ -41,16 +41,19 @@
 }
 .message{
     display:flex;
-    justify-content: start;
+    align-items: center;
 }
 .message.tagged{
     background-color: $col1;
 }
 .messageuser{
     font-weight: bold;
+    display:flex;
+    align-items: center;
 }
 .messagemessage{
     overflow-wrap: anywhere;
+    justify-content: center;
 }
 .messageurl{
     border-radius: 10px;

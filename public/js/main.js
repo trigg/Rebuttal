@@ -719,8 +719,16 @@ onstart.push(() => {
                         } else {
                             var user = getUserByID(message.userid);
                             var username = user ? user.name : '[deleted user]';
+
                             if (message.tags && message.tags.includes(iam)) {
                                 messageDiv.classList.add('tagged');
+                            }
+                            if (user && user.avatar) {
+                                messageUserImage.src = user.avatar;
+                            } else {
+                                // Use theme-specific avatar
+                                messageUserImage.src = 'img/' + theme + '/avatar.svg';
+                                messageUserImage.dataset.src = 'avatar.svg';
                             }
                             messageUserText.innerText = username + ":";
                             if ('text' in message) {

@@ -43,7 +43,7 @@ html {
 .roomlist, .userlist {
   flex-grow: 0;
   background-color: lavender;
-  width: 170px;
+  width: calc(6 * 32px);
   overflow-y: auto;
   overflow-x: hidden;
   flex-shrink: 0;
@@ -456,7 +456,7 @@ video {
 
 .message {
   display: flex;
-  justify-content: start;
+  align-items: center;
 }
 
 .message.tagged {
@@ -465,10 +465,13 @@ video {
 
 .messageuser {
   font-weight: bold;
+  display: flex;
+  align-items: center;
 }
 
 .messagemessage {
   overflow-wrap: anywhere;
+  justify-content: center;
 }
 
 .messageurl {

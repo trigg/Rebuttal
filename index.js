@@ -58,7 +58,11 @@ app.use('/webhook/', express.urlencoded({
 }));
 app.post("/webhook/", (req, res) => {
     var room = getRoomForHash(req.header('X-Hub-Signature-256'), req.rawBody);
-    if (!room) { res.status(404).end(); }
+    if (!room || room === null) {
+        console.log("Webhook payload rejected");
+        res.status(404).end();
+        return;
+    }
     var payload;
     if (req.body.payload) {
         payload = JSON.parse(req.body.payload)
@@ -85,6 +89,7 @@ app.post("/webhook/", (req, res) => {
                     url: payload.issue.url
                 }
                 storage.addNewMessage(room.id, message);
+                sendUpdatesMessages(roomid);
                 break;
             case "labeled":
                 m = "Changed labels on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
@@ -96,6 +101,7 @@ app.post("/webhook/", (req, res) => {
                     url: payload.issue.url
                 }
                 storage.addNewMessage(room.id, message);
+                sendUpdatesMessages(roomid);
                 break;
             case "created": // Commented
                 m = "Commented on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
@@ -109,6 +115,7 @@ app.post("/webhook/", (req, res) => {
                     url: payload.issue.url
                 }
                 storage.addNewMessage(room.id, message);
+                sendUpdatesMessages(roomid);
                 break;
             case "edited":
                 m = "Edited comment on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
@@ -119,6 +126,7 @@ app.post("/webhook/", (req, res) => {
                     url: payload.issue.url
                 }
                 storage.addNewMessage(room.id, message);
+                sendUpdatesMessages(roomid);
             default:
                 console.log(payload);
                 break;
@@ -161,7 +169,7 @@ const getRoomForHash = (hash, payload) => {
     storage.getAllRooms().forEach(room => {
         if (room.type == 'text') {
             var hmac = crypto.createHmac('sha256', room.id);
-            var roomHash = Buffer.from("sha256=" + hmac.update(payload).digest('hex'), 'utf8');
+            var roomHash = "sha256=" + hmac.update(payload).digest('hex');
             if (roomHash === hash) {
                 r = room;
             }
@@ -202,6 +210,11 @@ const sendUpdateUsers = () => {
         type: 'updateUsers',
         userList: updateUsers()
     });
+}
+
+const sendUpdatesMessages = (roomid) => {
+    var segnum = storage.getTextRoomNewestSegment(roomid);
+    sendToAll(connections, { type: 'updateText', roomid: roomid, segment: segnum, messages: storage.getTextForRoom(roomid, segnum) });
 }
 
 const sendUpdateRooms = () => {
@@ -476,10 +489,7 @@ wss.on("connection", ws => {
                 }
                 message.userid = ws.id;
                 storage.addNewMessage(roomid, message);
-                var segnum = storage.getTextRoomNewestSegment(roomid);
-
-                // Generally, you have new text. Send a whole chunk replacement
-                sendToAll(connections, { type: 'updateText', roomid: roomid, segment: segnum, messages: storage.getTextForRoom(roomid, segnum) });
+                sendUpdatesMessages(roomid);
                 // Send a notice that this single message has arrived.
                 sendToAll(connections, { type: 'sendMessage', roomid: roomid, message: message })
                 break;

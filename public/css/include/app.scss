@@ -38,7 +38,7 @@ html {
 .roomlist, .userlist{
     flex-grow:0;
     background-color: $col1;
-    width:170px;
+    width:calc(6 * #{$iconsize});
     
     overflow-y: auto;
     overflow-x: hidden;
