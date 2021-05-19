@@ -36,13 +36,23 @@
             <form id='login' class='login' action='javascript:void(0);'>
                 <div class='loginlogodiv'><img src='' alt='' class='loginlogo' id='loginlogo' alt='Server logo' /></div>
                 <div class='logintitle' id='logintitle'></div>
-                <input type='text' placeholder='Email' id='loginEmail' />
-                <input type='text' placeholder='Email (again)' id='loginEmail2' />
-                <input type='text' placeholder='Username' id='loginUser' />
-                <input type='password' placeholder='Password' id='loginPassword' />
-                <input type='password' placeholder='Password (again)' id='loginPassword2' />
+                <input type='text' placeholder='Email' id='loginEmail' autocomplete="username" />
+                <input type='password' placeholder='Password' id='loginPassword' autocomplete="current-password" />
                 <div id='loginReply'></div>
                 <input type='submit' value='Log in' id='loginButton' />
+            </form>
+            <form id='signup' class='login' action='javascript:void(0);'>
+                <div class='signuplogodiv'><img src='' alt='' class='loginlogo' id='signuplogo' alt='Server logo' />
+                </div>
+                <div class='signuptitle' id='signuptitle'></div>
+                <input type='text' placeholder='Email' id='signupEmail' autocomplete="username" />
+                <input type='text' placeholder='Email (again)' id='signupEmail2' autocomplete="username" />
+                <input type='text' placeholder='Username' id='signupUser' />
+                <input type='password' placeholder='Password' id='signupPassword' autocomplete="new-password" />
+                <input type='password' placeholder='Password (again)' id='signupPassword2'
+                    autocomplete="new-password" />
+                <div id='signupReply'></div>
+                <input type='submit' value='Sign Up' id='signupButton' />
             </form>
         </div>
         <div class='window appwindow' id='appWindow' style='display:none'>

@@ -86,7 +86,7 @@ app.post("/webhook/", (req, res) => {
                     type: 'webhook',
                     avatar: payload.sender.avatar_url,
                     username: payload.sender.login,
-                    message: m,
+                    text: m,
                     url: payload.issue.url
                 }
                 storage.addNewMessage(room.id, message);
@@ -98,7 +98,7 @@ app.post("/webhook/", (req, res) => {
                     type: 'webhook',
                     avatar: payload.sender.avatar_url,
                     username: payload.sender.login,
-                    message: m,
+                    text: m,
                     url: payload.issue.url
                 }
                 storage.addNewMessage(room.id, message);
@@ -113,7 +113,7 @@ app.post("/webhook/", (req, res) => {
                     type: 'webhook',
                     avatar: payload.sender.avatar_url,
                     username: payload.sender.login,
-                    message: m,
+                    text: m,
                     url: payload.issue.url
                 }
                 storage.addNewMessage(room.id, message);
@@ -125,7 +125,7 @@ app.post("/webhook/", (req, res) => {
                     type: 'webhook',
                     avatar: payload.sender.avatar_url,
                     username: payload.sender.login,
-                    message: m,
+                    text: m,
                     url: payload.issue.url
                 }
                 storage.addNewMessage(room.id, message);
@@ -136,7 +136,7 @@ app.post("/webhook/", (req, res) => {
                     type: 'webhook',
                     avatar: payload.sender.avatar_url,
                     username: payload.sender.login,
-                    message: m,
+                    text: m,
                     url: payload.issue.url
                 }
                 storage.addNewMessage(room.id, message);
@@ -147,7 +147,7 @@ app.post("/webhook/", (req, res) => {
                     type: 'webhook',
                     avatar: payload.sender.avatar_url,
                     username: payload.sender.login,
-                    message: m,
+                    text: m,
                     url: payload.repository.url
                 }
                 storage.addNewMessage(room.id, message);
@@ -166,7 +166,7 @@ app.post("/webhook/", (req, res) => {
             type: 'webhook',
             avatar: payload.sender.avatar_url,
             username: payload.sender.login,
-            message: m,
+            text: m,
             url: payload.repository.url
         }
         storage.addNewMessage(room.id, message);
@@ -178,7 +178,7 @@ app.post("/webhook/", (req, res) => {
             type: 'webhook',
             avatar: payload.sender.avatar_url,
             username: payload.sender.full_name,
-            message: m,
+            text: m,
             url: payload.forkee.url
         }
         storage.addNewMessage(room.id, message);

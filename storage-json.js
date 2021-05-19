@@ -1,6 +1,7 @@
 `use strict`;
-const { group } = require('console');
 const fs = require('fs');
+const bcrypt = require('bcrypt');
+
 /**
  * Be aware that sanity checking data is NOT to be done in the storage modules.
  * 
@@ -34,7 +35,7 @@ var storage = {
     getAccountByLogin: function (email, password) {
         let retuser = null;
         this.storage.accounts.forEach(user => {
-            if (user.email == email && user.password == password) {
+            if (user.email == email && bcrypt.compareSync(password, user.password)) {
                 retuser = user;
             }
         })
@@ -76,6 +77,8 @@ var storage = {
      * @param {user} details 
      */
     createAccount: function (details) {
+        details.password = bcrypt.hashSync(details.password, 10);
+
         this.storage.accounts.push(details);
         this.save();
     },
@@ -264,6 +267,12 @@ var storage = {
         return null;
     },
 
+    setAccountPassword: function (userid, password) {
+        hash = bcrypt.hashSync(password, 10);
+        this.getAccountByID(userid).password = hash;
+        this.save();
+    },
+
     /**
      * Called at start of server
      */
@@ -278,7 +287,7 @@ var storage = {
                 'accounts': [{
                     "id": "1",
                     "name": "root",
-                    "password": "iamroot",
+                    "password": bcrypt.hashSync("iamroot", 10),
                     "email": "root",
                     "group": "admin",
                     "hidden": true

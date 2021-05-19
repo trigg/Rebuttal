@@ -8,16 +8,14 @@ onstart.push(() => {
         el.appWindow.style.display = 'none';
         el.loginWindow.style.display = '';
 
-        el.loginEmail2.style.display = 'none';
-        el.loginPassword2.style.display = 'none';
-        el.loginUser.style.display = 'none';
+        el.signup.style.display = 'none';
     }
 
     const showLoginWithSignUp = () => {
         el.appWindow.style.display = 'none';
         el.loginWindow.style.display = '';
 
-        el.loginButton.value = 'Sign Up';
+        el.login.style.display = 'none';
     }
 
     const showApp = () => {
@@ -279,6 +277,7 @@ onstart.push(() => {
         }
         ws.onmessage = (message) => {
             const data = JSON.parse(message.data);
+            console.log(data);
             if (data['type'] in wsFunc) {
                 wsFunc[data['type']](data);
             } else {
@@ -296,10 +295,15 @@ onstart.push(() => {
 
     const wsFunc = {
         "connect": (data) => {
-            el.loginlogo.src = data.icon;
-            el.logintitle.innerText = data.message;
+            el.signuplogo.src = el.loginlogo.src = data.icon;
+            el.signuptitle.innerHTML = el.logintitle.innerHTML = markupParser.makeHtml(data.message);
+
             themelist = data.themelist;
             updateThemesInSettings();
+        },
+        "error": (data) => {
+            el.loginReply.innerHTML = el.signupReply.innerHTML = markupParser.makeHtml(data.message);
+            console.log(data.message);
         },
         "disconnect": (data) => {
             console.log("Removing peer data " + data.userid);
@@ -378,9 +382,6 @@ onstart.push(() => {
                     populateRoom();
                 }
             }
-        },
-        "error": (data) => {
-            console.log(data);
         },
         "video": (data) => {
             const { payload, touserid, fromuserid } = data;
@@ -491,66 +492,68 @@ onstart.push(() => {
 
     }
 
+    const processSignup = () => {
+        var email = el.signupEmail.value;
+        var email2 = el.signupEmail2.value;
+        var user = el.signupUser.value;
+        var password = el.signupPassword.value;
+        var password2 = el.signupPassword2.value;
+        var reply = el.signupReply;
+        el.signupReply.innerText = ''
+        if (!email) { el.signupEmail.focus(); return; }
+        if (!(email.indexOf('@') > -1 && email.indexOf('.') > -1)) {
+            el.signupReply.innerText = 'Please use an email address'
+            el.signupEmail.focus(); return;
+        }
+        if (email !== email2) {
+            el.signupReply.innerText = 'Email Addresses must match!'
+            el.signupEmail2.focus(); return;
+        }
+        if (!user) { el.signupUser.focus(); return; }
+        // TODO Probably want to be less stringent
+        if (!user.match(/^[a-zA-Z0-9-_ ]+$/)) {
+            el.signupReply.innerText = 'Username must only contain alphanumeric, dash, underscore and space';
+            el.signupUser.focus(); return;
+        }
+        if (user.length < 3) {
+            el.signupReply.innerText = 'Username must be longer than 3 characters';
+            el.signupUser.focus(); return;
+        }
+        if (!password) { el.signupPassword.focus(); return; }
+        if (password.length < 7) {
+            el.signupReply.innerText = 'Password must be at least 7 characters';
+
+        }
+        if (password !== password2) {
+            el.signupReply.innerText = 'Passwords must match!'
+            password2.focus(); return;
+        }
+
+        send({
+            type: 'signup',
+            email,
+            password,
+            userName: user,
+            signUp: signUpCode
+        })
+
+    }
     // 'Next step' in login process.
     const processLogin = () => {
         var email = el.loginEmail.value;
-        var email2 = el.loginEmail2.value;
-        var user = el.loginUser.value;
         var password = el.loginPassword.value;
-        var password2 = el.loginPassword2.value;
 
         el.loginReply.innerText = ''
-        if (signUpCode) {
-            if (!email) { el.loginEmail.focus(); return; }
-            if (!(email.indexOf('@') > -1 && email.indexOf('.') > -1)) {
-                el.loginReply.innerText = 'Please use an email address'
-                el.loginEmail.focus(); return;
-            }
-            if (email !== email2) {
-                el.loginReply.innerText = 'Email Addresses must match!'
-                el.loginEmail2.focus(); return;
-            }
-            if (!user) { el.loginUser.focus(); return; }
-            // TODO Probably want to be less stringent
-            if (!user.match(/^[a-zA-Z0-9-_ ]+$/)) {
-                el.loginReply.innerText = 'Username must only contain alphanumeric, dash, underscore and space';
-                el.loginUser.focus(); return;
-            }
-            if (user.length < 3) {
-                el.loginReply.innerText = 'Username must be longer than 3 characters';
-                el.loginUser.focus(); return;
-            }
-            if (!password) { el.loginPassword.focus(); return; }
-            if (password.length < 7) {
-                el.loginReply.innerText = 'Password must be at least 7 characters';
-
-            }
-            if (password !== password2) {
-                el.loginReply.innerText = 'Passwords must match!'
-                password2.focus(); return;
-            }
-
-            send({
-                type: 'signup',
-                email,
-                password,
-                userName: user,
-                signUp: signUpCode
-
-            })
-
-        } else {
-            if (email) {
-                if (password) {
-                    send({ type: 'login', email, password });
-                    startLocalDevices();
-                    Notification.requestPermission();
-                } else {
-                    el.loginPassword.focus();
-                }
+        if (email) {
+            if (password) {
+                send({ type: 'login', email, password });
+                startLocalDevices();
+                Notification.requestPermission();
             } else {
-                el.loginEmail.focus();
+                el.loginPassword.focus();
             }
+        } else {
+            el.loginEmail.focus();
         }
     }
 
@@ -713,7 +716,8 @@ onstart.push(() => {
                 }
                 list.forEach(segmentkey => {
                     var segment = div({ className: 'messagesegment', id: 'messagesegment-' + segmentkey });
-
+                    console.log(currentView);
+                    console.log(messagelist);
                     messagelist[currentView][segmentkey].forEach(message => {
                         var messageDiv = div({ className: 'message' });
                         var messageUserDiv = div({ className: 'messageuser' });
@@ -729,7 +733,7 @@ onstart.push(() => {
                         if (message.type && message.type === 'webhook') {
                             messageUserText.innerText = message.username;
                             messageUserImage.src = message.avatar;
-                            messageMessageDiv.innerHTML = markupParser.makeHtml(message.message);
+                            messageMessageDiv.innerHTML = markupParser.makeHtml(message.text);
                             messageMessageDiv.onclick = () => window.open(message.url, '_blank').focus()
                         } else {
                             var user = getUserByID(message.userid);
@@ -1498,6 +1502,11 @@ onstart.push(() => {
     el.login.onsubmit = (e) => {
         e.preventDefault();
         processLogin();
+        return false;
+    }
+    el.signup.onsubmit = (e) => {
+        e.preventDefault();
+        processSignup();
         return false;
     }
     el.inviteuserform.onsubmit = (e) => {

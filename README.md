@@ -73,10 +73,11 @@ Note that `serverimg` needs to be a path inside, and relative to, the projects `
 
 #### Storage
 
-the config option `storage` changes which `storage-*.js` to load. Currently there are two options, JSON and MySQL. 
+the config option `storage` changes which `storage-*.js` to load. Currently there are three options, JSON, SQLite, and MySQL.
 
-- JSON is NOT SAFE as all data, including user passwords, is stored plain text, it is intended for testing purposes only.
-- MySQL is not yet complete.
+- JSON is a plaintext file, users password is hashed but everything else is easily accessible to anyone with access to terminal or disk.
+- SQLite is a database file stored in the server directory, passwords are hashed but anyone with access to the terminal or disk will be able to read any other data.
+- MySQL is not yet implemented. 
 
 Other storage backends are welcome to be included as Pull Request provided they're not excessively large.
 
