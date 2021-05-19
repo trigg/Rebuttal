@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "run-server": "nodejs index.js",
-    "run-client": "electron . https://127.0.0.1:9000/",
+    "run-client": "electron --enable-transparent-visuals . --url=wss://127.0.0.1:9000/ipc",
+    "run-test-client": "electron  --ignore-certificate-errors --enable-transparent-visuals --disable-gpu . --url=wss://127.0.0.1:9000/ipc",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
     "postinstall": "electron-builder install-app-deps"

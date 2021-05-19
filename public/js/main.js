@@ -77,7 +77,6 @@ onstart.push(() => {
     }
 
     const setUserList = (userList) => {
-
         var elementParent = div({ className: 'userListParent' });
         if (hasPerm('inviteUser')) {
             var inviteDiv = div({ className: 'invitebutton' });
@@ -200,6 +199,12 @@ onstart.push(() => {
     }
 
     const setRoomList = (roomList) => {
+        if (electronMode) {
+            var room = getRoom(currentView);
+            if (room) {
+                window.ipc.send('userlist', room.userlist);
+            }
+        }
         var elementParent = div({ className: 'roomListParent' });
         roomList.forEach((room) => {
             var elementRoom = div({ className: 'room' });
@@ -1042,6 +1047,15 @@ onstart.push(() => {
         currentView = roomid;
         populateRoom();
         updateDeviceState();
+        if (electronMode) {
+
+            if (overlayEnable && isInVoiceRoom()) {
+                window.ipc.send('enableoverlay', []);
+            } else {
+                window.ipc.send('disableoverlay', []);
+            }
+
+        }
         // Tell the server
         if (roomid) {
             send({
@@ -1162,9 +1176,11 @@ onstart.push(() => {
                 } else if (sreader.talked) {
                     sideuser.classList.add('usertalking');
                     if (videouser) { videouser.classList.add('videodivtalking'); }
+                    if (electronMode) { window.ipc.send('talkstart', uuid); }
                 } else {
                     sideuser.classList.remove('usertalking');
                     if (videouser) { videouser.classList.remove('videodivtalking'); }
+                    if (electronMode) { window.ipc.send('talkstop', uuid); }
                 }
             }, 200);
         });

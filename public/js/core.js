@@ -34,6 +34,7 @@ var autocompletestart = 0;
 var autocompleteselection = 0;
 var electronMode = false;
 var customUrl = null;
+var overlayEnable = true;
 // Browser storage
 
 var theme = null;
@@ -76,5 +77,6 @@ getUsersByPartialName = (nameFrag) => {
     });
     return ret;
 }
+console.log("Electron: " + ('electron' in window));
 
 electronMode = /electron/i.test(navigator.userAgent)
