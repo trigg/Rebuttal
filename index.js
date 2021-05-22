@@ -153,6 +153,18 @@ app.post("/webhook/", (req, res) => {
                 storage.addNewMessage(room.id, message);
                 sendUpdatesMessages(room.id);
                 break;
+            case "closed":
+                m = "Closed '" + payload.issue.title + "' on " + payload.repository.full_name;
+                var messag = {
+                    type: 'webhook',
+                    avatar: payload.sender.avatar_url,
+                    username: payload.sender.login,
+                    text: m,
+                    url: payload.issue.url
+                }
+                storage.addNewMessage(room.id, message);
+                sendUpdatesMessages(room.id);
+                break;
             default:
                 console.log(payload);
                 break;
