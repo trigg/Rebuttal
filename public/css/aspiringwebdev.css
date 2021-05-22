@@ -413,7 +413,7 @@ video {
   flex-direction: column;
   height: 100%;
   max-height: 100vh;
-  justify-content: end;
+  justify-content: flex-end;
 }
 
 .chatroominput {
