@@ -5,21 +5,6 @@ Table of Contents
       * [Customisation](#customisation)
          * [Themes](#themes)
       * [Installation](#installation)
-         * [Generic Linux](#generic-linux)
-            * [Get Source Code](#get-source-code)
-            * [Get Yarn](#get-yarn)
-            * [Get Dependencies](#get-dependencies)
-            * [Configure](#configure)
-            * [Storage](#storage)
-            * [SSL](#ssl)
-               * [Self Signed](#self-signed)
-               * [Existing key](#existing-key)
-            * [First Run](#first-run)
-      * [Post Install](#post-install)
-         * [Port Forwarding](#port-forwarding)
-         * [Reverse Proxy](#reverse-proxy)
-            * [Apache](#apache)
-            * [Nginx](#nginx)
       * [Using](#using)
          * [Permissions &amp; Groups](#permissions--groups)
          * [Sending images in text chat](#sending-images-in-text-chat)
@@ -47,84 +32,7 @@ Rebuttal comes with 3 themes by default and allows extras. To create a theme cal
 SCSS sections are used to our own themes but not required of any new themes
 
 ## Installation
-
-### Generic Linux
-
-#### Get Source Code
-
-`https://github.com/trigg/Rebuttal.git`
-
-#### Get Yarn
-
-Get Yarn Using your package manager. 
-
-#### Get Dependencies
-
-`yarn`
-
-#### Configure
-
-```
-cp config-example.json config.json
-nano config.json
-```
-
-| Server Option      |  Effect                                                                 |
-| ------------------ | ----------------------------------------------------------------------- |
-| `serverimg`        | relative path to an image in ./public/                                  |
-| `servername`       | Text under image on login page. Accepts Markdown                        |
-| `port`             | Port to bind for this server. default is 9000                           |
-| `storage`          | See [Storage](#storage). Default `json`                                 |
-| `gravatarfallback` | See [Gravatar](https://en.gravatar.com/site/implement/images/) Default `monsterid` |
-| `infinitesignup`   | If set anyone can make an account without invite by visiting `/?signup`. Default not set |
-
-#### Storage
-
-the config option `storage` changes which `storage-*.js` to load. Currently there are three options, JSON, SQLite, and MySQL.
-
-- JSON is a plaintext file, users password is hashed but everything else is easily accessible to anyone with access to terminal or disk.
-- SQLite is a database file stored in the server directory, passwords are hashed but anyone with access to the terminal or disk will be able to read any other data.
-- MySQL is not yet implemented. 
-
-Other storage backends are welcome to be included as Pull Request provided they're not excessively large.
-
-#### SSL
-
-##### Self Signed
-
-```
-openssl req -nodes -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365
-```
-
-##### Existing key
-
-Make sure a copy of the key and cert are in the root directory of the project named `key.pem` and `cert.pem` respectively
-
-#### First Run
-
-`node index.js`
-
-On first run a default configuration will be set. Currently this is decided by the storage backend.
-
-## Post Install
-
-Depending on your use case, this might not be the end of your setup.
-
-### Port Forwarding
-
-If Rebuttal is running behind a NAT router and intended for access by the world in general you will need to port forward the port used by the server (Default 9000). This is not done by the server
-
-### Reverse Proxy
-
-If you want to have Rebuttal accessible on HTTPS port 443 and already have a service running it is possible to set up a reverse proxy to allow a directory or subdomain to pass requests through to rebuttal.
-
-#### Apache
-
-TBC
-
-#### Nginx
-
-TBC
+[See Wiki](https://github.com/trigg/Rebuttal/wiki/Server-Installation)
 
 ## Using
 
