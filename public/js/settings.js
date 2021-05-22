@@ -205,6 +205,19 @@ onstart.push(() => {
         }
         element.checked = getConfig(setting, false);
     }
+
+    const setupSlider = function (setting, slider, label, callback) {
+        if (callback) {
+            slider.oninput = () => {
+                setConfig(setting, slider.value);
+                label.innerText = (label.dataset.prefix ? label.dataset.prefix : '') + slider.value + (label.dataset.postfix ? label.dataset.postfix : '');
+                callback();
+            }
+        }
+        slider.value = getConfig(setting, 0);
+        label.innerText = (label.dataset.prefix ? label.dataset.prefix : '') + slider.value + (label.dataset.postfix ? label.dataset.postfix : '');
+
+    }
     // Callbacks for server commands
 
     el.createroomform.onsubmit = (event) => {
@@ -240,8 +253,12 @@ onstart.push(() => {
         }
     })
 
+
     setupCheckbox('noisesupress', el.settingNoiseSupress, () => { startLocalDevices(); });
     setupCheckbox('echocancel', el.settingEchoCancellation, () => { startLocalDevices(); });
+
+    setupSlider('streamresolution', el.settingsstreamresolution, el.settingsstreamresolutionoutput, () => { if (localLiveStream) { startLocalDevices(); } });
+    setupSlider('streamrate', el.settingsstreamrate, el.settingsstreamrateoutput, () => { if (localLiveStream) { startLocalDevices(); } });
 
     el.settingbutton.onclick = toggleSettings;
     el.settingsclose.onclick = toggleSettings;

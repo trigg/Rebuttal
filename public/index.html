@@ -186,7 +186,33 @@
                 </div>
                 <div class='settingspane' id='settingspanestreaming'>
                     <div class='settingsdevicesstream'>
-                        <h4>Streaming</h4>
+                        <div>
+                            <label for='settingsstreamresolution'>Maximum Resolution</label>
+                            <input type='range' list='resolutionticks' id='settingsstreamresolution' min='240'
+                                max='8640' step='10'>
+                            <span id='settingsstreamresolutionoutput' data-postfix='p'></span>
+                            <datalist id='resolutionticks'>
+                                <option value='480' label='480p'></option>
+                                <option value='720' label='720p'></option>
+                                <option value='1080' label='1080p'></option>
+                                <option value='1440' label='1440p'></option>
+                                <option value='2160' label='4K'></option>
+                                <option value='4320' label='8K'></option>
+                                <option value='8640' label='16K'></option>
+                            </datalist>
+                        </div>
+                        <div>
+                            <label for='settingsstreamrate'>Maximum Frame Rate</label>
+                            <input type='range' list='rateticks' id='settingsstreamrate' min='10' max='240' step='1'>
+                            <span id='settingsstreamrateoutput' data-postfix=' fps'></span>
+                            <datalist id='rateticks'>
+                                <option value='30'></option>
+                                <option value='60'></option>
+                                <option value='75'></option>
+                                <option value='144'></option>
+                                <option value='240'></option>
+                            </datalist>
+                        </div>
 
                     </div>
                 </div>

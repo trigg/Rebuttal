@@ -1548,12 +1548,11 @@ onstart.push(() => {
         return constraints;
     }
     const createScreenConstraints = () => {
-        // TODO Base on user settings
         return {
             video: {
                 cursor: 'motion',
-                framerate: 30,
-                height: 1080,
+                framerate: getConfig('streamrate', 30),
+                height: getConfig('streamresolution', 1080),
             }/*,
             audio: {
                 sampleSize: 16,
