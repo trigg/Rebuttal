@@ -1,4 +1,3 @@
-const { create } = require('domain');
 const { app, BrowserWindow, ipcMain, screen } = require('electron');
 const path = require("path")
 var url = app.commandLine.getSwitchValue('url');
@@ -8,8 +7,11 @@ if (process.env.XDG_SESSION_TYPE) {
     console.log("Running in " + process.env.XDG_SESSION_TYPE);
     switch (process.env.XDG_SESSION_TYPE) {
         case 'wayland':
-            //disableOverlay = true;
+            disableOverlay = true;
             // Currently not working
+            break;
+        case 'x11':
+            disableOverlay = !app.commandLine.hasSwitch('enable-transparent-visuals');
             break;
     }
 }

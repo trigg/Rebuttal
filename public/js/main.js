@@ -1463,7 +1463,9 @@ onstart.push(() => {
         // Change IMGs!
         var oldimg = document.getElementsByTagName('img');
         Object.values(oldimg).forEach(img => {
-            img.src = 'img/' + theme + '/' + img.dataset.src;
+            if ('src' in img.dataset) {
+                img.src = 'img/' + theme + '/' + img.dataset.src;
+            }
         });
         // And... Image inputs?
         var oldimg = document.getElementsByTagName('input');

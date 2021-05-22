@@ -296,7 +296,7 @@ const updateUsers = () => {
             account.hidden = false;
         }
         if (!('avatar' in account)) {
-            account.avatar = gravatar.url(account.email, { d: config.gravatarfallback });
+            account.avatar = gravatar.url(account.email, { d: config.gravatarfallback }, true);
         }
         users.push(
             {
