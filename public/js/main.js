@@ -734,7 +734,7 @@ onstart.push(() => {
         return ret;
     }
 
-    const populateRoom = () => {
+    populateRoom = () => {
         var room = getRoom(currentView);
         if (!room) {
             el.appCoreView.innerText = '';
@@ -882,6 +882,7 @@ onstart.push(() => {
                         });
                     }, { root: scrollingDiv }).observe(dudSegment);
                 }
+                var lastHtml = '';
                 list.forEach(segmentkey => {
                     var segment = div({ className: 'messagesegment', id: 'messagesegment-' + segmentkey });
                     console.log(currentView);
@@ -895,6 +896,15 @@ onstart.push(() => {
                         messageUserImage.className = 'messageuserimg userimg';
                         messageUserDiv.appendChild(messageUserImage);
                         messageUserDiv.appendChild(messageUserText);
+                        if (getConfig('hidedupename', false)) {
+                            var html = messageUserDiv.innerHTML;
+                            if (html === lastHtml) {
+                                messageUserDiv.style.opacity = 0.0;
+                            } else {
+                                lastHtml = html;
+                            }
+                        }
+
                         messageDiv.appendChild(messageUserDiv);
                         messageDiv.appendChild(messageMessageDiv);
                         segment.appendChild(messageDiv);

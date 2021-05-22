@@ -57,6 +57,7 @@ var loadMoreText;
 var playToGroup;
 var send;
 var connect;
+var populateRoom;
 
 getUserByID = (id) => {
     var ret = null;
