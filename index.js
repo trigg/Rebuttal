@@ -425,8 +425,15 @@ wss.on("connection", ws => {
                     userName.match(/^[a-zA-Z0-9-_ ]+$/) &&
                     userName.length >= 3 &&
                     password.length >= 7) {
+
                     console.log("Checking invite");
-                    var group = storage.expendSignUp(signUp);
+                    var group = null;
+                    if ('infinitesignup' in config && signUp === 'signup') {
+                        group = config.infinitesignup;
+                    } else {
+
+                        group = storage.expendSignUp(signUp);
+                    }
                     if (group) {
                         console.log("Created user");
                         storage.createAccount({

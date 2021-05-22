@@ -69,7 +69,11 @@ cp config-example.json config.json
 nano config.json
 ```
 
-Note that `serverimg` needs to be a path inside, and relative to, the projects `public` folder
+Note that `serverimg` needs to be a path inside, and relative to, the projects `public` folder.
+
+Gravatar is used for user avatars and any user who hasn't set one is given a generated one. Config option `gravatarfallback` should be set to one of any fallback in this document https://en.gravatar.com/site/implement/images/
+
+If you wish to allow free signup add the config option `infinitesignup` and set the value to a group name. Any number of users can sign up as this group by using the link `/?signup`
 
 #### Storage
 
