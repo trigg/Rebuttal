@@ -104,6 +104,31 @@ onstart.push(() => {
         showCustom(form);
     }
 
+    const popupChangeRoomName = (room) => {
+        var form = document.createElement('form');
+        var divName = div({ className: 'previousName', id: 'previousName' });
+        divName.innerText = room.name;
+        var input = document.createElement('input');
+        input.id = 'newname';
+        var submit = document.createElement('input')
+        submit.type = 'submit';
+        submit.value = 'Change room name';
+        form.onsubmit = (e) => {
+            e.preventDefault();
+            send({
+                type: 'updateroom',
+                roomid: room.id,
+                roomName: input.value
+            });
+            hideCustom();
+            return false;
+        }
+        form.appendChild(divName);
+        form.appendChild(input);
+        form.appendChild(submit);
+        showCustom(form);
+    }
+
     const showCustom = (ele) => {
         el.popupcustominner.innerText = '';
         el.popupcustominner.appendChild(ele);
@@ -303,7 +328,7 @@ onstart.push(() => {
                     }
                 }
                 if (hasPerm('renameRoom')) {
-                    list.push({ text: 'Change room name', callback: () => { } });
+                    list.push({ text: 'Change room name', callback: () => { popupChangeRoomName(room); } });
                 }
                 if (hasPerm('removeRoom')) {
                     list.push({ text: 'Delete room', callback: () => { } });

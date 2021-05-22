@@ -112,7 +112,7 @@ var storage = {
     updateRoom: function (roomid, details) {
         var room = this.getAccountByID(roomid);
         this.removeRoom(roomid);
-        this.storage.rooms.add(details);
+        this.storage.rooms.push(details);
         this.save();
     },
 
@@ -132,9 +132,9 @@ var storage = {
      * @param {uuid} roomid 
      */
     removeRoom: function (roomid) {
-        var room = this.getRoomByID(userid);
-        var idx = this.storage.accounts.indexOf(user);
-        this.storage.accounts.splice(idx, 1);
+        var room = this.getRoomByID(roomid);
+        var idx = this.storage.rooms.indexOf(room);
+        this.storage.rooms.splice(idx, 1);
         this.save();
     },
 
