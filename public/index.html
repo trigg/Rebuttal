@@ -148,9 +148,12 @@
                             <label for='settingEchoCancellation'>Use Echo Cancellation</label>
                         </div>
 
-                        <input type="range" min="16" max="128" value="24" class='slider' id='settingBitrate' />
-                        <label for='settingBitrate'>
-                            Audio bitrate</label>
+                        <div>
+                            <label for='settingBitrate'>Audio bitrate</label>
+                            <input type="range" min="16" max="128" value="24" class='slider' id='settingbitrate' />
+                            <span id='settingbitrateoutput' data-postfix=' kHz'></span>
+                        </div>
+
                     </div>
                     <div class='settingsdevicesvideo'>
                         <label for='settingscamdevice'>Device</label>

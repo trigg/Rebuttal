@@ -206,7 +206,7 @@ onstart.push(() => {
         element.checked = getConfig(setting, false);
     }
 
-    const setupSlider = function (setting, slider, label, callback) {
+    const setupSlider = function (setting, def, slider, label, callback) {
         if (callback) {
             slider.oninput = () => {
                 setConfig(setting, slider.value);
@@ -214,7 +214,7 @@ onstart.push(() => {
                 callback();
             }
         }
-        slider.value = getConfig(setting, 0);
+        slider.value = getConfig(setting, def);
         label.innerText = (label.dataset.prefix ? label.dataset.prefix : '') + slider.value + (label.dataset.postfix ? label.dataset.postfix : '');
 
     }
@@ -257,8 +257,9 @@ onstart.push(() => {
     setupCheckbox('noisesupress', el.settingNoiseSupress, () => { startLocalDevices(); });
     setupCheckbox('echocancel', el.settingEchoCancellation, () => { startLocalDevices(); });
 
-    setupSlider('streamresolution', el.settingsstreamresolution, el.settingsstreamresolutionoutput, () => { if (localLiveStream) { startLocalDevices(); } });
-    setupSlider('streamrate', el.settingsstreamrate, el.settingsstreamrateoutput, () => { if (localLiveStream) { startLocalDevices(); } });
+    setupSlider('audiobitrate', 64, el.settingbitrate, el.settingbitrateoutput, () => { startLocalDevices(); });
+    setupSlider('streamresolution', 1080, el.settingsstreamresolution, el.settingsstreamresolutionoutput, () => { if (localLiveStream) { startLocalDevices(); } });
+    setupSlider('streamrate', 30, el.settingsstreamrate, el.settingsstreamrateoutput, () => { if (localLiveStream) { startLocalDevices(); } });
 
     el.settingbutton.onclick = toggleSettings;
     el.settingsclose.onclick = toggleSettings;
