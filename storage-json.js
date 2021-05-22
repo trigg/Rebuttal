@@ -174,6 +174,9 @@ var storage = {
         if (!(roomid in this.storage.messages)) {
             this.storage.messages[roomid] = []
         }
+        var idx = this.storage.messages[roomid].length;
+        message.idx = idx;
+        message.roomid = roomid;
         this.storage.messages[roomid].push(message);
         this.save();
     },

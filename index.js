@@ -668,6 +668,8 @@ wss.on("connection", ws => {
                 if (storage.getAccountPermission(ws.id, 'changeMessage')) {
                     if (roomid && messageid && message) {
                         storage.updateMessage(roomid, messageid, message);
+                        sendUpdatesMessages(roomid);
+
                     } else {
                         sendTo(ws, { type: 'error', message: 'Not enough info' });
                     }

@@ -39,6 +39,33 @@ onstart.push(() => {
         el.popupcustomouter.style.display = 'none';
     }
 
+    const popupChangeMessage = (message) => {
+        if ('idx' in message && 'roomid' in message) {
+            var form = document.createElement('form');
+            var input = document.createElement('textarea');
+            var submit = document.createElement('input')
+            input.value = message.text;
+            submit.type = 'submit';
+            submit.value = 'Change message';
+            form.onsubmit = (e) => {
+                e.preventDefault();
+                message.text = input.value;
+                send({
+                    type: 'updatemessage',
+                    roomid: message.roomid,
+                    messageid: message.idx,
+                    message: message,
+                });
+                hideCustom();
+                return false;
+            }
+            form.appendChild(input);
+            form.appendChild(submit);
+            showCustom(form);
+        } else {
+            console.log("Details missing - can't edit");
+        }
+    }
     const popupChangeUserGroup = (user) => {
         var form = document.createElement('form');
         var divName = div({ className: 'previousName', id: 'previousName' });
@@ -899,7 +926,7 @@ onstart.push(() => {
                                             {
                                                 text: 'Edit Message',
                                                 callback: () => {
-                                                    //TODO
+                                                    popupChangeMessage(message);
                                                 }
                                             });
                                     }
@@ -1518,13 +1545,12 @@ onstart.push(() => {
         var deviceId = getConfig('microphonedevice', 'none');
         deviceId = (deviceId === 'undefined') ? 'none' : deviceId;
         deviceId = (deviceId !== 'none') ? { exact: deviceId } : undefined;
-        // TODO User settings
         return {
             sampleSize: 16,
             channelCount: 1,
             echoCancellation: getConfig('echocancel'),
             noiseSuppression: getConfig('noisesupress'),
-            sampleRate: getConfig('audiobitrate', 96) * 1000, // 24k - 96k
+            sampleRate: getConfig('audiobitrate', 96) * 1000,
             deviceId
         };
     }
@@ -1532,7 +1558,6 @@ onstart.push(() => {
         var deviceId = getConfig('cameradevice', 'none');
         deviceId = (deviceId === 'undefined') ? 'none' : deviceId;
         deviceId = (deviceId !== 'none') ? { exact: deviceId } : undefined;
-        // TODO User settings
         return {
             width: { min: 640, ideal: 1280 },
             height: { min: 400, ideal: 720 },
