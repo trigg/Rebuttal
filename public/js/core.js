@@ -71,7 +71,8 @@ getUserByID = (id) => {
 getUsersByPartialName = (nameFrag) => {
     var ret = [];
     userlist.forEach(user => {
-        if (user.name.indexOf(nameFrag) > -1) {
+        if (user.name.toLowerCase().indexOf(nameFrag.toLowerCase()) == 0) {
+            console.log(nameFrag + " matches " + user.name);
             ret.push(user);
         }
     });

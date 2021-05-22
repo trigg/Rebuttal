@@ -209,6 +209,15 @@ onstart.push(() => {
             elementUser.oncontextmenu = (e) => {
                 e.preventDefault();
                 var list = [];
+                list.push({
+                    text: 'volume', slider: getConfig('volume-' + user.id, 1.0), callback: (e) => {
+                        setConfig('volume-' + user.id, e.target.value);
+                        var video = document.getElementById('video-' + user.id);
+                        if (video) {
+                            video.setAttribute('volume', e.target.value);
+                        }
+                    }
+                });
                 if (hasPerm('renameUser') || user.id === iam) {
                     list.push({
                         text: 'Change user name', callback: () => {
@@ -293,9 +302,25 @@ onstart.push(() => {
 
         list.forEach(item => {
             var itemdiv = div({ className: 'contextmenuitem' });
-            itemdiv.innerText = item.text;
-            if ('callback' in item) {
-                itemdiv.onclick = () => { closeContextMenu(); item.callback(); };
+            if ('slider' in item) {
+                var anotherDiv = document.createElement('label');
+                anotherDiv.for = 'volumeslider'
+                anotherDiv.innerText = item.text;
+                var slider = document.createElement('input');
+                slider.id = 'volumeslider';
+                slider.type = 'range';
+                slider.min = '0.0';
+                slider.max = '1.0';
+                slider.step = '0.01';
+                slider.value = item.slider;
+                slider.oninput = item.callback;
+                itemdiv.appendChild(anotherDiv);
+                itemdiv.appendChild(slider);
+            } else {
+                itemdiv.innerText = item.text;
+                if ('callback' in item) {
+                    itemdiv.onclick = () => { closeContextMenu(); item.callback(); };
+                }
             }
             el.contextmenu.appendChild(itemdiv);
         })
@@ -727,6 +752,7 @@ onstart.push(() => {
                 video.setAttribute('autoPlay', true);
                 video.setAttribute('playsInline', true);
                 video.setAttribute('id', 'video-' + user.id);
+                video.setAttribute('volume', getConfig('volume' - +user.id, 1.0));
 
                 var audiometer = document.createElement('meter');
                 audiometer.high = 0.15;
@@ -988,7 +1014,6 @@ onstart.push(() => {
             }
             inputtext.onkeydown = (event) => {
                 if (autocompleteing === currentView) {
-                    console.log(event);
                     var soFar = event.target.value.substring(autocompletestart, event.target.selectionStart - 1);
                     var userList = getUsersByPartialName(soFar);
                     if (event.key === ' ' || event.key === 'Enter' || event.key === 'Tab') {
@@ -1081,7 +1106,7 @@ onstart.push(() => {
     const autoComplete = () => {
         if (autocompleteing === currentView) {
             var inputtext = document.getElementById('inputtext');
-            var soFar = inputtext.value.substring(autocompletestart, inputtext.selectionStart - 1);
+            var soFar = inputtext.value.substring(autocompletestart, inputtext.selectionStart);
             var userList = getUsersByPartialName(soFar);
 
             // We're done autocompleteing. Did we get anything?

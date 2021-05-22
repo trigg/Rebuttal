@@ -17,7 +17,6 @@ function SoundReader(context) {
                 // break;
             }
         }
-        console.log("Peak : " + peak.toFixed(2));
         ref.talked = talked;
     };
 }
