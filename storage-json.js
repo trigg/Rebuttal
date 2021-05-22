@@ -98,9 +98,9 @@ var storage = {
      * @param {user} details 
      */
     updateAccount: function (userid, details) {
-        var user = this.getAccountById(userid);
+        var user = this.getAccountByID(userid);
         this.removeAccount(userid);
-        this.storage.accounts.add(details);
+        this.storage.accounts.push(details);
         this.save();
     },
 
@@ -110,7 +110,7 @@ var storage = {
      * @param {room} details 
      */
     updateRoom: function (roomid, details) {
-        var room = this.getAccountById(roomid);
+        var room = this.getAccountByID(roomid);
         this.removeRoom(roomid);
         this.storage.rooms.add(details);
         this.save();

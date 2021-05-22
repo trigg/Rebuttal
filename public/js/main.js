@@ -35,6 +35,52 @@ onstart.push(() => {
         el.loginReply.innerText = message;
     }
 
+    const hideCustom = () => {
+        el.popupcustomouter.style.display = 'none';
+    }
+
+    const popupChangeUserGroup = (user) => {
+        var form = document.createElement('form');
+        var divName = div({ className: 'previousName', id: 'previousName' });
+        divName.innerText = user.name;
+        var input = document.createElement('select');
+        input.id = 'newgroup';
+        var override = hasPerm("inviteUserAny");
+        Object.keys(groups).forEach(group => {
+            var pL = groups[group];
+            var allowInvitesFor = pL.indexOf('noInviteFor') === -1;
+            if (override || allowInvitesFor) {
+                var opt = document.createElement('option');
+                opt.value = group;
+                opt.innerText = group;
+                input.appendChild(opt);
+            }
+        })
+        var submit = document.createElement('input')
+        submit.type = 'submit';
+        submit.value = 'Change user group';
+        form.onsubmit = (e) => {
+            e.preventDefault();
+            send({
+                type: 'setusergroup',
+                userid: user.id,
+                groupName: input.value
+            });
+            hideCustom();
+            return false;
+        }
+        form.appendChild(divName);
+        form.appendChild(input);
+        form.appendChild(submit);
+        showCustom(form);
+    }
+
+    const showCustom = (ele) => {
+        el.popupcustominner.innerText = '';
+        el.popupcustominner.appendChild(ele);
+        el.popupcustomouter.style.display = 'flex';
+    }
+
     const div = ({ className, id }) => {
         var d = document.createElement("div");
         if (className) { d.className = className; }
@@ -110,10 +156,18 @@ onstart.push(() => {
                 e.preventDefault();
                 var list = [];
                 if (hasPerm('renameUser')) {
-                    list.push({ text: 'Change user name', callback: () => { } });
+                    list.push({
+                        text: 'Change user name', callback: () => {
+                            popupChangeUserName(user);
+                        }
+                    });
                 }
                 if (hasPerm('setUserGroup')) {
-                    list.push({ text: 'Change user group', callback: () => { } });
+                    list.push({
+                        text: 'Change user group', callback: () => {
+                            popupChangeUserGroup(user);
+                        }
+                    });
                 }
                 if (hasPerm('removeUser') && user.id !== iam) {
                     list.push({
@@ -1471,7 +1525,9 @@ onstart.push(() => {
         var oldimg = document.getElementsByTagName('input');
         Object.values(oldimg).forEach(img => {
             if (img.getAttribute('type') === 'image') {
-                img.src = 'img/' + theme + '/' + img.dataset.src;
+                if ('src' in img.dataset) {
+                    img.src = 'img/' + theme + '/' + img.dataset.src;
+                }
             }
         });
 
@@ -1542,6 +1598,7 @@ onstart.push(() => {
     el.toggleMute.onclick = toggleMuted;
     el.hangup.onclick = () => switchRoom(null);
     el.inviteclose.onclick = hideInvite;
+    el.customclose.onclick = hideCustom;
     el.app.addEventListener('dragenter', dragEnter, false);
     el.app.addEventListener('dragover', dragOver, false);
     el.app.addEventListener('dragleave', dragLeave, false);

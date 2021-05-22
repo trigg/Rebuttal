@@ -143,7 +143,7 @@ code {
   width: 24px;
 }
 
-.popupsettings, .popupserver, .popupinvite {
+.popupsettings, .popupserver, .popupinvite, .popupcustomouter {
   display: none;
   position: relative;
   z-index: 1;
@@ -155,7 +155,7 @@ code {
   justify-content: center;
 }
 
-.settings, .server, .invite {
+.settings, .server, .invite, .popupcustom {
   min-width: 400px;
   min-height: 600px;
   background-color: beige;
