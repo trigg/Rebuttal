@@ -75,6 +75,35 @@ onstart.push(() => {
         showCustom(form);
     }
 
+    const popupChangeUserName = (user) => {
+        var form = document.createElement('form');
+        var divName = div({ className: 'previousName', id: 'previousName' });
+        divName.innerText = user.name;
+        var input = document.createElement('input');
+        input.id = 'newname';
+        var submit = document.createElement('input')
+        submit.type = 'submit';
+        submit.value = 'Change user name';
+        form.onsubmit = (e) => {
+            e.preventDefault();
+            if (input.value.match(/^[a-zA-Z0-9-_ ]+$/)) {
+                send({
+                    type: 'updateuser',
+                    userid: user.id,
+                    userName: input.value
+                });
+                hideCustom();
+            } else {
+                divName.innerText = 'Username must only have a-z 0-9 - _ and space';
+            }
+            return false;
+        }
+        form.appendChild(divName);
+        form.appendChild(input);
+        form.appendChild(submit);
+        showCustom(form);
+    }
+
     const showCustom = (ele) => {
         el.popupcustominner.innerText = '';
         el.popupcustominner.appendChild(ele);
@@ -155,7 +184,7 @@ onstart.push(() => {
             elementUser.oncontextmenu = (e) => {
                 e.preventDefault();
                 var list = [];
-                if (hasPerm('renameUser')) {
+                if (hasPerm('renameUser') || user.id === iam) {
                     list.push({
                         text: 'Change user name', callback: () => {
                             popupChangeUserName(user);

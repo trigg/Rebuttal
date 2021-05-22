@@ -623,11 +623,11 @@ wss.on("connection", ws => {
                 }
                 break
             case "updateuser":
-                if (storage.getAccountPermission(ws.id, 'renameUser')) {
-                    if (userid && userName) {
+                if (storage.getAccountPermission(ws.id, 'renameUser') || ws.id === userid) {
+                    if (userid && userName && userName.match(/^[a-zA-Z0-9-_ ]+$/)) {
                         var user2 = storage.getAccountByID(userid);
                         user2.name = userName;
-                        storage.updateUser(userid, user2);
+                        storage.updateAccount(userid, user2);
                         sendUpdateUsers();
                     } else {
                         sendTo(ws, { type: 'error', message: 'Not enough info' });
