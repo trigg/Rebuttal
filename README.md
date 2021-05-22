@@ -69,11 +69,14 @@ cp config-example.json config.json
 nano config.json
 ```
 
-Note that `serverimg` needs to be a path inside, and relative to, the projects `public` folder.
-
-Gravatar is used for user avatars and any user who hasn't set one is given a generated one. Config option `gravatarfallback` should be set to one of any fallback in this document https://en.gravatar.com/site/implement/images/
-
-If you wish to allow free signup add the config option `infinitesignup` and set the value to a group name. Any number of users can sign up as this group by using the link `/?signup`
+| Server Option      |  Effect                                                                 |
+| ------------------ | ----------------------------------------------------------------------- |
+| `serverimg`        | relative path to an image in ./public/                                  |
+| `servername`       | Text under image on login page. Accepts Markdown                        |
+| `port`             | Port to bind for this server. default is 9000                           |
+| `storage`          | See [Storage](#storage). Default `json`                                 |
+| `gravatarfallback` | See [Gravatar](https://en.gravatar.com/site/implement/images/) Default `monsterid` |
+| `infinitesignup`   | If set anyone can make an account without invite by visiting `/?signup`. Default not set |
 
 #### Storage
 
