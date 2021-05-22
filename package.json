@@ -7,6 +7,7 @@
     "server": "nodejs index.js",
     "client": "electron --enable-transparent-visuals .",
     "test-client": "electron  --ignore-certificate-errors --enable-transparent-visuals --disable-gpu .",
+    "test": "node test/index.js",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
     "postinstall": "electron-builder install-app-deps"

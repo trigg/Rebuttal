@@ -437,6 +437,8 @@ onstart.push(() => {
             if (!customUrl) {
                 return;
             }
+            customUrl = customUrl.replace(/^https/i, 'wss');
+            customUrl = customUrl.replace(/^http/i, 'ws');
             ws = new WebSocket(customUrl);
 
         }
