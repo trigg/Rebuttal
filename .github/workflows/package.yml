@@ -10,6 +10,7 @@ jobs:
       - uses: actions/setup-node@v1
         with:
           node-version: 16
+      - run: sudo apt install bsdtar rpm 
       - run: yarn
       - run: yarn dist
       - name: Archive Binaries
