@@ -7,7 +7,7 @@ Table of Contents
       * [Installation](#installation)
          * [Generic Linux](#generic-linux)
             * [Get Source Code](#get-source-code)
-            * [Get NPM](#get-npm)
+            * [Get Yarn](#get-yarn)
             * [Get Dependencies](#get-dependencies)
             * [Configure](#configure)
             * [Storage](#storage)
@@ -30,7 +30,7 @@ Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
 
 # Rebuttal Electron App
 
-Install this repository and run `npm run client -- --url=wss://127.0.0.1:9000/ipc` in the root. Naturally change the url to point to a running IPC URI on a server
+Install this repository and run `yarn client -- --url=https://127.0.0.1:9000/ipc` in the root. Naturally change the url to point to a running IPC URI on a server
 
 # Rebuttal webchat
 
@@ -54,13 +54,13 @@ SCSS sections are used to our own themes but not required of any new themes
 
 `https://github.com/trigg/Rebuttal.git`
 
-#### Get NPM
+#### Get Yarn
 
-Get NPM Using your package manager. 
+Get Yarn Using your package manager. 
 
 #### Get Dependencies
 
-`npm install uuid ws express socket-io buffer-image-size`
+`yarn`
 
 #### Configure
 
