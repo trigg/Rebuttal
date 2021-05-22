@@ -4,9 +4,9 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "run-server": "nodejs index.js",
-    "run-client": "electron --enable-transparent-visuals . --url=wss://127.0.0.1:9000/ipc",
-    "run-test-client": "electron  --ignore-certificate-errors --enable-transparent-visuals --disable-gpu . --url=wss://127.0.0.1:9000/ipc",
+    "server": "nodejs index.js",
+    "client": "electron --enable-transparent-visuals .",
+    "test-client": "electron  --ignore-certificate-errors --enable-transparent-visuals --disable-gpu .",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
     "postinstall": "electron-builder install-app-deps"

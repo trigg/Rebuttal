@@ -30,7 +30,7 @@ Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
 
 # Rebuttal Electron App
 
-Install this repository and run `electron . --url=wss://path.to/ipc` in the root. 
+Install this repository and run `npm run client -- --url=wss://127.0.0.1:9000/ipc` in the root. Naturally change the url to point to a running IPC URI on a server
 
 # Rebuttal webchat
 
