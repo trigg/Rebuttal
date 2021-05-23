@@ -896,14 +896,7 @@ onstart.push(() => {
                         messageUserImage.className = 'messageuserimg userimg';
                         messageUserDiv.appendChild(messageUserImage);
                         messageUserDiv.appendChild(messageUserText);
-                        if (getConfig('hidedupename', false)) {
-                            var html = messageUserDiv.innerHTML;
-                            if (html === lastHtml) {
-                                messageUserDiv.style.opacity = 0.0;
-                            } else {
-                                lastHtml = html;
-                            }
-                        }
+
 
                         messageDiv.appendChild(messageUserDiv);
                         messageDiv.appendChild(messageMessageDiv);
@@ -972,6 +965,15 @@ onstart.push(() => {
                                 imgElement.src = message['img'];
                                 imgElement.setAttribute('alt', 'user submitted image');
                                 segment.appendChild(imgElement);
+                            }
+                        }
+                        if (getConfig('hidedupename', false)) {
+                            var html = messageUserDiv.innerHTML;
+                            console.log(html + " " + lastHtml);
+                            if (html === lastHtml) {
+                                messageUserDiv.style.opacity = 0.0;
+                            } else {
+                                lastHtml = html;
                             }
                         }
                     });
