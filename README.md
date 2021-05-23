@@ -20,7 +20,7 @@ Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
 
 # Rebuttal Electron App
 
-Install this repository and run `yarn client -- --url=https://127.0.0.1:9000/ipc` in the root. Naturally change the url to point to a running IPC URI on a server
+Please see https://github.com/trigg/Rebuttal-Client
 
 # Rebuttal webchat
 
