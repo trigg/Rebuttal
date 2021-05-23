@@ -2,7 +2,7 @@
     "storage": "json",
     "port": 9000,
     "servername": "Rebuttal",
-    "serverimg": "img/bubblegum/avatar.svg",
+    "serverimg": "img/logo.svg",
     "gravatarfallback": "monsterid",
     "plugins": [
         "webhook"
