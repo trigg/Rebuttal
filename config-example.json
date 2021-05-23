@@ -3,5 +3,8 @@
     "port": 9000,
     "servername": "Rebuttal",
     "serverimg": "img/bubblegum/avatar.svg",
-    "gravatarfallback": "monsterid"
+    "gravatarfallback": "monsterid",
+    "plugins": [
+        "webhook"
+    ]
 }

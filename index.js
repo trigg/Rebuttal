@@ -13,225 +13,8 @@ const crypto = require('crypto');
 const gravatar = require('gravatar');
 
 const app = express();
+const plugins = [];
 
-// Prepare storage engine
-const port = config['port'];
-const storageEngineFileName = './storage-' + config['storage'];
-var storageEngineExists = false;
-try {
-    if (fs.existsSync(storageEngineFileName + ".js")) {
-        storageEngineExists = true;
-    }
-} catch (err) {
-    console.error(err)
-}
-if (!storageEngineExists) {
-    console.error("Storage option not available : " + config['storage']);
-    process.exit(1);
-}
-const storage = require(storageEngineFileName);
-if (!storage) {
-    console.error("Storage option non-functional : " + config['storage']);
-    process.exit(1);
-}
-
-var options = {
-    key: fs.readFileSync('key.pem'),
-    cert: fs.readFileSync('cert.pem')
-};
-
-var connections = [];
-var groupplay = [];
-const uploadDir = 'public/uploads';
-const uploadUri = '/uploads';
-var server = https.createServer(options, app);
-const wss = new WebSocket.Server({ server: server, path: "/ipc" });
-app.use('/', express.static('public'));
-app.use('/webhook/', express.json({
-    verify: (req, res, buf, encoding) => {
-        if (buf && buf.length) {
-            req.rawBody = buf.toString(encoding || 'utf8');
-        }
-    }
-}));
-app.use('/webhook/', express.urlencoded({
-    extended: true
-}));
-app.post("/webhook/", (req, res) => {
-    var room = getRoomForHash(req.header('X-Hub-Signature-256'), req.rawBody);
-    if (!room || room === null) {
-        console.log("Webhook payload rejected");
-        res.status(404).end();
-        return;
-    }
-    var payload;
-    if (req.body.payload) {
-        payload = JSON.parse(req.body.payload)
-    } else {
-        payload = req.body;
-    }
-    if (!payload) {
-        console.log(req.body);
-        return;
-    }
-    var m = '';
-    if (payload.action) {
-        switch (payload.action) {
-            case "opened":
-                m = "Opened Issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
-                if (payload.issue.body && payload.issue.body !== '') {
-                    m += "  \n" + payload.issue.body;
-                }
-                var message = {
-                    type: 'webhook',
-                    avatar: payload.sender.avatar_url,
-                    username: payload.sender.login,
-                    text: m,
-                    url: payload.issue.url
-                }
-                storage.addNewMessage(room.id, message);
-                sendUpdatesMessages(room.id);
-                break;
-            case "labeled":
-                m = "Changed labels on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
-                var message = {
-                    type: 'webhook',
-                    avatar: payload.sender.avatar_url,
-                    username: payload.sender.login,
-                    text: m,
-                    url: payload.issue.url
-                }
-                storage.addNewMessage(room.id, message);
-                sendUpdatesMessages(room.id);
-                break;
-            case "created": // Commented
-                m = "Commented on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
-                if (payload.comment.body) {
-                    m += payload.comment.body.replaceAll("\r\n", "  \n");
-                }
-                var message = {
-                    type: 'webhook',
-                    avatar: payload.sender.avatar_url,
-                    username: payload.sender.login,
-                    text: m,
-                    url: payload.issue.url
-                }
-                storage.addNewMessage(room.id, message);
-                sendUpdatesMessages(room.id);
-                break;
-            case "edited":
-                m = "Edited comment on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
-                var message = {
-                    type: 'webhook',
-                    avatar: payload.sender.avatar_url,
-                    username: payload.sender.login,
-                    text: m,
-                    url: payload.issue.url
-                }
-                storage.addNewMessage(room.id, message);
-                sendUpdatesMessages(room.id);
-            case "deleted":
-                m = "Deleted comment on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
-                var message = {
-                    type: 'webhook',
-                    avatar: payload.sender.avatar_url,
-                    username: payload.sender.login,
-                    text: m,
-                    url: payload.issue.url
-                }
-                storage.addNewMessage(room.id, message);
-                sendUpdatesMessages(room.id);
-            case "started":
-                m = "Starred " + payload.repository.full_name;
-                var message = {
-                    type: 'webhook',
-                    avatar: payload.sender.avatar_url,
-                    username: payload.sender.login,
-                    text: m,
-                    url: payload.repository.url
-                }
-                storage.addNewMessage(room.id, message);
-                sendUpdatesMessages(room.id);
-                break;
-            case "closed":
-                m = "Closed '" + payload.issue.title + "' on " + payload.repository.full_name;
-                var messag = {
-                    type: 'webhook',
-                    avatar: payload.sender.avatar_url,
-                    username: payload.sender.login,
-                    text: m,
-                    url: payload.issue.url
-                }
-                storage.addNewMessage(room.id, message);
-                sendUpdatesMessages(room.id);
-                break;
-            default:
-                console.log(payload);
-                break;
-        }
-    } else if (payload.commits) {
-        m = "Pushed commits to " + payload.repository.full_name;
-        payload.commits.forEach(commit => {
-            m += "\n```\n" + commit.message + "\n```";
-        })
-        var message = {
-            type: 'webhook',
-            avatar: payload.sender.avatar_url,
-            username: payload.sender.login,
-            text: m,
-            url: payload.repository.url
-        }
-        storage.addNewMessage(room.id, message);
-        sendUpdatesMessages(room.id);
-
-    } else if (payload.forkee) {
-        m = "Project " + payload.forkee.full_name + " forked from " + payload.repository.full_name;
-        var message = {
-            type: 'webhook',
-            avatar: payload.sender.avatar_url,
-            username: payload.sender.full_name,
-            text: m,
-            url: payload.forkee.url
-        }
-        storage.addNewMessage(room.id, message);
-        sendUpdatesMessages(room.id);
-
-    } else {
-        // No idea what it is
-        console.log(payload);
-    }
-
-    res.status(200).end();
-});
-
-// Prepare known theme list
-var themelist = [];
-
-fs.readdirSync(path.join(__dirname, 'public', 'img'), { withFileTypes: true })
-    .filter(entry => entry.isDirectory())
-    .forEach(entry => {
-        var themefile = path.join(__dirname, 'public', 'img', entry.name, 'theme.json');
-        if (fs.existsSync(themefile)) {
-            var data = JSON.parse(fs.readFileSync(themefile));
-            data.id = entry.name;
-            themelist.push(data);
-        }
-    });
-
-const getRoomForHash = (hash, payload) => {
-    var r = null;
-
-    storage.getAllRooms().forEach(room => {
-        if (room.type == 'text') {
-            var hmac = crypto.createHmac('sha256', room.id);
-            var roomHash = "sha256=" + hmac.update(payload).digest('hex');
-            if (roomHash === hash) {
-                r = room;
-            }
-        }
-    })
-    return r;
-}
 
 const sendToID = (id, message) => {
     Object.values(connections).forEach(client => {
@@ -370,7 +153,7 @@ const getGroups = () => {
     return list;
 }
 
-wss.on("connection", ws => {
+const startConnection = (ws) => {
     ws.on("close", () => {
         if (ws.id) {
             sendToAll(connections, { type: "disconnect", userid: ws.id });
@@ -790,7 +573,86 @@ wss.on("connection", ws => {
 
         })
     );
-});
+};
+
+
+
+// Prepare storage engine
+const port = config['port'];
+const storageEngineFileName = path.join(__dirname, 'storage-' + config['storage']);
+var storageEngineExists = false;
+try {
+    if (fs.existsSync(storageEngineFileName + ".js")) {
+        storageEngineExists = true;
+    }
+} catch (err) {
+    console.error(err)
+}
+if (!storageEngineExists) {
+    console.error("Storage option not available : " + config['storage']);
+    process.exit(1);
+}
+const storage = require(storageEngineFileName);
+if (!storage) {
+    console.error("Storage option non-functional : " + config['storage']);
+    process.exit(1);
+}
+
+console.log(config.plugins);
+if ('plugins' in config) {
+    config.plugins.forEach(plugin => {
+        const pluginFileName = path.join(__dirname, 'plugin', plugin);
+        var exist = false;
+        console.log(pluginFileName);
+        try {
+            if (fs.existsSync(pluginFileName + '.js')) {
+                exist = true;
+            }
+        } catch (err) {
+            console.log(err);
+        }
+        if (exist) {
+            plugins.push(require(pluginFileName));
+        } else {
+            console.log("Could not load '" + pluginFileName + ".js'");
+            process.exit(1);
+        }
+    });
+}
+
+var options = {
+    key: fs.readFileSync('key.pem'),
+    cert: fs.readFileSync('cert.pem')
+};
+
+var connections = [];
+var groupplay = [];
+const uploadDir = 'public/uploads';
+const uploadUri = '/uploads';
+var server = https.createServer(options, app);
+const wss = new WebSocket.Server({ server: server, path: "/ipc" });
+app.use('/', express.static('public'));
+
+plugins.forEach(plugin => {
+    plugin.start(app);
+})
+
+// Prepare known theme list
+var themelist = [];
+
+fs.readdirSync(path.join(__dirname, 'public', 'img'), { withFileTypes: true })
+    .filter(entry => entry.isDirectory())
+    .forEach(entry => {
+        var themefile = path.join(__dirname, 'public', 'img', entry.name, 'theme.json');
+        if (fs.existsSync(themefile)) {
+            var data = JSON.parse(fs.readFileSync(themefile));
+            data.id = entry.name;
+            themelist.push(data);
+        }
+    });
+
+
+wss.on("connection", ws => { startConnection(ws) });
 
 storage.start();
 server.listen(port, '0.0.0.0');
