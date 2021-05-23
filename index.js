@@ -37,7 +37,7 @@ var thisServer = {
         })
     },
 
-    sendToRoom: (roomid, message) => {
+    sendToRoom: function (roomid, message) {
         Object.values(this.connections).forEach(client => {
             if (client.currentRoom === roomid) {
                 this.sendTo(client, message);

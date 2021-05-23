@@ -3,6 +3,7 @@ const path = require("path")
 var url = app.commandLine.getSwitchValue('url');
 
 var disableOverlay = false;
+// Check for capabilities RE: Overlay
 if (process.env.XDG_SESSION_TYPE) {
     console.log("Running in " + process.env.XDG_SESSION_TYPE);
     switch (process.env.XDG_SESSION_TYPE) {
@@ -16,10 +17,8 @@ if (process.env.XDG_SESSION_TYPE) {
     }
 }
 
-if (!url) {
-    console.log("Needs a Server URL currently");
-    process.exit(1);
-}
+
+
 var overlay;
 var win;
 
@@ -38,13 +37,31 @@ function createOverlay() {
             contextIsolation: true,
         }
     });
-    overlay.loadFile('overlay/overlay.html');
+    overlay.loadFile('client/overlay.html');
     overlay.setAlwaysOnTop(true, 'screen');
     overlay.setIgnoreMouseEvents(true);
 
 
     overlay.setPosition(prim.bounds.x, prim.bounds.y);
     //overlay.setSize();
+}
+
+function createServerBrowser() {
+    win = new BrowserWindow({
+        width: 600,
+        height: 400,
+        webPreferences: {
+            preload: path.join(__dirname, 'client', 'preload-browser.js'),
+            nodeIntegration: false,
+            contextIsolation: true,
+        }
+    })
+    win.loadFile('client/browser.html');
+
+    win.once('ready-to-show', () => {
+        win.show();
+        win.setAutoHideMenuBar(true);
+    });
 }
 
 function prepareOverlay() {
@@ -108,7 +125,11 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-    createWindow();
+    if (!url) {
+        createServerBrowser();
+    } else {
+        createWindow();
+    }
     prepareOverlay();
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
