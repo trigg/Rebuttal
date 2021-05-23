@@ -1,7 +1,9 @@
 `use strict`;
 const express = require('express');
 var plugin = {
+    server: null,
     start: function (server) {
+        this.server = server;
         console.log("Webhook started");
         server.app.use('/webhook/', express.json({
             verify: (req, res, buf, encoding) => {
@@ -164,7 +166,7 @@ var plugin = {
     getRoomForHash: function (hash, payload) {
         var r = null;
 
-        server.storage.getAllRooms().forEach(room => {
+        this.server.storage.getAllRooms().forEach(room => {
             if (room.type == 'text') {
                 var hmac = crypto.createHmac('sha256', room.id);
                 var roomHash = "sha256=" + hmac.update(payload).digest('hex');
