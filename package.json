@@ -2,15 +2,10 @@
   "name": "rebuttal",
   "version": "1.0.0",
   "description": "",
-  "main": "app.js",
+  "main": "index.js",
   "scripts": {
-    "server": "nodejs index.js",
-    "client": "electron --enable-transparent-visuals .",
-    "test-client": "electron  --ignore-certificate-errors --enable-transparent-visuals --disable-gpu .",
-    "test": "node test/index.js",
-    "pack": "electron-builder --dir",
-    "dist": "electron-builder",
-    "postinstall": "electron-builder install-app-deps"
+    "run": "nodejs index.js",
+    "test": "node test/index.js"
   },
   "author": {
     "name": "trigg",
@@ -29,44 +24,5 @@
     "uuid": "^8.3.2",
     "ws": "^7.4.5"
   },
-  "devDependencies": {
-    "electron": "^12.0.7",
-    "electron-builder": "22.10.4",
-    "node-gyp": "^8.0.0"
-  },
-  "build": {
-    "appId": "com.electron.rebuttal.app",
-    "productName": "Rebuttal Client",
-    "copyright": "Copyright ©2021 Nathan Howard",
-    "publish": null,
-    "dmg": {
-      "contents": [
-        {
-          "x": 110,
-          "y": 150
-        },
-        {
-          "x": 240,
-          "y": 150,
-          "type": "link",
-          "path": "/Applications"
-        }
-      ]
-    },
-    "win": {
-      "target": [
-        "nsis"
-      ]
-    },
-    "linux": {
-      "target": [
-        "AppImage",
-        "snap",
-        "deb",
-        "rpm",
-        "pacman",
-        "tar.gz"
-      ]
-    }
-  }
+  "devDependencies": {}
 }

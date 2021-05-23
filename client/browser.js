@@ -23,7 +23,7 @@ font = getConfig('font', null);
 
 const replaceButtons = () => {
     console.log(getConfig('serverList', "[]"));
-    JSON.parse(getConfig('serverList', [])).forEach(server => {
+    JSON.parse(getConfig('serverList', "[]")).forEach(server => {
         console.log(server);
     });
 };
