@@ -1,5 +1,6 @@
 `use strict`;
 const express = require('express');
+const crypto = require('crypto');
 var plugin = {
     server: null,
     start: function (server) {
