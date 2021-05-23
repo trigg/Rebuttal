@@ -1,19 +1,20 @@
 `use strict`;
 const express = require('express');
 var plugin = {
-    start: function (app) {
+    start: function (server) {
         console.log("Webhook started");
-        app.use('/webhook/', express.json({
+        server.app.use('/webhook/', express.json({
             verify: (req, res, buf, encoding) => {
                 if (buf && buf.length) {
                     req.rawBody = buf.toString(encoding || 'utf8');
                 }
             }
         }));
-        app.use('/webhook/', express.urlencoded({
+        server.app.use('/webhook/', express.urlencoded({
             extended: true
         }));
-        app.post("/webhook/", (req, res) => {
+        server.app.post("/webhook/", (req, res) => {
+            console.log("Incomming webhook");
             var room = this.getRoomForHash(req.header('X-Hub-Signature-256'), req.rawBody);
             if (!room || room === null) {
                 console.log("Webhook payload rejected");
@@ -45,8 +46,8 @@ var plugin = {
                             text: m,
                             url: payload.issue.url
                         }
-                        storage.addNewMessage(room.id, message);
-                        sendUpdatesMessages(room.id);
+                        server.storage.addNewMessage(room.id, message);
+                        server.sendUpdatesMessages(room.id);
                         break;
                     case "labeled":
                         m = "Changed labels on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
@@ -57,8 +58,8 @@ var plugin = {
                             text: m,
                             url: payload.issue.url
                         }
-                        storage.addNewMessage(room.id, message);
-                        sendUpdatesMessages(room.id);
+                        server.storage.addNewMessage(room.id, message);
+                        server.sendUpdatesMessages(room.id);
                         break;
                     case "created": // Commented
                         m = "Commented on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
@@ -72,8 +73,8 @@ var plugin = {
                             text: m,
                             url: payload.issue.url
                         }
-                        storage.addNewMessage(room.id, message);
-                        sendUpdatesMessages(room.id);
+                        server.storage.addNewMessage(room.id, message);
+                        server.sendUpdatesMessages(room.id);
                         break;
                     case "edited":
                         m = "Edited comment on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
@@ -84,8 +85,8 @@ var plugin = {
                             text: m,
                             url: payload.issue.url
                         }
-                        storage.addNewMessage(room.id, message);
-                        sendUpdatesMessages(room.id);
+                        server.storage.addNewMessage(room.id, message);
+                        server.sendUpdatesMessages(room.id);
                     case "deleted":
                         m = "Deleted comment on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
                         var message = {
@@ -95,8 +96,8 @@ var plugin = {
                             text: m,
                             url: payload.issue.url
                         }
-                        storage.addNewMessage(room.id, message);
-                        sendUpdatesMessages(room.id);
+                        server.storage.addNewMessage(room.id, message);
+                        server.sendUpdatesMessages(room.id);
                     case "started":
                         m = "Starred " + payload.repository.full_name;
                         var message = {
@@ -106,8 +107,8 @@ var plugin = {
                             text: m,
                             url: payload.repository.url
                         }
-                        storage.addNewMessage(room.id, message);
-                        sendUpdatesMessages(room.id);
+                        server.storage.addNewMessage(room.id, message);
+                        server.sendUpdatesMessages(room.id);
                         break;
                     case "closed":
                         m = "Closed '" + payload.issue.title + "' on " + payload.repository.full_name;
@@ -118,8 +119,8 @@ var plugin = {
                             text: m,
                             url: payload.issue.url
                         }
-                        storage.addNewMessage(room.id, message);
-                        sendUpdatesMessages(room.id);
+                        server.storage.addNewMessage(room.id, message);
+                        server.sendUpdatesMessages(room.id);
                         break;
                     default:
                         console.log(payload);
@@ -137,8 +138,8 @@ var plugin = {
                     text: m,
                     url: payload.repository.url
                 }
-                storage.addNewMessage(room.id, message);
-                sendUpdatesMessages(room.id);
+                server.storage.addNewMessage(room.id, message);
+                server.sendUpdatesMessages(room.id);
 
             } else if (payload.forkee) {
                 m = "Project " + payload.forkee.full_name + " forked from " + payload.repository.full_name;
@@ -149,8 +150,8 @@ var plugin = {
                     text: m,
                     url: payload.forkee.url
                 }
-                storage.addNewMessage(room.id, message);
-                sendUpdatesMessages(room.id);
+                server.storage.addNewMessage(room.id, message);
+                server.sendUpdatesMessages(room.id);
 
             } else {
                 // No idea what it is
@@ -163,7 +164,7 @@ var plugin = {
     getRoomForHash: function (hash, payload) {
         var r = null;
 
-        storage.getAllRooms().forEach(room => {
+        server.storage.getAllRooms().forEach(room => {
             if (room.type == 'text') {
                 var hmac = crypto.createHmac('sha256', room.id);
                 var roomHash = "sha256=" + hmac.update(payload).digest('hex');
