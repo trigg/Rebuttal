@@ -47,7 +47,7 @@ var plugin = {
                             avatar: payload.sender.avatar_url,
                             username: payload.sender.login,
                             text: m,
-                            url: payload.issue.url
+                            url: payload.issue.html_url
                         }
                         server.storage.addNewMessage(room.id, message);
                         server.sendUpdatesMessages(room.id);
@@ -59,7 +59,7 @@ var plugin = {
                             avatar: payload.sender.avatar_url,
                             username: payload.sender.login,
                             text: m,
-                            url: payload.issue.url
+                            url: payload.issue.html_url
                         }
                         server.storage.addNewMessage(room.id, message);
                         server.sendUpdatesMessages(room.id);
@@ -74,7 +74,7 @@ var plugin = {
                             avatar: payload.sender.avatar_url,
                             username: payload.sender.login,
                             text: m,
-                            url: payload.issue.url
+                            url: payload.issue.html_url
                         }
                         server.storage.addNewMessage(room.id, message);
                         server.sendUpdatesMessages(room.id);
@@ -86,7 +86,7 @@ var plugin = {
                             avatar: payload.sender.avatar_url,
                             username: payload.sender.login,
                             text: m,
-                            url: payload.issue.url
+                            url: payload.issue.html_url
                         }
                         server.storage.addNewMessage(room.id, message);
                         server.sendUpdatesMessages(room.id);
@@ -97,7 +97,7 @@ var plugin = {
                             avatar: payload.sender.avatar_url,
                             username: payload.sender.login,
                             text: m,
-                            url: payload.issue.url
+                            url: payload.issue.html_url
                         }
                         server.storage.addNewMessage(room.id, message);
                         server.sendUpdatesMessages(room.id);
@@ -108,7 +108,7 @@ var plugin = {
                             avatar: payload.sender.avatar_url,
                             username: payload.sender.login,
                             text: m,
-                            url: payload.repository.url
+                            url: payload.repository.html_url
                         }
                         server.storage.addNewMessage(room.id, message);
                         server.sendUpdatesMessages(room.id);
@@ -120,7 +120,7 @@ var plugin = {
                             avatar: payload.sender.avatar_url,
                             username: payload.sender.login,
                             text: m,
-                            url: payload.issue.url
+                            url: payload.issue.html_url
                         }
                         server.storage.addNewMessage(room.id, message);
                         server.sendUpdatesMessages(room.id);
@@ -139,7 +139,7 @@ var plugin = {
                     avatar: payload.sender.avatar_url,
                     username: payload.sender.login,
                     text: m,
-                    url: payload.repository.url
+                    url: payload.repository.html_url
                 }
                 server.storage.addNewMessage(room.id, message);
                 server.sendUpdatesMessages(room.id);
@@ -151,7 +151,7 @@ var plugin = {
                     avatar: payload.sender.avatar_url,
                     username: payload.sender.full_name,
                     text: m,
-                    url: payload.forkee.url
+                    url: payload.forkee.html_url
                 }
                 server.storage.addNewMessage(room.id, message);
                 server.sendUpdatesMessages(room.id);
