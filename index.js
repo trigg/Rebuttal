@@ -558,12 +558,18 @@ var thisServer = {
                     break;
             }
         });
+        var url = null;
+        if ('url' in config) {
+            url = config.url;
+        }
         ws.send(
+
             JSON.stringify({
                 type: "connect",
                 message: config.servername,
                 icon: config.serverimg,
-                themelist
+                themelist,
+                url
 
             })
         );

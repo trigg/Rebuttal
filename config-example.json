@@ -6,5 +6,6 @@
     "gravatarfallback": "monsterid",
     "plugins": [
         "webhook"
-    ]
+    ],
+    "url": null
 }
