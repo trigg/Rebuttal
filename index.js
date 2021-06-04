@@ -84,6 +84,43 @@ var thisServer = {
         return conn;
     },
 
+    isUserSuppressed: function(userid){
+        let conn = false;
+        Object.values(this.connections).forEach(connection => {
+            if (connection.id === userid  && connection.suppress) {
+                conn = connection.suppress;
+            }
+        })
+        return conn;
+    },
+
+    setUserSuppressed: function(userid, suppress){
+        Object.values(this.connections).forEach(connection => {
+            if (connection.id === userid ) {
+                connection.suppress=suppress;
+            }
+        })
+    },
+    
+    isUserTalking: function(userid){
+        let conn = false;
+        Object.values(this.connections).forEach(connection => {
+            if (connection.id === userid  && connection.talking) {
+                conn = connection.talking;
+            }
+        })
+        return conn;
+    },
+
+    setUserTalking: function(userid, talking){
+        Object.values(this.connections).forEach(connection => {
+            if (connection.id === userid ) {
+                connection.talking=talking;
+            }
+        })
+    },
+
+
     updateUsers: function () {
         // Create a client-usable copy of users
         // Add transient data, hide private
@@ -101,7 +138,9 @@ var thisServer = {
                     name: account.name,
                     status: this.isUserConnected(account.id),
                     avatar: account.avatar,
-                    hidden: account.hidden
+                    hidden: account.hidden,
+                    suppress: this.isUserSuppressed(account.id),
+                    talking: this.isUserTalking(account.id)
                 }
             );
 
@@ -267,6 +306,7 @@ var thisServer = {
                         this.connections[user.id] = ws;
                         ws.name = user.name;
                         ws.id = user.id;
+                        ws.suppress = false;
                         this.sendTo(ws, {
                             type: "login",
                             userid: user.id,
@@ -548,11 +588,29 @@ var thisServer = {
                             console.log("Could not accept uploaded file");
                             console.log(e);
                         }
-
-
                     });
-
                     break;
+                case 'servermute':
+                    if(userid && message){
+                        this.setUserSuppressed(userid, message);
+                        this.sendToAll(this.connections, {
+                           type:'servermute',
+                           userid,
+                           message
+                        })
+                    }
+                    break;
+                case 'talking':
+                    if(userid && message){
+                        this.setUserTalking(userid, message);
+                    }
+                    this.sendToAll(this.connections,
+                        {
+                            type:'talking',
+                            userid,
+                            message
+                        })
+                    break
                 default:
                     console.log("Recv : %s", msg);
                     break;
@@ -642,16 +700,17 @@ plugins.forEach(plugin => {
 // Prepare known theme list
 var themelist = [];
 
-fs.readdirSync(path.join(__dirname, 'public', 'img'), { withFileTypes: true })
-    .filter(entry => entry.isDirectory())
-    .forEach(entry => {
-        var themefile = path.join(__dirname, 'public', 'img', entry.name, 'theme.json');
-        if (fs.existsSync(themefile)) {
-            var data = JSON.parse(fs.readFileSync(themefile));
-            data.id = entry.name;
-            themelist.push(data);
-        }
-    });
+// TODO. What do we do here exactly? Client should manage this maybe
+//fs.readdirSync(path.join(__dirname, 'public', 'img'), { withFileTypes: true })
+//    .filter(entry => entry.isDirectory())
+//    .forEach(entry => {
+//        var themefile = path.join(__dirname, 'public', 'img', entry.name, 'theme.json');
+//        if (fs.existsSync(themefile)) {
+//            var data = JSON.parse(fs.readFileSync(themefile));
+//            data.id = entry.name;
+//            themelist.push(data);
+//        }
+//    });
 
 wss.on("connection", ws => { thisServer.startConnection(ws) });
 
