@@ -529,7 +529,7 @@ var thisServer = {
                     }
                     fs.mkdir(path.join(uploadDir, id), { recursive: true }, (err) => {
                         if (err) {
-                            return console.error(err);
+                            console.error(err);
                             process.exit(1);
                         }
                         const reg = /[^a-z0-9-_]/gi;
@@ -626,11 +626,11 @@ var options = {
     cert: fs.readFileSync('cert.pem')
 };
 
-const uploadDir = 'public/uploads';
+const uploadDir = '/uploads';
 const uploadUri = '/uploads';
 var server = https.createServer(options, app);
 const wss = new WebSocket.Server({ server: server, path: "/ipc" });
-app.use('/', express.static('public'));
+//app.use('/', express.static('public'));
 
 thisServer.app = app;
 thisServer.storage = storage;
