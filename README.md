@@ -22,7 +22,9 @@ This is still extremely early development
 
 ## Installation
 [See Wiki](https://github.com/trigg/Rebuttal/wiki/Server-Installation)
+
 ## Customisation
+[See Wiki](https://github.com/trigg/Rebuttal/wiki/Configuration)
 
 ### Server Plugins
 [See Wiki](https://github.com/trigg/Rebuttal/wiki/Server-Plugins)
