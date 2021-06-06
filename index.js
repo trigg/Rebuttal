@@ -84,38 +84,38 @@ var thisServer = {
         return conn;
     },
 
-    isUserSuppressed: function(userid){
+    isUserSuppressed: function (userid) {
         let conn = false;
         Object.values(this.connections).forEach(connection => {
-            if (connection.id === userid  && connection.suppress) {
+            if (connection.id === userid && connection.suppress) {
                 conn = connection.suppress;
             }
         })
         return conn;
     },
 
-    setUserSuppressed: function(userid, suppress){
+    setUserSuppressed: function (userid, suppress) {
         Object.values(this.connections).forEach(connection => {
-            if (connection.id === userid ) {
-                connection.suppress=suppress;
+            if (connection.id === userid) {
+                connection.suppress = suppress;
             }
         })
     },
-    
-    isUserTalking: function(userid){
+
+    isUserTalking: function (userid) {
         let conn = false;
         Object.values(this.connections).forEach(connection => {
-            if (connection.id === userid  && connection.talking) {
+            if (connection.id === userid && connection.talking) {
                 conn = connection.talking;
             }
         })
         return conn;
     },
 
-    setUserTalking: function(userid, talking){
+    setUserTalking: function (userid, talking) {
         Object.values(this.connections).forEach(connection => {
-            if (connection.id === userid ) {
-                connection.talking=talking;
+            if (connection.id === userid) {
+                connection.talking = talking;
             }
         })
     },
@@ -400,7 +400,7 @@ var thisServer = {
                     break;
                 case "golive":
                     ws.livestate = livestate;
-                    this.sendToAll(this.connections, { type: 'golive', livestate, livelabel, userid: ws.id });
+                    this.sendToAll(this.connections, { type: 'golive', livestate, livelabel, userid: ws.id, roomid: ws.currentRoom });
                     if (livestate) {
                         ws.livelabel = livelabel;
                     } else {
@@ -591,22 +591,22 @@ var thisServer = {
                     });
                     break;
                 case 'servermute':
-                    if(userid && message){
+                    if (userid && message) {
                         this.setUserSuppressed(userid, message);
                         this.sendToAll(this.connections, {
-                           type:'servermute',
-                           userid,
-                           message
+                            type: 'servermute',
+                            userid,
+                            message
                         })
                     }
                     break;
                 case 'talking':
-                    if(userid && message){
+                    if (userid && message) {
                         this.setUserTalking(userid, message);
                     }
                     this.sendToAll(this.connections,
                         {
-                            type:'talking',
+                            type: 'talking',
                             userid,
                             message
                         })

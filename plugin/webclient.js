@@ -1,5 +1,7 @@
 const shell = require('shelljs');
 const fs = require('fs');
+const express = require('express');
+
 // Get client
 shell.exec('git clone https://github.com/trigg/Rebuttal-Client.git client');
 // Update it
