@@ -13,7 +13,7 @@ var plugin = {
     start: function (server) {
         this.server = server;
         console.log("Webclient started");
-        server.app.use('/', express.static('client'));
+        server.app.use('/', express.static('../client/public/'));
     }
 };
 
