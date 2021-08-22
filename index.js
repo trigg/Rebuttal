@@ -408,6 +408,14 @@ var thisServer = {
                     }
                     this.sendUpdateRooms();
                     break;
+                case "letmesee":
+                    this.sendToID(touserid, {
+                        type: "letmesee",
+                        touserid,
+                        fromuserid,
+                        message
+                    });
+                    break;
                 case "createroom":
                     if (this.storage.getAccountPermission(ws.id, 'createRoom')) {
                         if (roomType && roomName) {
