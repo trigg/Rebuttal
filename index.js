@@ -132,6 +132,12 @@ var thisServer = {
             if (!('avatar' in account)) {
                 account.avatar = gravatar.url(account.email, { protocol: 'https', d: config.gravatarfallback }, true);
             }
+            if (!('livestate' in account)) {
+                account.livestate = false;
+            }
+            if (!('livelabel' in account)) {
+                account.livelabel = '';
+            }
             users.push(
                 {
                     id: account.id,
@@ -140,7 +146,9 @@ var thisServer = {
                     avatar: account.avatar,
                     hidden: account.hidden,
                     suppress: this.isUserSuppressed(account.id),
-                    talking: this.isUserTalking(account.id)
+                    talking: this.isUserTalking(account.id),
+                    livestate: account.livestate,
+                    livelabel: account.livelabel
                 }
             );
 
