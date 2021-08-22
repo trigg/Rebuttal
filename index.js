@@ -704,7 +704,7 @@ const uploadDir = '/uploads';
 const uploadUri = '/uploads';
 var server = https.createServer(options, app);
 const wss = new WebSocket.Server({ server: server, path: "/ipc" });
-app.use('/invite', express.static('invite'));
+app.use('/invite', express.static(path.join(__dirname, 'invite')));
 //app.use('/', express.static('public'));
 
 thisServer.app = app;
