@@ -7,5 +7,5 @@
     "plugins": [
         "webhook"
     ],
-    "url": null
+    "url": "https://example.com/"
 }

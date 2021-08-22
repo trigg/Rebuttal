@@ -247,7 +247,7 @@ var thisServer = {
                     this.storage.generateSignUp(groupName, uuid);
                     this.sendTo(ws, {
                         type: 'invite',
-                        url: uuid
+                        url: config.url + 'invite/' + uuid
                     });
                     break
                 case "signup":
@@ -688,6 +688,7 @@ const uploadDir = '/uploads';
 const uploadUri = '/uploads';
 var server = https.createServer(options, app);
 const wss = new WebSocket.Server({ server: server, path: "/ipc" });
+app.use('/invite', express.static('invite'));
 //app.use('/', express.static('public'));
 
 thisServer.app = app;
