@@ -2,10 +2,31 @@
 const express = require('express');
 const crypto = require('crypto');
 var plugin = {
+    pluginName: "webhook",
     server: null,
+
     start: function (server) {
         this.server = server;
+        // Add custom context menu to text rooms
+        server.event.listen('serverprep', server.event.priority.NORMAL, function (event) {
+            server.contextmenu.textroom.push({
+                label: "Manage Webhooks",
+                permissionRequired: "renameRoom", //TODO Not this
+                option: "managewebhooks",
+
+                // Callback when custom option is pressed (Any custom option, check which one is returned!)
+                fn: function (data) {
+                    var { option, value } = data;
+                    if (option === this.option) {
+                        // TODO Show Gui managing webhooks
+                    }
+
+                }
+            });
+        });
+
         console.log("Webhook started");
+
         server.app.use('/webhook/', express.json({
             verify: (req, res, buf, encoding) => {
                 if (buf && buf.length) {
