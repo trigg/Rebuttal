@@ -7,22 +7,41 @@ var plugin = {
 
     start: function (server) {
         this.server = server;
-        // Add custom context menu to text rooms
+        // Listen for serverprep - before start
         server.event.listen('serverprep', server.event.priority.NORMAL, function (event) {
+            // Add a context menu option to text rooms
             server.contextmenu.textroom.push({
                 label: "Manage Webhooks",
                 permissionRequired: "renameRoom", //TODO Not this
-                option: "managewebhooks",
-
-                // Callback when custom option is pressed (Any custom option, check which one is returned!)
-                fn: function (data) {
-                    var { option, value } = data;
-                    if (option === this.option) {
-                        // TODO Show Gui managing webhooks
-                    }
-
-                }
+                option: 'managewebhooks'
             });
+        });
+        // Listen for users clicking a context menu item
+        server.event.listen('usercontextmenucallback', server.event.priority.NORMAL, (event) => {
+            var { option, value, ref } = event;
+            if (option === 'managewebhooks') {
+                // Show Gui managing webhooks
+                var window = {
+                    type: 'div',
+                    children: [
+                        {
+                            type: 'input',
+                            inputtype: 'button',
+                            value: 'Regenerate webhook'
+                        },
+                        {
+                            type: 'input',
+                            inputtype: 'hidden',
+                            value
+                        },
+                        {
+                            type: 'span',
+                            text: ''
+                        }
+                    ]
+                };
+                this.server.presentCustomWindow(ref, window);
+            }
         });
 
         console.log("Webhook started");

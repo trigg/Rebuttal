@@ -20,7 +20,6 @@ var thisServer = {
     event: null,
     storage: null,
     contextmenu: { user: [], room: [], textroom: [], voiceroom: [], message: [] },
-    clientcontextmenu: { user: [], room: [], textroom: [], voiceroom: [], message: [] },
     connections: [],
 
     init: function () {
@@ -39,6 +38,11 @@ var thisServer = {
             }
         });
 
+    },
+
+    presentCustomWindow: function (ws, window) {
+        // TODO Check sanity of window before sending?
+        this.sendTo(ws, { type: 'presentcustomwindow', window });
     },
 
     sendToID: function (id, message) {
@@ -227,7 +231,7 @@ var thisServer = {
 
     startConnection: function (ws) {
         ws.on("close", () => {
-            this.event('connectionclose', { ref: ws });
+            this.event.trigger('connectionclose', { ref: ws });
             // Can't cancel a disconnection
             if (ws.id) {
                 this.sendToAll(this.connections, { type: "disconnect", userid: ws.id });
@@ -272,6 +276,9 @@ var thisServer = {
                 signUp,
                 audio,
                 video,
+                context,
+                option,
+                value,
             } = data;
             switch (type) {
                 case 'invite':
@@ -687,8 +694,14 @@ var thisServer = {
                         })
                     break;
                 case 'contextoption':
-                    if (userid && context && option && value) {
-                        this.event.trigger("usercontextmenucallback", { context, option, value })
+                    console.log(data);
+                    if (context && option && value) {
+                        this.event.trigger("usercontextmenucallback", { userUuid: ws.id, context, option, value, ref: ws })
+                    }
+                    break;
+                case 'windowinput':
+                    if (inputid && value && allinputs) {
+                        this.event.trigger("userwindowinputcallback", { userUuid: ws.id, inputId: inputid, value, inputValues: allinputs, ref: ws });
                     }
                     break;
                 default:
@@ -700,14 +713,13 @@ var thisServer = {
         if ('url' in config) {
             url = config.url;
         }
-        this.event('connectionnew', {
+        this.event.trigger('connectionnew', {
             ref: ws, welcomeObj: {
                 type: "connect",
                 message: config.servername,
                 icon: config.serverimg,
                 url,
-                contextmenus: clientcontextmenu
-
+                contextmenus: this.contextmenu
             }
         });
 

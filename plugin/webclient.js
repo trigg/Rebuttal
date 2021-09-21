@@ -6,6 +6,8 @@
 const shell = require('shelljs');
 const fs = require('fs');
 const express = require('express');
+const path = require('path');
+
 
 // Get client
 if (!fs.existsSync('client')) {
@@ -14,6 +16,8 @@ if (!fs.existsSync('client')) {
 // Update it
 shell.cd('client');
 shell.exec('git pull');
+shell.cd('..');
+
 
 var plugin = {
     pluginName: "webclient",
@@ -37,10 +41,10 @@ var plugin = {
         console.log("Webclient started");
 
         // Allow access to the client files
-        server.app.use('/', express.static('../client/public/'));
+        server.app.use('/', express.static('client/public/'));
 
         // Inject themes into welcomeObj
-        server.event.listen('connectionnew', this.event.priority.NORMAL, function (event) {
+        server.event.listen('connectionnew', server.event.priority.NORMAL, function (event) {
             event.welcomeObj.themelist = this.themelist;
         });
     }
