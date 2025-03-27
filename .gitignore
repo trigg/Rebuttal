@@ -3,7 +3,6 @@ node_modules
 cert.pem
 key.pem
 
-yarn.lock
 package-lock.json
 yarn-error.log
 
