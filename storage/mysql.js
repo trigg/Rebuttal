@@ -3,7 +3,7 @@ const mysql = require('mysql');
 const storage = {
     sqlconn: null,
     storage: {},
-    fileName: 'data.json',
+    fileName: 'data.mysql',
 
     /**
      * Get room by UUID

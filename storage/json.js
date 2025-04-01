@@ -9,7 +9,7 @@ const bcrypt = require('bcrypt');
  */
 var storage = {
     storage: {},
-    fileName: "data.json",
+    fileName: null,
 
     /**
      * Get room by UUID
@@ -213,6 +213,9 @@ var storage = {
 
     getGroupPermission: function (groupname, permission) {
         var permList = this.storage.permissions[groupname];
+        if (permList == undefined) {
+            permList = this.storage.permissions[groupname] = [];
+        }
         if (permList.indexOf(permission) > -1) {
             return true;
         }
@@ -225,6 +228,9 @@ var storage = {
 
     addGroupPermission: function (groupname, permission) {
         var permList = this.storage.permissions[groupname];
+        if (permList == undefined) {
+            permList = this.storage.permissions[groupname] = [];
+        }
         if (permList.indexOf(permission) == -1) {
             permList.push(permission);
             this.storage.permissions[groupname] = permList;
@@ -287,45 +293,10 @@ var storage = {
         } else {
             this.storage = {
                 'rooms': [],
-                'accounts': [{
-                    "id": "1",
-                    "name": "root",
-                    "password": bcrypt.hashSync("iamroot", 10),
-                    "email": "root",
-                    "group": "admin",
-                    "hidden": true
-                },],
+                'accounts': [],
                 "signUp": {},
                 'messages': {},
                 'permissions': {
-                    "admin": [
-                        'createRoom',
-                        'createUser',
-                        'renameRoom',
-                        'renameUser',
-                        'renameServer',
-                        'removeRoom',
-                        'removeUser',
-                        'inviteUser',
-                        'joinVoiceRoom',
-                        "sendMessage",
-                        "setUserGroup",
-                        "setGroupPerm",
-                        "changeMessage",
-                        "noInviteFor",
-                        "inviteUserAny"
-                    ],
-                    "moderator": [
-                        "renameRoom",
-                        "inviteUser",
-                        "joinVoiceRoom",
-                        "sendMessage",
-                        "noInviteFor",
-                    ],
-                    "user": [
-                        "joinVoiceRoom",
-                        "sendMessage"
-                    ]
                 }
             }
         }
@@ -335,7 +306,9 @@ var storage = {
      * Not called by server. The storage plugin needs to ensure the integrity of the stored data on its own.
      */
     save: function () {
-        fs.writeFileSync(this.fileName, JSON.stringify(this.storage));
+        if (this.fileName !== null) {
+            fs.writeFileSync(this.fileName, JSON.stringify(this.storage));
+        }
     },
 
     /**

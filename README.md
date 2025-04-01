@@ -8,7 +8,7 @@ Table of Contents
    * [Rebuttal webchat](#rebuttal-webchat)
       * [Installation](#installation)
       * [Customisation](#customisation)
-         * [Server Plugins](#plugins) 
+         * [Server Plugins](#plugins)
          * [Themes](#themes)
    * [Rebuttal Electron App](#rebuttal-electron-app)
 
@@ -16,7 +16,7 @@ Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
 
 # Rebuttal webchat
 
-Rebuttal webchat is a multimedia webchat system featuring text channels and Voice, Webcam and Livestream rooms. It is written as a NodeJS server with plugins and a HTML/JS client served from the server. 
+Rebuttal webchat is a multimedia webchat system featuring text channels and Voice, Webcam and Livestream rooms. It is written as a NodeJS server with plugins and a HTML/JS client served from the server.
 
 This is still extremely early development
 

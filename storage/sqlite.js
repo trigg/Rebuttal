@@ -5,7 +5,7 @@ const bcrypt = require('bcrypt');
 
 /**
  * Be aware that sanity checking data is NOT to be done in the storage modules.
- * 
+ *
  * All data must be sanity checked in the core app.
  */
 var storage = {
@@ -339,11 +339,6 @@ var storage = {
     start: function () {
         this.db = sqlite(this.fileName);
         this.prepare();
-        var user = this.getAllAccounts();
-
-        if (user.length == 0) {
-            this.createDatabase();
-        }
     },
 
     createDatabase: function () {
@@ -353,43 +348,6 @@ var storage = {
         this.db.exec('CREATE TABLE messages (idx INTEGER NOT NULL , roomid TEXT NOT NULL, text TEXT, url TEXT, userid TEXT, username TEXT, type TEXT, tags TEXT, img TEXT)');
         this.db.exec('CREATE TABLE permission (perm TEXT NOT NULL, groupid TEXT NOT NULL)');
         this.db.exec('CREATE TABLE signup (groupid TEXT NOT NULL, id TEXT NOT NULL UNIQUE)');
-
-        var password = uuidv4();
-        console.log("Created Root account.");
-        console.log("Pass : " + password);
-
-        var hash = bcrypt.hashSync(password, 10);
-
-        this.db.prepare('INSERT INTO user (id, name, email, password, groupid, hidden) VALUES (?, ?, ?, ?, ?, ?)')
-            .run('1', 'root', 'root', hash, 'admin', 1);
-
-        [
-            'createRoom',
-            'createUser',
-            'renameRoom',
-            'renameUser',
-            'renameServer',
-            'removeRoom',
-            'removeUser',
-            'inviteUser',
-            'joinVoiceRoom',
-            "sendMessage",
-            "setUserGroup",
-            "setGroupPerm",
-            "changeMessage",
-            "noInviteFor",
-            "inviteUserAny"
-        ].forEach(perm => {
-            this.db.prepare("INSERT INTO permission ( perm, groupid ) VALUES (?, 'admin') ").run(perm);
-        });
-
-        [
-            "joinVoiceRoom",
-            "sendMessage"
-        ].forEach(perm => {
-            this.db.prepare("INSERT INTO permission ( perm, groupid ) VALUES (?, 'user') ").run(perm);
-        });
-
     },
 
     prepare: function () {
