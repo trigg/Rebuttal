@@ -1,5 +1,12 @@
-var protocol = {
+const { v4: uuidv4 } = require("uuid");
+const fs = require('fs');
+const path = require('path');
+const { Readable } = require('stream');
+const sizeOfImage = require('buffer-image-size');
 
+var protocol = {
+    uploadDir: '/uploads',
+    uploadUri :'/uploads',
     switch: function (server, socket, user) {
         // Connection has just transfered from another protocol to v1.
         // Give them the information they'd expect to have
@@ -34,6 +41,7 @@ var protocol = {
 
     },
     handle: function (server, socket, data) {
+        var uuid;
         const {
             type,
             userName,
@@ -48,12 +56,10 @@ var protocol = {
             rawfile,
             segment,
             message,
-            url,
             withvengeance,
             roomName,
             roomType,
             groupName,
-            permissionName,
             messageid,
             userid,
             audio,
@@ -61,10 +67,12 @@ var protocol = {
             context,
             option,
             value,
+            inputid,
+            allinputs,
         } = data;
         switch (type) {
             case 'invite':
-                var uuid = uuidv4();
+                uuid = uuidv4();
 
                 server.storage.generateSignUp(groupName, uuid);
                 server.sendTo(socket, {
@@ -91,13 +99,13 @@ var protocol = {
                 if (allow1 && allow2) {
                     if (filename && rawfile) {
                         // TODO File upload in message event?
-                        fs.mkdirSync(path.join(uploadDir, socket.id), { recursive: true });
+                        fs.mkdirSync(path.join(this.uploadDir, socket.id), { recursive: true });
                         const reg = /[^a-z0-9-_]/gi;
                         outputfilename = filename;
                         outputfilename = outputfilename.replace(reg, '');
-                        var uuid = uuidv4();
-                        var outputuri = path.join(uploadUri, socket.id, outputfilename + uuid);
-                        outputfilename = path.join(uploadDir, socket.id, outputfilename + uuid);
+                        uuid = uuidv4();
+                        var outputuri = path.join(this.uploadUri, socket.id, outputfilename + uuid);
+                        outputfilename = path.join(this.uploadDir, socket.id, outputfilename + uuid);
 
                         const buffer = Buffer.from(rawfile, 'base64');
                         try {
@@ -296,14 +304,14 @@ var protocol = {
                 break;
             case "updategroup":
                 if (server.storage.getAccountPermission(socket.id, 'setGroupPerm')) {
-
+                    //TODO
                 } else {
                     server.sendTo(socket, { type: 'error', message: 'Permission denied "setGroupPerm"' });
                 }
                 break;
             case "removegroup":
                 if (server.storage.getAccountPermission(socket.id, 'setGroupPerm')) {
-
+                    //TODO
                 } else {
                     server.sendTo(socket, { type: 'error', message: 'Permission denied "setGroupPerm"' });
                 }
@@ -330,7 +338,7 @@ var protocol = {
                 if (!id) {
                     id = 'undefined'
                 }
-                fs.mkdir(path.join(uploadDir, id), { recursive: true }, (err) => {
+                fs.mkdir(path.join(this.uploadDir, id), { recursive: true }, (err) => {
                     if (err) {
                         console.error(err);
                         process.exit(1);
@@ -338,7 +346,7 @@ var protocol = {
                     const reg = /[^a-z0-9-_]/gi;
                     var outputfilename = filename;
                     outputfilename = outputfilename.replace(reg, '');
-                    outputfilename = path.join(uploadDir, id, outputfilename + uuidv4());
+                    outputfilename = path.join(this.uploadDir, id, outputfilename + uuidv4());
                     const buffer = Buffer.from(rawfile, 'base64');
                     try {
                         var dim = sizeOfImage(buffer);

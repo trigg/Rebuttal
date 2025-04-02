@@ -1,6 +1,5 @@
 `use strict`;
 const sqlite = require('better-sqlite3');
-const { v4: uuidv4 } = require("uuid");
 const bcrypt = require('bcrypt');
 const fs = require('fs');
 
@@ -324,7 +323,7 @@ var storage = {
     },
 
     setAccountPassword: function (userid, password) {
-        hash = bcrypt.hashSync(password, 10);
+        var hash = bcrypt.hashSync(password, 10);
         this.stmtSetAccountPassword.run(hash, userid);
     },
 
@@ -385,7 +384,7 @@ var storage = {
     getAllPluginData: function (pluginName) {
         var data = this.stmtGetPluginData.all(pluginName);
         var ret = {};
-        for (row of data) {
+        for (let row of data) {
             ret[row['key']] = row['value'];
         }
         return ret;

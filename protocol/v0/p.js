@@ -3,6 +3,7 @@ const protocolv1 = require('../v1/p');
 
 var protocol = {
     handle: function (server, socket, data) {
+        var allow;
         const {
             type,
             userName,
@@ -33,7 +34,7 @@ var protocol = {
                         group = server.storage.expendSignUp(signUp);
                     }
                     if (group) {
-                        var allow = server.event.trigger('usercreate', { userName, userUuid })
+                        allow = server.event.trigger('usercreate', { userName, userUuid })
                         // In this case we don't use FINAL event as it won't have email/password
                         // If we put email/password in the event it'll be plaintext for every plugin
                         // I simply don't feel that is right
@@ -64,14 +65,14 @@ var protocol = {
 
                 break;
             case "login":
-                let user = server.storage.getAccountByLogin(email, password);
+                var user = server.storage.getAccountByLogin(email, password);
                 if (!server.protocols.includes(protocol)) {
                     server.sendTo(socket, { type: 'error', message: 'Invalid protocol selected' });
                     socket.close();
                 }
                 socket.protocol_version = protocol
                 if (user) {
-                    var allow = server.event.trigger('userauth', { userUuid: user.id, userName: user.name });
+                    allow = server.event.trigger('userauth', { userUuid: user.id, userName: user.name });
                     // As before, avoiding FINAL event as we can't allow plain-text passwords to be seen by plugin
                     if (allow) {
                         switch (protocol) {
@@ -81,6 +82,7 @@ var protocol = {
                                 break;
                             case "v1":
                                 protocolv1.switch(server, socket, user);
+                                break;
                             default:
                                 server.sendTo(socket, { type: 'error', message: 'Invalid protocol selected' });
                                 socket.close();

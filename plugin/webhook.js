@@ -8,7 +8,8 @@ var plugin = {
     start: function (server) {
         this.server = server;
         // Listen for serverprep - before start
-        server.event.listen('serverprep', server.event.priority.NORMAL, function (event) {
+        server.event.listen('serverprep', server.event.priority.NORMAL, (event) => {
+            event;
             // Add a context menu option to text rooms
             server.contextmenu.textroom.push({
                 label: "Manage Webhooks",
@@ -75,6 +76,7 @@ var plugin = {
                 return;
             }
             var m = '';
+            var message;
             if (payload.action) {
                 switch (payload.action) {
                     case "opened":
@@ -82,7 +84,7 @@ var plugin = {
                         if (payload.issue.body && payload.issue.body !== '') {
                             m += "  \n" + payload.issue.body;
                         }
-                        var message = {
+                        message = {
                             type: 'webhook',
                             avatar: payload.sender.avatar_url,
                             username: payload.sender.login,
@@ -94,7 +96,7 @@ var plugin = {
                         break;
                     case "labeled":
                         m = "Changed labels on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
-                        var message = {
+                        message = {
                             type: 'webhook',
                             avatar: payload.sender.avatar_url,
                             username: payload.sender.login,
@@ -109,7 +111,7 @@ var plugin = {
                         if (payload.comment.body) {
                             m += payload.comment.body.replaceAll("\r\n", "  \n");
                         }
-                        var message = {
+                        message = {
                             type: 'webhook',
                             avatar: payload.sender.avatar_url,
                             username: payload.sender.login,
@@ -121,7 +123,7 @@ var plugin = {
                         break;
                     case "edited":
                         m = "Edited comment on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
-                        var message = {
+                        message = {
                             type: 'webhook',
                             avatar: payload.sender.avatar_url,
                             username: payload.sender.login,
@@ -130,9 +132,10 @@ var plugin = {
                         }
                         server.storage.addNewMessage(room.id, message);
                         server.sendUpdatesMessages(room.id);
+                        break;
                     case "deleted":
                         m = "Deleted comment on issue : '" + payload.issue.title + "' in " + payload.repository.full_name;
-                        var message = {
+                        message = {
                             type: 'webhook',
                             avatar: payload.sender.avatar_url,
                             username: payload.sender.login,
@@ -141,9 +144,10 @@ var plugin = {
                         }
                         server.storage.addNewMessage(room.id, message);
                         server.sendUpdatesMessages(room.id);
+                        break;
                     case "started":
                         m = "Starred " + payload.repository.full_name;
-                        var message = {
+                        message = {
                             type: 'webhook',
                             avatar: payload.sender.avatar_url,
                             username: payload.sender.login,
@@ -155,7 +159,7 @@ var plugin = {
                         break;
                     case "closed":
                         m = "Closed '" + payload.issue.title + "' on " + payload.repository.full_name;
-                        var messag = {
+                        message = {
                             type: 'webhook',
                             avatar: payload.sender.avatar_url,
                             username: payload.sender.login,
@@ -174,7 +178,7 @@ var plugin = {
                 payload.commits.forEach(commit => {
                     m += "\n```\n" + commit.message + "\n```";
                 })
-                var message = {
+                message = {
                     type: 'webhook',
                     avatar: payload.sender.avatar_url,
                     username: payload.sender.login,
@@ -186,7 +190,7 @@ var plugin = {
 
             } else if (payload.forkee) {
                 m = "Project " + payload.forkee.full_name + " forked from " + payload.repository.full_name;
-                var message = {
+                message = {
                     type: 'webhook',
                     avatar: payload.sender.avatar_url,
                     username: payload.sender.full_name,

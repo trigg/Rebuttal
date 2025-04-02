@@ -1,11 +1,10 @@
 `use strict`;
 const fs = require('fs');
 const bcrypt = require('bcrypt');
-const { setPluginData, test_passalong } = require('./interface');
 
 /**
  * Be aware that sanity checking data is NOT to be done in the storage modules.
- * 
+ *
  * All data must be sanity checked in the core app.
  */
 var storage = {
@@ -14,7 +13,7 @@ var storage = {
 
     /**
      * Get room by UUID
-     * @param {uuid} roomid 
+     * @param {uuid} roomid
      * @returns room
      */
     getRoomByID: function (roomid) {
@@ -29,9 +28,9 @@ var storage = {
 
     /**
      * Get Account by login credentials
-     * @param {string} email 
-     * @param {string} password 
-     * @returns 
+     * @param {string} email
+     * @param {string} password
+     * @returns
      */
     getAccountByLogin: function (email, password) {
         let retuser = null;
@@ -45,7 +44,7 @@ var storage = {
 
     /**
      * Get Account by UUID
-     * @param {uuid} userid 
+     * @param {uuid} userid
      * @returns user
      */
     getAccountByID: function (userid) {
@@ -66,7 +65,7 @@ var storage = {
     },
     /**
      * Get all accounts. This should NOT return password. Really. It shouldn't
-     * 
+     *
      * @returns accounts
      */
     getAllAccounts: function () {
@@ -75,7 +74,7 @@ var storage = {
 
     /**
      * Add new account to account list
-     * @param {user} details 
+     * @param {user} details
      */
     createAccount: function (details) {
         details.password = bcrypt.hashSync(details.password, 10);
@@ -86,7 +85,7 @@ var storage = {
 
     /**
      * Add new room to room list
-     * @param {room} details 
+     * @param {room} details
      */
     createRoom: function (details) {
         this.storage.rooms.push(details);
@@ -95,23 +94,22 @@ var storage = {
 
     /**
      * Replace account details with new details. Ensure UUID Matches as sanity checking IS NOT DONE HERE
-     * @param {uuid} userid 
-     * @param {user} details 
+     * @param {uuid} userid
+     * @param {user} details
      */
     updateAccount: function (userid, details) {
-        var user = this.getAccountByID(userid);
         this.removeAccount(userid);
+        details['id'] = userid;
         this.storage.accounts.push(details);
         this.save();
     },
 
     /**
      * Replace room details with new details. Ensure UUIDs match!
-     * @param {uuid} roomid 
-     * @param {room} details 
+     * @param {uuid} roomid
+     * @param {room} details
      */
     updateRoom: function (roomid, details) {
-        var room = this.getRoomByID(roomid);
         this.removeRoom(roomid);
         details['id'] = roomid;
         this.storage.rooms.push(details);
@@ -120,7 +118,7 @@ var storage = {
 
     /**
      * Remove User Account
-     * @param {uuid} userid 
+     * @param {uuid} userid
      */
     removeAccount: function (userid) {
         var user = this.getAccountByID(userid);
@@ -131,7 +129,7 @@ var storage = {
 
     /**
      * Remove room
-     * @param {uuid} roomid 
+     * @param {uuid} roomid
      */
     removeRoom: function (roomid) {
         var room = this.getRoomByID(roomid);
@@ -142,8 +140,8 @@ var storage = {
 
     /**
      * Get a segment of conversation for room.
-     * @param {uuid} roomid 
-     * @param {int} segment 
+     * @param {uuid} roomid
+     * @param {int} segment
      */
     getTextForRoom: function (uuid, segment) {
         var start = segment * 5;
@@ -156,7 +154,7 @@ var storage = {
 
     /**
      * Get newest, possibly incomplete, segment
-     * @param {uuid} uuid 
+     * @param {uuid} uuid
      */
     getTextRoomNewestSegment: function (uuid) {
         if (uuid in this.storage.messages) {
@@ -167,10 +165,10 @@ var storage = {
 
     /**
      * Add a message to room
-     * 
-     * 
-     * @param {uuid} roomid 
-     * @param {object} message 
+     *
+     *
+     * @param {uuid} roomid
+     * @param {object} message
      */
     addNewMessage: function (roomid, message) {
         if (!(roomid in this.storage.messages)) {
@@ -185,9 +183,9 @@ var storage = {
 
     /**
      * Change contents of message
-     * @param {uuid} roomid 
-     * @param {int} messageid 
-     * @param {object} contents 
+     * @param {uuid} roomid
+     * @param {int} messageid
+     * @param {object} contents
      */
     updateMessage: function (roomid, messageid, contents) {
         this.storage.messages[roomid][messageid] = contents;
@@ -196,8 +194,8 @@ var storage = {
 
     /**
      * Remove message
-     * @param {uuid} roomid 
-     * @param {int} messageid 
+     * @param {uuid} roomid
+     * @param {int} messageid
      */
     removeMessage: function (roomid, messageid) {
         this.storage.messages[roomid][messageid]['text'] = '*Message Removed*';
@@ -257,7 +255,7 @@ var storage = {
     },
 
     /**
-     * 
+     *
      * @returns List of group names
      */
     getGroups: function () {
@@ -280,7 +278,7 @@ var storage = {
     },
 
     setAccountPassword: function (userid, password) {
-        hash = bcrypt.hashSync(password, 10);
+        var hash = bcrypt.hashSync(password, 10);
         this.getAccountByID(userid).password = hash;
         this.save();
     },

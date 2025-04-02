@@ -22,9 +22,6 @@ Other tests should feed a JSON object into json storage, disable saving, and run
 
 - Image uploads
 - Server Logos - aspect ratios, too large, too small, formats
-- Storage systems
-- - Create resources
-- - Delete resources
-- - Select resources
 - plugins
 - - webhooks
+- v1 protocol, watching for storage object changes

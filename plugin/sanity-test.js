@@ -11,7 +11,7 @@ var plugin = {
         var eventstage = -1;
         server.event.register('testevent');
         server.event.listen('testevent', server.event.priority.MONITOR, function (e) {
-            console.log("Sanity test-  should be last");
+            console.log("Sanity test-  should be last "+e);
             if (eventstage >= server.event.priority.MONITOR) {
                 throw new Error('Event priorities called out of order');
             }
@@ -21,7 +21,7 @@ var plugin = {
             eventstage = server.event.priority.MONITOR;
         })
         server.event.listen('testevent', server.event.priority.EARLY, function (e) {
-            console.log("Sanity test-  should be first");
+            console.log("Sanity test-  should be first "+e);
             if (eventstage >= server.event.priority.EARLY) {
                 throw new Error('Event priorities called out of order');
             }
@@ -29,7 +29,7 @@ var plugin = {
             eventstage = server.event.priority.EARLY;
         })
         server.event.listen('testevent', server.event.priority.LATE, function (e) {
-            console.log("Sanity test-  should be middle");
+            console.log("Sanity test-  should be middle "+e);
             if (eventstage >= server.event.priority.LATE) {
                 throw new Error('Event priorities called out of order');
             }

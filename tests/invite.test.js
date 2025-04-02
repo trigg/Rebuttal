@@ -1,6 +1,5 @@
 const rebuttal = require("../server.js")
 const requestws = require('superwstest')
-const request = require('supertest')
 
 // Create a server with made up config
 var config = {
@@ -19,7 +18,6 @@ rebuttal.storage.generateSignUp('user', '00000000-0000-0000-0000-000000000000')
 rebuttal.storage.generateSignUp('admin', '11111111-1111-1111-1111-111111111111')
 
 describe("Invites", () => {
-    var my_userid = null;
 
     beforeEach((done) => {
         rebuttal.server.listen(0, 'localhost', done);

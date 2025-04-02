@@ -5,8 +5,6 @@ const https = require('https');
 const { v4: uuidv4 } = require("uuid");
 const fs = require('fs');
 const path = require('path');
-const { Readable } = require('stream');
-const sizeOfImage = require('buffer-image-size');
 const gravatar = require('gravatar');
 
 const event = require('./events');
@@ -28,10 +26,10 @@ var thisServer = {
         this.config = config
         this.app = express();
         this.app.use('/invite', express.static(path.join(__dirname, 'invite')));
-        plugins = [];
+        var plugins = [];
 
         // Prepare storage engine
-        storageEngineFileName = path.join(__dirname, 'storage', config['storage']);
+        var storageEngineFileName = path.join(__dirname, 'storage', config['storage']);
         var storageEngineExists = false;
         try {
             if (fs.existsSync(storageEngineFileName + ".js")) {
@@ -122,8 +120,6 @@ var thisServer = {
             console.log("Started HTTPS server")
         })
 
-        const uploadDir = '/uploads';
-        const uploadUri = '/uploads';
         this.wss = new WebSocket.Server({ server: this.server, path: "/ipc" });
         this.event = event;
         this.port = config['port'];
@@ -371,7 +367,6 @@ var thisServer = {
                 }
                 this.sendUpdateRooms();
                 this.sendUpdateUsers();
-            } else {
             }
         });
         ws.on("message", msg => {
@@ -379,7 +374,7 @@ var thisServer = {
             try {
                 data = JSON.parse(msg);
             } catch (e) {
-                console.log("Invalid JSON");
+                console.log("Invalid JSON "+e);
                 data = {}
             }
             switch (ws.protocol_version) {

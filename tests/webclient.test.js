@@ -3,7 +3,6 @@
  */
 
 const rebuttal = require("../server.js")
-const requestws = require('superwstest')
 const request = require('supertest')
 
 // Create a server with made up config

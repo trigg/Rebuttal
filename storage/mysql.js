@@ -104,8 +104,8 @@ const storage = {
 
     /**
      * Add a message to room
-     * 
-     * 
+     *
+     *
      * @param {uuid} roomid 
      * @param {uuid} userid 
      * @param {object} message 

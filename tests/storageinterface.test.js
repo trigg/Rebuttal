@@ -1,7 +1,3 @@
-/**
- * Actual checks on client should be done in its own repo. This just needs to check the plugin layer works fine
- */
-
 const StorageInterface = require("../storage/interface")
 const json = require("../storage/json")
 const sqlite = require("../storage/sqlite")
@@ -25,7 +21,6 @@ describe("Storage systems have a full interface", () => {
         for (const method in StorageInterface) {
             expect(sqlite).toHaveProperty(method)
             expect(typeof sqlite[method]).toBe("function")
-
         }
     })
 })
@@ -130,7 +125,7 @@ describe.each([
         var oldmessage = messages[1];
         oldmessage.text = "A whole new meaning";
         storage.updateMessage(roomUuid, oldmessage.idx, oldmessage);
-        var messages = storage.getTextForRoom(roomUuid, segment);
+        messages = storage.getTextForRoom(roomUuid, segment);
 
         expect(messages).toMatchObject([
             {
@@ -154,7 +149,7 @@ describe.each([
         // Delete message
         storage.removeMessage(roomUuid, messages[0].idx);
 
-        var messages = storage.getTextForRoom(roomUuid, segment);
+        messages = storage.getTextForRoom(roomUuid, segment);
 
         expect(messages).toMatchObject([
             {
@@ -172,9 +167,9 @@ describe.each([
         ]);
     })
     it("Storage " + sname + " doesn't crash when dealing with invites", () => {
-        // TODO Check contents ....
+        // Prove invites don't crash
+        // This gets covered by invite.test.js
         var inviteUuid = uuidv4();
-        // Check invite codes. Currently good enough if it doesn't crash I guess?
         storage.generateSignUp("user", inviteUuid);
         storage.expendSignUp(inviteUuid);
 
@@ -191,7 +186,7 @@ describe.each([
 
         expect(storage.getGroups()).toMatchObject(["newgroup", "oldgroup"]);
     });
-    if ("Storage " + sname + " holds room data correctly", () => {
+    it ("Storage " + sname + " holds room data correctly", () => {
         var roomUuid = uuidv4();
         var roomUuid2 = uuidv4();
         // Test room operations
@@ -238,5 +233,8 @@ describe.each([
     });
 });
 
+// TODO Message with URL
 
-// MySQL
+// TODO Message with Images
+
+// TODO MySQL
