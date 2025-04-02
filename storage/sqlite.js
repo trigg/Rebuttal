@@ -116,7 +116,6 @@ var storage = {
      */
     getAccountByID: function (userid) {
         var user = this.stmtGetAccountById.get(userid);
-        console.log(user);
         if (!user) { return null; }
         return this.coerceUser(user);
     },

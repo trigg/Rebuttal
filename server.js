@@ -51,7 +51,6 @@ var thisServer = {
         }
 
         this.storage.start();
-        console.log(this.storage.getAllAccounts());
         if (this.storage.getAllAccounts().length == 0) {
             // Should be run when no users are in config
             var userUuid = uuidv4();
@@ -95,12 +94,10 @@ var thisServer = {
             console.log(this.storage.storage);
         }
 
-        console.log(config.plugins);
         if ('plugins' in config) {
             config.plugins.forEach(plugin => {
                 const pluginFileName = path.join(__dirname, 'plugin', plugin);
                 var exist = false;
-                console.log(pluginFileName);
                 try {
                     if (fs.existsSync(pluginFileName + '.js')) {
                         exist = true;

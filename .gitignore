@@ -15,3 +15,5 @@ client
 
 dist
 *.tgz
+test_mode.sqlite
+test.json
