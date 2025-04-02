@@ -1,6 +1,7 @@
 `use strict`;
 const fs = require('fs');
 const bcrypt = require('bcrypt');
+const { setPluginData, test_passalong } = require('./interface');
 
 /**
  * Be aware that sanity checking data is NOT to be done in the storage modules.
@@ -9,7 +10,7 @@ const bcrypt = require('bcrypt');
  */
 var storage = {
     storage: {},
-    fileName: null,
+    fileName: "test.json",
 
     /**
      * Get room by UUID
@@ -110,8 +111,9 @@ var storage = {
      * @param {room} details 
      */
     updateRoom: function (roomid, details) {
-        var room = this.getAccountByID(roomid);
+        var room = this.getRoomByID(roomid);
         this.removeRoom(roomid);
+        details['id'] = roomid;
         this.storage.rooms.push(details);
         this.save();
     },
@@ -198,7 +200,8 @@ var storage = {
      * @param {int} messageid 
      */
     removeMessage: function (roomid, messageid) {
-        this.storage.messages[roomid][messageid] = { text: '*Message Removed*', id: 0 };
+        this.storage.messages[roomid][messageid]['text'] = '*Message Removed*';
+
         this.save();
     },
 
@@ -296,10 +299,73 @@ var storage = {
                 'accounts': [],
                 "signUp": {},
                 'messages': {},
-                'permissions': {
-                }
+                'permissions': {},
+                'plugin': {},
             }
         }
+    },
+    /**
+         * Create or update a key-value pair of data.
+         * @param {string} pluginName
+         * @param {string} key
+         * @param {string} value
+         */
+    setPluginData: function (pluginName, key, value) {
+        if (!(pluginName in this.storage.plugin)) {
+            this.storage.plugin[pluginName] = {}
+        }
+        this.storage.plugin[pluginName][key] = value;
+        this.save();
+    },
+
+    /**
+     * Get the value of plugin data for a specific key
+     * @param {string} pluginName
+     * @param {string} key
+     * @returns a string value
+     */
+    getPluginData: function (pluginName, key) {
+        if (!(pluginName in this.storage.plugin)) {
+            return null;
+        }
+        if (!(key in this.storage.plugin[pluginName])) {
+            return null;
+        }
+        return this.storage.plugin[pluginName][key];
+    },
+
+    /**
+     * Get all key/value pairs for a plugin
+     * @param {string} pluginName
+     * @returns associative array of key & values
+     */
+    getAllPluginData: function (pluginName) {
+        if (!(pluginName in this.storage.plugin)) {
+            return null;
+        }
+        return this.storage.plugin[pluginName];
+    },
+
+    /**
+     * Delete one key/value pair from plugin data
+     * @param {string} pluginName
+     * @param {string} key
+     */
+    deletePluginData: function (pluginName, key) {
+        if (!(pluginName in this.storage.plugin)) {
+            return;
+        }
+        this.storage.plugin[pluginName][key] = {};
+        this.save();
+    },
+
+    /**
+     * Delete all plugin data for a plugin
+     * @param {string} pluginName
+     */
+    deleteAllPluginData: function (pluginName) {
+        this.storage.plugin[pluginName] = {};
+        this.save();
     },
 
     /**
@@ -316,6 +382,14 @@ var storage = {
      */
     exit: function () {
         this.save();
+    },
+
+    test_mode: function () {
+        this.fileName = null;
+    },
+
+    test_passalong: function (f) {
+        f();
     }
 }
 module.exports = storage;

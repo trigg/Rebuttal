@@ -165,6 +165,10 @@ const storage = {
      * Called before server stops. Probably. Most likely. Don't bet on it though
      */
     exit: function () {
+    },
+
+    test_passalong: function (f) {
+        f();
     }
 }
 export default storage;
