@@ -8,7 +8,10 @@ const path = require('path');
 const { Readable } = require('stream');
 const sizeOfImage = require('buffer-image-size');
 const gravatar = require('gravatar');
+
 const event = require('./events');
+const protocolv0 = require('./protocol/v0/p');
+const protocolv1 = require('./protocol/v1/p');
 
 var thisServer = {
     config: null,
@@ -19,6 +22,7 @@ var thisServer = {
     contextmenu: { user: [], room: [], textroom: [], voiceroom: [], message: [] },
     connections: [],
     server: null,
+    protocols: ["v1"],
 
     create: function (config) {
         this.config = config
@@ -120,7 +124,6 @@ var thisServer = {
         this.server = https.createServer(options, this.app, () => {
             console.log("Started HTTPS server")
         })
-
 
         const uploadDir = '/uploads';
         const uploadUri = '/uploads';
@@ -359,13 +362,16 @@ var thisServer = {
     },
 
     startConnection: function (ws) {
+        ws.protocol_version = "v0";
         ws.on("close", () => {
             this.event.trigger('connectionclose', { ref: ws });
             // Can't cancel a disconnection
             if (ws.id) {
                 this.sendToAll(this.connections, { type: "disconnect", userid: ws.id });
-                delete this.connections[ws.id];
-
+                var index = this.connections.indexOf(ws);
+                if (index !== -1) {
+                    this.connections.splice(index, 1);
+                }
                 this.sendUpdateRooms();
                 this.sendUpdateUsers();
             } else {
@@ -379,467 +385,16 @@ var thisServer = {
                 console.log("Invalid JSON");
                 data = {}
             }
-            const {
-                type,
-                userName,
-                email,
-                password,
-                roomid,
-                touserid,
-                fromuserid,
-                payload,
-                livestate,
-                livelabel,
-                filename,
-                rawfile,
-                segment,
-                message,
-                url,
-                withvengeance,
-                roomName,
-                roomType,
-                groupName,
-                permissionName,
-                messageid,
-                userid,
-                signUp,
-                audio,
-                video,
-                context,
-                option,
-                value,
-            } = data;
-            switch (type) {
-                case 'invite':
-                    var uuid = uuidv4();
-
-                    this.storage.generateSignUp(groupName, uuid);
-                    this.sendTo(ws, {
-                        type: 'invite',
-                        url: this.config.url + 'invite/' + uuid
-                    });
-                    break
-                case "signup":
-                    // Put effort into matching the same checks from client side
-                    if (password &&
-                        email &&
-                        userName &&
-                        signUp &&
-                        email.indexOf("@") > -1 &&
-                        email.indexOf('.') &&
-                        userName.match(/^[a-zA-Z0-9-_ ]+$/) &&
-                        userName.length >= 3 &&
-                        password.length >= 7) {
-
-                        console.log("Checking invite");
-                        var group = null;
-                        if ('infinitesignup' in this.config && signUp === 'signup') {
-                            group = this.config.infinitesignup;
-                        } else {
-
-                            group = this.storage.expendSignUp(signUp);
-                        }
-                        if (group) {
-                            var allow = this.event.trigger('usercreate', { userName, userUuid })
-                            // In this case we don't use FINAL event as it won't have email/password
-                            // If we put email/password in the event it'll be plaintext for every plugin
-                            // I simply don't feel that is right
-                            if (allow) {
-                                console.log("Created user");
-                                var userUuid = uuidv4();
-                                this.storage.createAccount({
-                                    id: userUuid,
-                                    name: userName,
-                                    password,
-                                    email,
-                                    group
-                                });
-
-                                this.sendTo(ws, { type: 'refreshNow' });
-                            } else {
-                                console.log("Invite denied by plugin");
-                                this.sendTo(ws, { type: 'error', message: 'Signup permission denied by plugin' });
-                            }
-                        } else {
-                            console.log("Invite invalid");
-                            this.sendTo(ws, { type: 'error', message: 'Signup code expired or invalid' });
-                        }
-                    } else {
-                        console.log("Not enough details to create account");
-                        this.sendTo(ws, { type: 'error', message: 'Not enough info' });
-                    }
-
+            switch (ws.protocol_version) {
+                case "v0":
+                    protocolv0.handle(this, ws, data);
                     break;
-                case "login":
-                    let user = this.storage.getAccountByLogin(email, password);
-                    if (user) {
-                        // Log user out from other sources. Maybe later allow multiple login for one user
-                        // But it is not this day
-                        this.connections.forEach(conn => {
-                            if (conn.id && conn.id === user.id) {
-                                conn.close();
-                            }
-                        })
-                        var allow = this.event.trigger('userauth', { userUuid: user.id, userName: user.name });
-                        // As before, avoiding FINAL event as we can't allow plain-text passwords to be seen by plugin
-                        if (allow) {
-
-                            this.connections[user.id] = ws;
-                            ws.name = user.name;
-                            ws.id = user.id;
-                            ws.suppress = false;
-                            this.sendTo(ws, {
-                                type: "login",
-                                userid: user.id,
-                                success: true
-                            });
-                            this.sendTo(ws, {
-                                type: 'updateUsers',
-                                userList: this.updateUsers()
-                            });
-                            this.sendTo(ws, {
-                                type: 'updateRooms',
-                                roomList: this.updateRooms()
-                            });
-                            var perms = this.storage.getGroupPermissionList(user.group);
-                            this.sendTo(ws, {
-                                type: 'updatePerms',
-                                perms: perms
-                            });
-                            this.sendTo(ws, {
-                                type: 'updateGroups',
-                                groups: this.getGroups()
-                            })
-
-                            // Alert everyone else
-                            this.sendUpdateRooms();
-                            this.sendUpdateUsers();
-                        } else {
-                            console.log("User login denied by plugin");
-                            this.sendTo(ws, { type: 'error', message: 'Permission denied' });
-                        }
-                    } else {
-                        this.sendTo(ws, {
-                            type: "login",
-                            success: false
-                        })
-                    }
-                    break;
-                case "getmessages":
-                    var getsegment;
-                    if (segment === undefined || segment === null) {
-                        getsegment = this.storage.getTextRoomNewestSegment(roomid);
-                    } else {
-                        getsegment = segment;
-                    }
-                    var returnsegment = this.storage.getTextForRoom(roomid, getsegment);
-                    var ret = { type: 'updateText', roomid: roomid, segment: getsegment, messages: returnsegment };
-                    this.sendToID(ws.id, ret);
-                    break;
-                case "message":
-                    var outputfilename = null;
-                    // Send a notice that this single message has arrived.
-                    var allow1 = this.event.trigger('messagecreate', { roomUuid: roomid, message: message });
-                    var allow2 = this.event.trigger('messagesend', { userUuid: ws.id, userName: ws.name, roomUuid: roomid, message: message });
-                    if (allow1 && allow2) {
-                        if (filename && rawfile) {
-                            // TODO File upload in message event?
-                            fs.mkdirSync(path.join(uploadDir, ws.id), { recursive: true });
-                            const reg = /[^a-z0-9-_]/gi;
-                            outputfilename = filename;
-                            outputfilename = outputfilename.replace(reg, '');
-                            var uuid = uuidv4();
-                            var outputuri = path.join(uploadUri, ws.id, outputfilename + uuid);
-                            outputfilename = path.join(uploadDir, ws.id, outputfilename + uuid);
-
-                            const buffer = Buffer.from(rawfile, 'base64');
-                            try {
-                                var dim = sizeOfImage(buffer);
-                                console.log(dim.width, dim.height);
-                                var s = new Readable();
-                                s.push(buffer);
-                                s.push(null);
-                                s.pipe(fs.createWriteStream(outputfilename));
-                                message.img = outputuri;
-                                message.height = dim.height;
-                                message.width = dim.width;
-                            } catch (e) {
-                                console.log("Could not accept uploaded file");
-                                console.log(e);
-                            }
-                        }
-                        message.userid = ws.id;
-                        this.storage.addNewMessage(roomid, message);
-                        this.sendUpdatesMessages(roomid);
-                        this.sendToAll(this.connections, { type: 'sendMessage', roomid: roomid, message: message })
-                    } else {
-                        console.log("Message")
-                    }
-                    break;
-                case "joinroom":
-                    // TODO Validate room exists
-                    this.event.trigger('userjoinroom', { userUuid: ws.id, userName: ws.name, roomUuid: roomid });
-                    this.setRoom(ws, roomid);
-                    this.sendUpdateRooms();
-                    break;
-                case "leaveroom":
-                    this.event.trigger('userleaveroom', { userUuid: ws.id, userName: ws.name, roomUuid: roomid });
-                    this.setRoom(ws, null);
-                    this.sendUpdateRooms();
-                    break;
-                case "video":
-                    if (touserid && fromuserid && payload) {
-                        this.sendToID(touserid, data);
-                    }
-                    break;
-                case "golive":
-                    ws.livestate = livestate;
-                    this.sendToAll(this.connections, { type: 'golive', livestate, livelabel, userid: ws.id, roomid: ws.currentRoom });
-                    if (livestate) {
-                        ws.livelabel = livelabel;
-                    } else {
-                        ws.livelabel = '';
-                    }
-                    this.sendUpdateRooms();
-                    break;
-                case "letmesee":
-                    this.sendToID(touserid, {
-                        type: "letmesee",
-                        touserid,
-                        fromuserid,
-                        message
-                    });
-                    break;
-                case "createroom":
-                    if (this.storage.getAccountPermission(ws.id, 'createRoom')) {
-                        if (roomType && roomName) {
-                            var roomUuid = uuidv4();
-                            this.storage.createRoom({
-                                type: roomType,
-                                name: roomName,
-                                id: roomUuid
-                            });
-                            this.event.trigger('roomdelete', { roomUuid: roomUuid })
-                            this.sendUpdateRooms();
-                        } else {
-                            this.sendTo(ws, { type: 'error', message: 'Not enough info' });
-                        }
-                    } else {
-                        this.sendTo(ws, { type: 'error', message: 'Permission denied "createRoom"' });
-                    }
-                    break;
-                case "createuser":
-                    if (this.storage.getAccountPermission(ws.id, 'createUser')) {
-                        if (userName && groupName && email) {
-                            var password2 = uuidv4();
-                            var userUuid = uuidv4();
-                            this.storage.createAccount({
-                                id: userUuid,
-                                name: userName,
-                                group: groupName,
-                                email: email,
-                                password: password2
-                            });
-                            this.event.trigger('usercreate', { userName, userUuid })
-                            this.sendTo(ws, { type: 'adminMessage', message: 'User created with password : ' + password2 });
-                            this.sendUpdateUsers();
-                        } else {
-                            this.sendTo(ws, { type: 'error', message: 'Not enough info' });
-                        }
-                    } else {
-                        this.sendTo(ws, { type: 'error', message: 'Permission denied "createUser"' });
-                    }
-                    break;
-                case "updateroom":
-                    if (this.storage.getAccountPermission(ws.id, 'renameRoom')) {
-                        if (roomName && roomid) {
-                            var room = this.storage.getRoomByID(roomid);
-                            room.name = roomName;
-                            this.storage.updateRoom(roomid, room);
-                            this.sendUpdateRooms();
-                        } else {
-                            this.sendTo(ws, { type: 'error', message: 'Not enough info' });
-                        }
-                    } else {
-                        this.sendTo(ws, { type: 'error', message: 'Permission denied "renameRoom"' });
-                    }
-                    break
-                case "updateuser":
-                    if (this.storage.getAccountPermission(ws.id, 'renameUser') || ws.id === userid) {
-                        if (userid && userName && userName.match(/^[a-zA-Z0-9-_ ]+$/)) {
-                            var user2 = this.storage.getAccountByID(userid);
-                            user2.name = userName;
-                            this.storage.updateAccount(userid, user2);
-                            this.sendUpdateUsers();
-                        } else {
-                            this.sendTo(ws, { type: 'error', message: 'Not enough info' });
-                        }
-                    } else {
-                        this.sendTo(ws, { type: 'error', message: 'Permission denied "renameUser"' });
-                    }
-                    break;
-                case "removeroom":
-                    if (this.storage.getAccountPermission(ws.id, 'removeRoom')) {
-                        if (roomid) {
-                            this.event.trigger('roomdelete', { roomUuid: roomid })
-                            this.storage.removeRoom(roomid);
-                            this.sendUpdateRooms();
-                        } else {
-                            this.sendTo(ws, { type: 'error', message: 'Not enough info' });
-                        }
-                    } else {
-                        this.sendTo(ws, { type: 'error', message: 'Permission denied "removeRoom"' });
-                    }
-                    break;
-                case "removeuser":
-                    if (this.storage.getAccountPermission(ws.id, 'removeUser')) {
-                        var deleteuser = touserid;
-                        if (touserid === null) {
-                            deleteuser = ws.id
-                        }
-                        if (deleteuser) {
-                            if (withvengeance) {
-                                // TODO Delete Messages
-                                // TODO Delete Uploads
-                            }
-                            this.event.trigger('userdelete', { userUuid: deleteuser })
-                            this.disconnectId(deleteuser);
-                            this.storage.removeAccount(deleteuser);
-                            this.sendUpdateUsers();
-                        } else {
-                            this.sendTo(ws, { type: 'error', message: 'Not enough info' });
-                        }
-                    } else {
-                        console.log("Failed to delete")
-                        this.sendTo(ws, { type: 'error', message: 'Permission denied "removeUser"' });
-                    }
-                    break;
-                case "updatemessage":
-                    if (this.storage.getAccountPermission(ws.id, 'changeMessage')) {
-                        if (roomid && messageid && message) {
-                            this.event.trigger('messagechange', { roomUuid: roomid, newMessage: message, oldMessage: "NOT IMPLEMENTED" })//TODO
-                            this.storage.updateMessage(roomid, messageid, message);
-                            this.sendUpdatesMessages(roomid);
-
-                        } else {
-                            this.sendTo(ws, { type: 'error', message: 'Not enough info' });
-                        }
-                    } else {
-                        this.sendTo(ws, { type: 'error', message: 'Permission denied "changeMessage"' });
-                    }
-                    break;
-                case "removemessage":
-                    if (this.storage.getAccountPermission(ws.id, 'removeMessage')) {
-                        if (roomid && messageid) {
-                            this.event.trigger('messagechange', { roomUuid: roomid, newMessage: 'removed', oldMessage: "NOT IMPLEMENTED" })//TODO
-                            this.storage.removeMessage(roomid, messageid);
-                        } else {
-                            this.sendTo(ws, { type: 'error', message: 'Not enough info' });
-                        }
-                    } else {
-                        this.sendTo(ws, { type: 'error', message: 'Permission denied "removeMessage"' });
-                    }
-                    break;
-                case "creategroup":
-                    if (this.storage.getAccountPermission(ws.id, 'setGroupPerm')) {
-                        //TODO
-                    } else {
-                        this.sendTo(ws, { type: 'error', message: 'Permission denied "setGroupPerm"' });
-                    }
-                    break;
-                case "updategroup":
-                    if (this.storage.getAccountPermission(ws.id, 'setGroupPerm')) {
-
-                    } else {
-                        this.sendTo(ws, { type: 'error', message: 'Permission denied "setGroupPerm"' });
-                    }
-                    break;
-                case "removegroup":
-                    if (this.storage.getAccountPermission(ws.id, 'setGroupPerm')) {
-
-                    } else {
-                        this.sendTo(ws, { type: 'error', message: 'Permission denied "setGroupPerm"' });
-                    }
-                    break;
-                case "setusergroup":
-                    if (this.storage.getAccountPermission(ws.id, 'setUserGroup')) {
-                        if (userid && groupName) {
-                            this.storage.setAccountGroup(userid, groupName);
-                        } else {
-                            this.sendTo(ws, { type: 'error', message: 'Not enough info' });
-                        }
-                    } else {
-                        this.sendTo(ws, { type: 'error', message: 'Permission denied "setUserGroup"' });
-                    }
-                    break;
-                case "chatdev":
-                    if (ws.currentRoom) {
-                        this.sendToRoom(ws.currentRoom, { type: 'chatdev', video, audio, userid: ws.id });
-                    }
-                    break;
-                case 'fileupload':
-                    // TODO Check permissions
-                    var id = ws.id;
-                    if (!id) {
-                        id = 'undefined'
-                    }
-                    fs.mkdir(path.join(uploadDir, id), { recursive: true }, (err) => {
-                        if (err) {
-                            console.error(err);
-                            process.exit(1);
-                        }
-                        const reg = /[^a-z0-9-_]/gi;
-                        var outputfilename = filename;
-                        outputfilename = outputfilename.replace(reg, '');
-                        outputfilename = path.join(uploadDir, id, outputfilename + uuidv4());
-                        const buffer = Buffer.from(rawfile, 'base64');
-                        try {
-                            var dim = sizeOfImage(buffer);
-                            console.log(dim.width, dim.height);
-                            var s = new Readable();
-                            s.push(buffer);
-                            s.push(null);
-                            s.pipe(fs.createWriteStream(outputfilename));
-                        } catch (e) {
-                            console.log("Could not accept uploaded file");
-                            console.log(e);
-                        }
-                    });
-                    break;
-                case 'servermute':
-                    if (userid && message) {
-                        this.setUserSuppressed(userid, message);
-                        this.sendToAll(this.connections, {
-                            type: 'servermute',
-                            userid,
-                            message
-                        })
-                    }
-                    break;
-                case 'talking':
-                    if (userid && message) {
-                        this.setUserTalking(userid, message);
-                    }
-                    this.sendToAll(this.connections,
-                        {
-                            type: 'talking',
-                            userid,
-                            message
-                        })
-                    break;
-                case 'contextoption':
-                    if (context && option && value) {
-                        this.event.trigger("usercontextmenucallback", { userUuid: ws.id, context, option, value, ref: ws })
-                    }
-                    break;
-                case 'windowinput':
-                    if (inputid && value && allinputs) {
-                        this.event.trigger("userwindowinputcallback", { userUuid: ws.id, inputId: inputid, value, inputValues: allinputs, ref: ws });
-                    }
+                case "v1":
+                    protocolv1.handle(this, ws, data);
                     break;
                 default:
-                    console.log("Recv : %s", msg);
-                    break;
+                    this.sendTo(ws, { type: 'error', message: 'Invalid protocol : "' + ws.protocol_version + '"' });
+                    ws.close();
             }
         });
         var url = null;
@@ -852,7 +407,8 @@ var thisServer = {
                 message: this.config.servername,
                 icon: this.config.serverimg,
                 url,
-                contextmenus: this.contextmenu
+                contextmenus: this.contextmenu,
+                protocols: this.protocols
             }
         });
 

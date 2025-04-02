@@ -39,9 +39,9 @@ describe("Websocket based tests", () => {
     it('Connects to websocket and fails to auth with incorrect credentials', async () => {
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
-            .expectJson((reply) => (reply.type === "connect"))
-            .sendJson({ type: 'login', email: 'someone@example.com', password: 'iforgor' })
-            .expectJson((reply) => (reply.type === 'login' && reply.success == false))
+            .expectJson((reply) => (reply.type === "connect" && reply.protocols.includes("v1")))
+            .sendJson({ type: 'login', email: 'someone@example.com', password: 'iforgor', protocol: 'v1' })
+            .expectJson((reply) => (reply.type === 'error' && reply.message === "Permission denied"))
             .close()
             .expectClosed();
     });
@@ -49,8 +49,8 @@ describe("Websocket based tests", () => {
     it('Connects and fails to create a room list before login', async () => {
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
-            .expectJson((reply) => (reply.type === 'connect'))
-            .sendJson({ type: 'createroom', roomType: 'text', roomName: "Testers chat" })
+            .expectJson((reply) => (reply.type === 'connect' && reply.protocols.includes("v1")))
+            .sendJson({ type: 'createroom', roomType: 'text', roomName: "Testers chat", protocol: 'v1' })
             .expectJson((reply) => (reply.type === 'error'))
             .close()
             .expectClosed();
