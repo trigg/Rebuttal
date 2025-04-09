@@ -1,3 +1,29 @@
+diff --git a/node_modules/superwstest/build/superwstest.js b/node_modules/superwstest/build/superwstest.js
+index 37f2e59..3b0c318 100644
+--- a/node_modules/superwstest/build/superwstest.js
++++ b/node_modules/superwstest/build/superwstest.js
+@@ -163,9 +163,21 @@ const wsMethods = {
+     if (typeof check === 'function') {
+       const result = check(received);
+       if (result === false) {
++        if(opts.skip){
++          console.log(`Skip past: ${stringify(received)}`)
++          wsMethods.expectMessage(ws, conversion, check, options)
++          return
++        }
++
+         throw new Error(`Expected message ${stringify(check)}, got ${stringify(received)}`);
+       }
+     } else if (!util.isDeepStrictEqual(received, check)) {
++        if(opts.skip){
++          console.log(`Skip past: ${stringify(received)}`)
++          wsMethods.expectMessage(ws, conversion, check, options)
++          return
++        }
++
+       throw new Error(`Expected message ${stringify(check)}, got ${stringify(received)}`);
+     }
+   },
 diff --git a/node_modules/superwstest/src/superwstest.mjs b/node_modules/superwstest/src/superwstest.mjs
 index 72fffdd..e2bf224 100644
 --- a/node_modules/superwstest/src/superwstest.mjs
