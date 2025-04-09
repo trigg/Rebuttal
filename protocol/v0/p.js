@@ -1,8 +1,8 @@
 const { v4: uuidv4 } = require("uuid");
 const protocolv1 = require('../v1/p');
 
-var protocol = {
-    handle: function (server, socket, data) {
+var protocolv0 = {
+    handle: async function (server, socket, data) {
         var allow;
         const {
             type,
@@ -31,7 +31,7 @@ var protocol = {
                         group = server.config.infinitesignup;
                     } else {
 
-                        group = server.storage.expendSignUp(signUp);
+                        group = await server.storage.expendSignUp(signUp);
                     }
                     if (group) {
                         allow = server.event.trigger('usercreate', { userName, userUuid })
@@ -41,7 +41,7 @@ var protocol = {
                         if (allow) {
                             console.log("Created user");
                             var userUuid = uuidv4();
-                            server.storage.createAccount({
+                            await server.storage.createAccount({
                                 id: userUuid,
                                 name: userName,
                                 password,
@@ -65,48 +65,47 @@ var protocol = {
 
                 break;
             case "login":
-                var user = server.storage.getAccountByLogin(email, password);
+                var user = await server.storage.getAccountByLogin(email, password);
                 if (!server.protocols.includes(protocol)) {
                     server.sendTo(socket, { type: 'error', message: 'Invalid protocol selected' });
-                    socket.close();
+                    socket.close(3001, 'Invalid protocol selected');
                 }
                 socket.protocol_version = protocol
                 if (user) {
                     allow = server.event.trigger('userauth', { userUuid: user.id, userName: user.name });
                     // As before, avoiding FINAL event as we can't allow plain-text passwords to be seen by plugin
                     if (allow) {
-                        switch (protocol) {
-                            case "v0":
-                                server.sendTo(socket, { type: 'error', message: 'Cannot switch from v0 to v0' });
-                                socket.close();
-                                break;
-                            case "v1":
-                                protocolv1.switch(server, socket, user);
-                                break;
-                            default:
-                                server.sendTo(socket, { type: 'error', message: 'Invalid protocol selected' });
-                                socket.close();
-                                break;
-                        }
-
                         socket.name = user.name;
                         socket.id = user.id;
 
                         server.connections.push(socket);
-
+                        switch (protocol) {
+                            case "v0":
+                                server.sendTo(socket, { type: 'error', message: 'Cannot switch from v0 to v0' });
+                                socket.close(3001, 'Cannot switch from v0 to v0');
+                                break;
+                            case "v1":
+                                await protocolv1.switch_protocol(server, socket, user);
+                                break;
+                            default:
+                                server.sendTo(socket, { type: 'error', message: 'Invalid protocol selected' });
+                                socket.close(3001, "Invalid protocol selected");
+                                break;
+                        }
                     } else {
                         console.log("User login denied by plugin");
                         server.sendTo(socket, { type: 'error', message: 'Permission denied' });
                     }
                 } else {
                     server.sendTo(socket, { type: 'error', message: 'Permission denied' });
-                    socket.close();
+                    socket.close(3001, "Permission denied");
                 }
                 break;
             default:
+                console.log("v0 does not handle packet type : " + type);
                 server.sendTo(socket, { type: 'error', message: 'Unknown packet type : "' + type + '"' });
-                socket.close();
+                socket.close(3001, 'Unknown packet type : "' + type + '"');
         }
     }
 }
-module.exports = protocol;
+module.exports = protocolv0

@@ -8,10 +8,14 @@ const path = require('path');
 const gravatar = require('gravatar');
 
 const event = require('./events');
-const protocolv0 = require('./protocol/v0/p');
-const protocolv1 = require('./protocol/v1/p');
+const protocolv0 = require('./protocol/v0/p.js');
+const protocolv1 = require('./protocol/v1/p.js');
 
-var thisServer = {
+const jsonstorage = require('./storage/json.js');
+const mysqlstorage = require('./storage/mysql.js');
+const sqlitestorage = require('./storage/sqlite.js');
+
+var server = {
     config: null,
     port: 9000,
     app: null,
@@ -22,47 +26,41 @@ var thisServer = {
     server: null,
     protocols: ["v1"],
 
-    create: function (config) {
-        this.config = config
+    create: async function (config) {
+        this.config = config;
         this.app = express();
-        this.app.use('/invite', express.static(path.join(__dirname, 'invite')));
+        this.app.use('/invite', express.static('invite'));
         var plugins = [];
 
-        // Prepare storage engine
-        var storageEngineFileName = path.join(__dirname, 'storage', config['storage']);
-        var storageEngineExists = false;
-        try {
-            if (fs.existsSync(storageEngineFileName + ".js")) {
-                storageEngineExists = true;
-            }
-        } catch (err) {
-            console.error(err)
+        switch (config['storage']) {
+            case "mysql":
+                this.storage = mysqlstorage;
+                break;
+            case "sqlite":
+                this.storage = sqlitestorage;
+                break
+            case "json":
+                this.storage = jsonstorage;
+                break
+            default:
+                console.error("Storage option not available : " + config['storage']);
+                process.exit(1);
         }
-        if (!storageEngineExists) {
-            console.error("Storage option not available : " + config['storage']);
-            process.exit(1);
-        }
-        this.storage = require(storageEngineFileName);
-        if (!this.storage) {
-            console.error("Storage option non-functional : " + config['storage']);
-            process.exit(1);
-        }
-
-        this.storage.start();
-        if (this.storage.getAllAccounts().length == 0) {
+        await this.storage.start();
+        if ((await this.storage.getAllAccounts()).length == 0) {
             // Should be run when no users are in config
             var userUuid = uuidv4();
             var password = uuidv4();
-            console.log("Created Root account.");
+            console.log("Created Root account : root@localhost");
             console.log("Pass : " + password);
-            this.storage.createAccount({
+            await this.storage.createAccount({
                 id: userUuid,
                 name: "root",
                 password,
                 email: "root@localhost",
                 group: "admin"
             });
-            [
+            for (const perm of [
                 'createRoom',
                 'createUser',
                 'renameRoom',
@@ -78,35 +76,41 @@ var thisServer = {
                 "changeMessage",
                 "noInviteFor",
                 "inviteUserAny"
-            ].forEach(perm => {
-                this.storage.addGroupPermission('admin', perm);
-            });
+            ]) {
+                await this.storage.addGroupPermission('admin', perm);
+            };
 
-            [
+            for (const perm of [
                 "joinVoiceRoom",
                 "sendMessage"
-            ].forEach(perm => {
-                this.storage.addGroupPermission('user', perm);
-            });
+            ]) {
+                await this.storage.addGroupPermission('user', perm);
+            };
+
+            var roomUuid = uuidv4();
+            await this.storage.createRoom({ id: roomUuid, name: "Main", type: "text" });
+
+            var voiceUuid = uuidv4();
+            await this.storage.createRoom({ id: voiceUuid, name: "Chat", type: "voice" });
 
             console.log(this.storage.storage);
         }
 
         if ('plugins' in config) {
             config.plugins.forEach(plugin => {
-                const pluginFileName = path.join(__dirname, 'plugin', plugin);
+                const pluginFileName = path.join('plugin', plugin + '.js');
                 var exist = false;
                 try {
-                    if (fs.existsSync(pluginFileName + '.js')) {
+                    if (fs.existsSync(pluginFileName)) {
                         exist = true;
                     }
                 } catch (err) {
                     console.log(err);
                 }
                 if (exist) {
-                    plugins.push(require(pluginFileName));
+                    plugins.push(require("./" + pluginFileName));
                 } else {
-                    console.log("Could not load '" + pluginFileName + ".js'");
+                    console.log('Could not load \'' + pluginFileName + '\'');
                     process.exit(1);
                 }
             });
@@ -127,20 +131,20 @@ var thisServer = {
         // Prepare event system
         this.event.init();
 
-        plugins.forEach(plugin => {
+        for (const plugin of plugins) {
             this.event.trigger('pluginprep', { pluginName: plugin.pluginName, ref: plugin });
-            plugin.start(thisServer);
+            plugin.start(server);
             this.event.trigger('pluginstart', { pluginName: plugin.pluginName, ref: plugin });
-        })
+        }
 
         this.event.trigger('serverprep', {});
-        thisServer.init();
+        server.init();
 
         this.event.trigger('serverstart', {});
     },
 
     init: function () {
-        this.wss.on("connection", ws => { thisServer.startConnection(ws) });
+        this.wss.on("connection", ws => { server.startConnection(ws) });
 
         // TODO Populate client context menu
 
@@ -197,10 +201,10 @@ var thisServer = {
         })
     },
 
-    sendUpdateUsers: function () {
+    sendUpdateUsers: async function () {
         this.sendToAll(this.connections, {
             type: 'updateUsers',
-            userList: this.updateUsers()
+            userList: await this.updateUsers()
         });
     },
 
@@ -209,10 +213,10 @@ var thisServer = {
         this.sendToAll(this.connections, { type: 'updateText', roomid: roomid, segment: segnum, messages: this.storage.getTextForRoom(roomid, segnum) });
     },
 
-    sendUpdateRooms: function () {
+    sendUpdateRooms: async function () {
         this.sendToAll(this.connections, {
             type: 'updateRooms',
-            roomList: this.updateRooms()
+            roomList: await this.updateRooms()
         });
     },
 
@@ -237,13 +241,13 @@ var thisServer = {
     },
 
     isUserSuppressed: function (userid) {
-        let conn = false;
+        let supp = false;
         Object.values(this.connections).forEach(connection => {
             if (connection.id === userid && connection.suppress) {
-                conn = connection.suppress;
+                supp = connection.suppress;
             }
         })
-        return conn;
+        return supp;
     },
 
     setUserSuppressed: function (userid, suppress) {
@@ -273,11 +277,11 @@ var thisServer = {
     },
 
 
-    updateUsers: function () {
+    updateUsers: async function () {
         // Create a client-usable copy of users
         // Add transient data, hide private
         let users = [];
-        this.storage.getAllAccounts().forEach(account => {
+        (await this.storage.getAllAccounts()).forEach(account => {
             if (!('hidden' in account)) {
                 account.hidden = false;
             }
@@ -329,11 +333,11 @@ var thisServer = {
         this.sendUpdateRooms();
     },
 
-    updateRooms: function () {
+    updateRooms: async function () {
         // Create a client-usable copy of rooms
         // Add transient data
         let array = [];
-        this.storage.getAllRooms().forEach(room => {
+        (await this.storage.getAllRooms()).forEach(room => {
             array.push(
                 {
                     id: room.id,
@@ -346,11 +350,11 @@ var thisServer = {
         return array;
     },
 
-    getGroups: function () {
+    getGroups: async function () {
         var list = {};
-        this.storage.getGroups().forEach(group => {
-            list[group] = this.storage.getGroupPermissionList(group);
-        })
+        for (const group of (await this.storage.getGroups())) {
+            list[group] = await this.storage.getGroupPermissionList(group);
+        }
         return list;
     },
 
@@ -369,24 +373,24 @@ var thisServer = {
                 this.sendUpdateUsers();
             }
         });
-        ws.on("message", msg => {
+        ws.on("message", async (msg) => {
             let data;
             try {
                 data = JSON.parse(msg);
             } catch (e) {
-                console.log("Invalid JSON "+e);
+                console.log("Invalid JSON " + e);
                 data = {}
             }
             switch (ws.protocol_version) {
                 case "v0":
-                    protocolv0.handle(this, ws, data);
+                    await protocolv0.handle(this, ws, data);
                     break;
                 case "v1":
-                    protocolv1.handle(this, ws, data);
+                    await protocolv1.handle(this, ws, data);
                     break;
                 default:
                     this.sendTo(ws, { type: 'error', message: 'Invalid protocol : "' + ws.protocol_version + '"' });
-                    ws.close();
+                    ws.close(3001, 'Invalid protocol : "' + ws.protocol_version + '"');
             }
         });
         var url = null;
@@ -407,4 +411,4 @@ var thisServer = {
 
     }
 }
-module.exports = thisServer;
+module.exports = server;

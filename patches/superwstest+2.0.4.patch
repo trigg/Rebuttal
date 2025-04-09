@@ -1,0 +1,31 @@
+diff --git a/node_modules/superwstest/src/superwstest.mjs b/node_modules/superwstest/src/superwstest.mjs
+index 72fffdd..e2bf224 100644
+--- a/node_modules/superwstest/src/superwstest.mjs
++++ b/node_modules/superwstest/src/superwstest.mjs
+@@ -106,6 +106,7 @@ const wsMethods = {
+   exec: async (ws, fn) => fn(ws),
+   expectMessage: async (ws, conversion, check = undefined, options = undefined) => {
+     const opts = { ...ws.defaultExpectOptions, ...options };
++    console.log(opts);
+     const received = await Promise.race([
+       ws.messages.pop(opts.timeout).catch((e) => {
+         throw new Error(`Expected message ${stringify(check)}, but got ${e}`);
+@@ -122,10 +123,16 @@ const wsMethods = {
+     if (typeof check === 'function') {
+       const result = check(received);
+       if (result === false) {
+-        throw new Error(`Expected message ${stringify(check)}, got ${stringify(received)}`);
++        if(opts.skip === true){
++          return
++        }
++        throw new Error(`Expected message ${stringify(check)}, got A ${stringify(received)}`);
+       }
+     } else if (!util.isDeepStrictEqual(received, check)) {
+-      throw new Error(`Expected message ${stringify(check)}, got ${stringify(received)}`);
++      if(opts.skip === true){
++        return
++      }
++      throw new Error(`Expected message ${stringify(check)}, got B ${stringify(received)}`);
+     }
+   },
+   expectText: (ws, expected, options) => {

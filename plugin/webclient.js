@@ -28,10 +28,10 @@ var plugin = {
         this.themelist = [];
 
         // Enumerate all themes on the server side
-        fs.readdirSync(path.join(__dirname, '..', 'client', 'public', 'img'), { withFileTypes: true })
+        fs.readdirSync(path.join('client', 'public', 'img'), { withFileTypes: true })
             .filter(entry => entry.isDirectory())
             .forEach(entry => {
-                var themefile = path.join(__dirname, '..', 'client', 'public', 'img', entry.name, 'theme.json');
+                var themefile = path.join('client', 'public', 'img', entry.name, 'theme.json');
                 if (fs.existsSync(themefile)) {
                     var data = JSON.parse(fs.readFileSync(themefile));
                     data.id = entry.name;
@@ -45,7 +45,7 @@ var plugin = {
 
         // Inject themes into welcomeObj
         server.event.listen('connectionnew', server.event.priority.NORMAL, function (event) {
-            event.welcomeObj.themelist = this.themelist;
+            event.welcomeObj.themelist = plugin.themelist;
         });
     }
 };

@@ -1,14 +1,14 @@
 `use strict`;
-const sqlite = require('better-sqlite3');
-const bcrypt = require('bcrypt');
-const fs = require('fs');
+const sqlite = require('better-sqlite3')
+const bcrypt = require('bcrypt')
+const fs = require('fs')
 
 /**
  * Be aware that sanity checking data is NOT to be done in the storage modules.
  *
  * All data must be sanity checked in the core app.
  */
-var storage = {
+var sqlitestorage = {
     db: null,
     fileName: "data.sqlite",
     sqlGetRoomsByID: 'SELECT * FROM room WHERE id = ?',
@@ -71,7 +71,7 @@ var storage = {
     stmtDeletePluginDataKey: null,
     stmtDeletePluginData: null,
 
-    coerceUser: function (user) {
+    coerceUser: async function (user) {
         user.group = user.groupid;
         delete user.groupid;
         if (user.avatar === null) {
@@ -86,7 +86,7 @@ var storage = {
      * @param {uuid} roomid
      * @returns room
      */
-    getRoomByID: function (roomid) {
+    getRoomByID: async function (roomid) {
         var room = this.stmtGetRoomsByID.get([roomid]);
         if (!room) { return null; }
         return room;
@@ -98,7 +98,7 @@ var storage = {
      * @param {string} password
      * @returns
      */
-    getAccountByLogin: function (email, password) {
+    getAccountByLogin: async function (email, password) {
         var user = this.stmtGetAccountByLogin.get([email]);
         if (!user) { return null; }
         // SQL would not accept 'group' as field name
@@ -113,7 +113,7 @@ var storage = {
      * @param {uuid} userid
      * @returns user
      */
-    getAccountByID: function (userid) {
+    getAccountByID: async function (userid) {
         var user = this.stmtGetAccountById.get(userid);
         if (!user) { return null; }
         return this.coerceUser(user);
@@ -122,7 +122,7 @@ var storage = {
      * Get list of all rooms
      * @returns rooms
      */
-    getAllRooms: function () {
+    getAllRooms: async function () {
         return this.stmtGetAllRooms.all();;
     },
     /**
@@ -130,7 +130,7 @@ var storage = {
      *
      * @returns accounts
      */
-    getAllAccounts: function () {
+    getAllAccounts: async function () {
         var a = this.stmtGetAllAccounts.all();
         a.forEach(user => {
             this.coerceUser(user);
@@ -142,7 +142,7 @@ var storage = {
      * Add new account to account list
      * @param {user} details
      */
-    createAccount: function (details) {
+    createAccount: async function (details) {
         //id,name,email,password,avatar,groupid
         var hash = bcrypt.hashSync(details.password, 10);
         if (!('hidden' in details)) {
@@ -163,7 +163,7 @@ var storage = {
      * Add new room to room list
      * @param {room} details
      */
-    createRoom: function (details) {
+    createRoom: async function (details) {
         this.stmtCreateRoom.run(details.id, details.name, details.type);
     },
 
@@ -174,7 +174,7 @@ var storage = {
      * @param {uuid} userid
      * @param {user} details
      */
-    updateAccount: function (userid, details) {
+    updateAccount: async function (userid, details) {
         this.stmtUpdateAccount.run(details.name, details.avatar ? details.avatar : null, details.group, userid);
     },
 
@@ -183,7 +183,7 @@ var storage = {
      * @param {uuid} roomid
      * @param {room} details
      */
-    updateRoom: function (roomid, details) {
+    updateRoom: async function (roomid, details) {
         this.stmtUpdateRoom.run(details.name, details.type, roomid);
     },
 
@@ -191,7 +191,7 @@ var storage = {
      * Remove User Account
      * @param {uuid} userid
      */
-    removeAccount: function (userid) {
+    removeAccount: async function (userid) {
         this.stmtRemoveAccount.run(userid);
     },
 
@@ -199,7 +199,7 @@ var storage = {
      * Remove room
      * @param {uuid} roomid
      */
-    removeRoom: function (roomid) {
+    removeRoom: async function (roomid) {
         this.stmtRemoveRoom.run(roomid);
     },
 
@@ -208,7 +208,7 @@ var storage = {
      * @param {uuid} roomid
      * @param {int} segment
      */
-    getTextForRoom: function (uuid, segment) {
+    getTextForRoom: async function (uuid, segment) {
         var start = segment * 5;
         var end = (segment + 1) * 5;
         var a = this.stmtGetTextForRoom.all(uuid, start, end);
@@ -233,7 +233,7 @@ var storage = {
      * Get newest, possibly incomplete, segment
      * @param {uuid} uuid
      */
-    getTextRoomNewestSegment: function (uuid) {
+    getTextRoomNewestSegment: async function (uuid) {
         var a = this.stmtGetTextRoomNextSegment.get(uuid);
         var last = Math.floor((a.count - 1) / 5);
         if (last < 0) { last = 0 }
@@ -246,7 +246,7 @@ var storage = {
      * @param {uuid} roomid
      * @param {object} message
      */
-    addNewMessage: function (roomid, message) {
+    addNewMessage: async function (roomid, message) {
         var idx = this.stmtGetTextRoomNextSegment.get(roomid);
         this.stmtAddNewMessage.run(idx.count,
             roomid,
@@ -266,7 +266,7 @@ var storage = {
      * @param {int} messageid
      * @param {object} contents
      */
-    updateMessage: function (roomid, messageid, contents) {
+    updateMessage: async function (roomid, messageid, contents) {
         this.stmtUpdateMessage.run(
             contents.text,
             contents.url ? contents.url : null,
@@ -281,11 +281,11 @@ var storage = {
      * @param {uuid} roomid
      * @param {int} messageid
      */
-    removeMessage: function (roomid, messageid) {
+    removeMessage: async function (roomid, messageid) {
         this.updateMessage(roomid, messageid, { text: '*Message Removed*', });
     },
 
-    getAccountPermission: function (userid, permission) {
+    getAccountPermission: async function (userid, permission) {
         if (!userid) {
             return false;
         }
@@ -294,12 +294,12 @@ var storage = {
         return this.getGroupPermission(user.group, permission);
     },
 
-    getGroupPermission: function (groupname, permission) {
+    getGroupPermission: async function (groupname, permission) {
         var a = this.stmtGetGroupPermission.all(groupname, permission);
         return a.length > 0;
     },
 
-    getGroupPermissionList: function (groupname) {
+    getGroupPermissionList: async function (groupname) {
         var list = [];
 
         this.stmtGetGroupPermissionList.all(groupname).forEach(
@@ -310,19 +310,19 @@ var storage = {
         return list;
     },
 
-    addGroupPermission: function (groupname, permission) {
+    addGroupPermission: async function (groupname, permission) {
         this.stmtAddGroupPermission.run(permission, groupname);
     },
 
-    removeGroupPermission: function (groupname, permission) {
+    removeGroupPermission: async function (groupname, permission) {
         this.stmtRemoveGroupPermission.run(groupname, permission);
     },
 
-    setAccountGroup: function (userid, groupname) {
+    setAccountGroup: async function (userid, groupname) {
         this.stmtSetAccountGroup.run(groupname, userid);
     },
 
-    setAccountPassword: function (userid, password) {
+    setAccountPassword: async function (userid, password) {
         var hash = bcrypt.hashSync(password, 10);
         this.stmtSetAccountPassword.run(hash, userid);
     },
@@ -331,7 +331,7 @@ var storage = {
      *
      * @returns List of group names
      */
-    getGroups: function () {
+    getGroups: async function () {
         var list = []
         this.stmtGetGroups.all().forEach(group => {
             list.push(group.groupid);
@@ -339,11 +339,11 @@ var storage = {
         return list;
     },
 
-    generateSignUp: function (group, uuid) {
+    generateSignUp: async function (group, uuid) {
         this.stmtGenerateSignUp.run(group, uuid);
     },
 
-    expendSignUp: function (uuid) {
+    expendSignUp: async function (uuid) {
         var g = this.stmtGetSignUp.get(uuid);
         if (g) {
             this.stmtRemoveSignUp.run(uuid);
@@ -358,7 +358,7 @@ var storage = {
      * @param {string} key
      * @param {string} value
      */
-    setPluginData: function (pluginName, key, value) {
+    setPluginData: async function (pluginName, key, value) {
         this.stmtSetPluginDataKey.run(pluginName, key, value, value)
     },
 
@@ -368,7 +368,7 @@ var storage = {
      * @param {string} key
      * @returns a string value
      */
-    getPluginData: function (pluginName, key) {
+    getPluginData: async function (pluginName, key) {
         var data = this.stmtGetPluginDataKey.get(pluginName, key);
         if (!data) {
             return null;
@@ -381,7 +381,7 @@ var storage = {
      * @param {string} pluginName
      * @returns associative array of key & values
      */
-    getAllPluginData: function (pluginName) {
+    getAllPluginData: async function (pluginName) {
         var data = this.stmtGetPluginData.all(pluginName);
         var ret = {};
         for (let row of data) {
@@ -395,7 +395,7 @@ var storage = {
      * @param {string} pluginName
      * @param {string} key
      */
-    deletePluginData: function (pluginName, key) {
+    deletePluginData: async function (pluginName, key) {
         this.stmtDeletePluginDataKey.run(pluginName, key);
     },
 
@@ -403,7 +403,7 @@ var storage = {
      * Delete all plugin data for a plugin
      * @param {string} pluginName
      */
-    deleteAllPluginData: function (pluginName) {
+    deleteAllPluginData: async function (pluginName) {
         this.stmtDeletePluginData.run(pluginName);
     },
 
@@ -411,7 +411,7 @@ var storage = {
     /**
      * Called at start of server
      */
-    start: function () {
+    start: async function () {
         // If we're in testing mode, delete the file first.
         if (this.fileName == "test_mode.sqlite" && fs.existsSync(this.fileName)) {
             fs.unlinkSync(this.fileName);
@@ -420,7 +420,7 @@ var storage = {
         this.prepare();
     },
 
-    createDatabase: function () {
+    createDatabase: async function () {
         console.log("CREATING DATABASE");
         this.db.exec('CREATE TABLE IF NOT EXISTS user (id TEXT NOT NULL UNIQUE, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL,avatar TEXT,groupid TEXT NOT NULL,hidden INTEGER NOT NULL)');
         this.db.exec('CREATE TABLE IF NOT EXISTS room (id TEXT NOT NULL UNIQUE, name TEXT NOT NULL, type TEXT NOT NULL)');
@@ -430,7 +430,7 @@ var storage = {
         this.db.exec('CREATE TABLE IF NOT EXISTS plugin (pluginName TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY (pluginName, key))');
     },
 
-    prepare: function () {
+    prepare: async function () {
         this.createDatabase();
 
         this.stmtGetRoomsByID = this.db.prepare(this.sqlGetRoomsByID);
@@ -468,16 +468,16 @@ var storage = {
     /**
      * Called before server stops. Probably. Most likely. Don't bet on it though
      */
-    exit: function () {
+    exit: async function () {
         sqlite.close();
     },
 
-    test_mode: function () {
+    test_mode: async function () {
         this.fileName = "test_mode.sqlite"
     },
 
-    test_passalong: function (f) {
+    test_passalong: async function (f) {
         f();
     }
 }
-module.exports = storage;
+module.exports = sqlitestorage;

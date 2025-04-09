@@ -7,7 +7,7 @@ const bcrypt = require('bcrypt');
  *
  * All data must be sanity checked in the core app.
  */
-var storage = {
+var jsonstorage = {
     storage: {},
     fileName: "test.json",
 
@@ -16,7 +16,7 @@ var storage = {
      * @param {uuid} roomid
      * @returns room
      */
-    getRoomByID: function (roomid) {
+    getRoomByID: async function (roomid) {
         let retroom = null;
         this.storage.rooms.forEach(room => {
             if (room.id == roomid) {
@@ -32,7 +32,7 @@ var storage = {
      * @param {string} password
      * @returns
      */
-    getAccountByLogin: function (email, password) {
+    getAccountByLogin: async function (email, password) {
         let retuser = null;
         this.storage.accounts.forEach(user => {
             if (user.email == email && bcrypt.compareSync(password, user.password)) {
@@ -47,7 +47,7 @@ var storage = {
      * @param {uuid} userid
      * @returns user
      */
-    getAccountByID: function (userid) {
+    getAccountByID: async function (userid) {
         let retuser = null;
         this.storage.accounts.forEach(user => {
             if (user.id === userid) {
@@ -60,7 +60,7 @@ var storage = {
      * Get list of all rooms
      * @returns rooms
      */
-    getAllRooms: function () {
+    getAllRooms: async function () {
         return this.storage.rooms;
     },
     /**
@@ -68,7 +68,7 @@ var storage = {
      *
      * @returns accounts
      */
-    getAllAccounts: function () {
+    getAllAccounts: async function () {
         return this.storage.accounts;
     },
 
@@ -76,7 +76,7 @@ var storage = {
      * Add new account to account list
      * @param {user} details
      */
-    createAccount: function (details) {
+    createAccount: async function (details) {
         details.password = bcrypt.hashSync(details.password, 10);
 
         this.storage.accounts.push(details);
@@ -87,7 +87,7 @@ var storage = {
      * Add new room to room list
      * @param {room} details
      */
-    createRoom: function (details) {
+    createRoom: async function (details) {
         this.storage.rooms.push(details);
         this.save();
     },
@@ -97,8 +97,8 @@ var storage = {
      * @param {uuid} userid
      * @param {user} details
      */
-    updateAccount: function (userid, details) {
-        this.removeAccount(userid);
+    updateAccount: async function (userid, details) {
+        await this.removeAccount(userid);
         details['id'] = userid;
         this.storage.accounts.push(details);
         this.save();
@@ -109,8 +109,8 @@ var storage = {
      * @param {uuid} roomid
      * @param {room} details
      */
-    updateRoom: function (roomid, details) {
-        this.removeRoom(roomid);
+    updateRoom: async function (roomid, details) {
+        await this.removeRoom(roomid);
         details['id'] = roomid;
         this.storage.rooms.push(details);
         this.save();
@@ -120,8 +120,8 @@ var storage = {
      * Remove User Account
      * @param {uuid} userid
      */
-    removeAccount: function (userid) {
-        var user = this.getAccountByID(userid);
+    removeAccount: async function (userid) {
+        var user = await this.getAccountByID(userid);
         var idx = this.storage.accounts.indexOf(user);
         this.storage.accounts.splice(idx, 1);
         this.save();
@@ -131,8 +131,8 @@ var storage = {
      * Remove room
      * @param {uuid} roomid
      */
-    removeRoom: function (roomid) {
-        var room = this.getRoomByID(roomid);
+    removeRoom: async function (roomid) {
+        var room = await this.getRoomByID(roomid);
         var idx = this.storage.rooms.indexOf(room);
         this.storage.rooms.splice(idx, 1);
         this.save();
@@ -143,7 +143,7 @@ var storage = {
      * @param {uuid} roomid
      * @param {int} segment
      */
-    getTextForRoom: function (uuid, segment) {
+    getTextForRoom: async function (uuid, segment) {
         var start = segment * 5;
         var end = (segment + 1) * 5;
         if (!(uuid in this.storage.messages)) {
@@ -156,7 +156,7 @@ var storage = {
      * Get newest, possibly incomplete, segment
      * @param {uuid} uuid
      */
-    getTextRoomNewestSegment: function (uuid) {
+    getTextRoomNewestSegment: async function (uuid) {
         if (uuid in this.storage.messages) {
             return Math.floor((this.storage.messages[uuid].length - 1) / 5);
         }
@@ -170,7 +170,7 @@ var storage = {
      * @param {uuid} roomid
      * @param {object} message
      */
-    addNewMessage: function (roomid, message) {
+    addNewMessage: async function (roomid, message) {
         if (!(roomid in this.storage.messages)) {
             this.storage.messages[roomid] = []
         }
@@ -187,7 +187,7 @@ var storage = {
      * @param {int} messageid
      * @param {object} contents
      */
-    updateMessage: function (roomid, messageid, contents) {
+    updateMessage: async function (roomid, messageid, contents) {
         this.storage.messages[roomid][messageid] = contents;
         this.save();
     },
@@ -197,22 +197,22 @@ var storage = {
      * @param {uuid} roomid
      * @param {int} messageid
      */
-    removeMessage: function (roomid, messageid) {
+    removeMessage: async function (roomid, messageid) {
         this.storage.messages[roomid][messageid]['text'] = '*Message Removed*';
 
         this.save();
     },
 
-    getAccountPermission: function (userid, permission) {
+    getAccountPermission: async function (userid, permission) {
         if (!userid) {
             return false;
         }
-        var user = this.getAccountByID(userid);
+        var user = await this.getAccountByID(userid);
         if (!user) { return false; }
-        return this.getGroupPermission(user.group, permission);
+        return await this.getGroupPermission(user.group, permission);
     },
 
-    getGroupPermission: function (groupname, permission) {
+    getGroupPermission: async function (groupname, permission) {
         var permList = this.storage.permissions[groupname];
         if (permList == undefined) {
             permList = this.storage.permissions[groupname] = [];
@@ -223,11 +223,11 @@ var storage = {
         return false;
     },
 
-    getGroupPermissionList: function (groupname) {
+    getGroupPermissionList: async function (groupname) {
         return this.storage.permissions[groupname];
     },
 
-    addGroupPermission: function (groupname, permission) {
+    addGroupPermission: async function (groupname, permission) {
         var permList = this.storage.permissions[groupname];
         if (permList == undefined) {
             permList = this.storage.permissions[groupname] = [];
@@ -239,7 +239,7 @@ var storage = {
         }
     },
 
-    removeGroupPermission: function (groupname, permission) {
+    removeGroupPermission: async function (groupname, permission) {
         var permList = this.storage.permissions[groupname];
         if (permList.indexOf(permission) > -1) {
             permList.push(permission);
@@ -248,26 +248,26 @@ var storage = {
         }
     },
 
-    setAccountGroup: function (userid, groupname) {
-        var account = this.getAccountByID(userid);
+    setAccountGroup: async function (userid, groupname) {
+        var account = await this.getAccountByID(userid);
         account.group = groupname;
-        this.updateAccount(userid, account);
+        await this.updateAccount(userid, account);
     },
 
     /**
      *
      * @returns List of group names
      */
-    getGroups: function () {
+    getGroups: async function () {
         return Object.keys(this.storage.permissions);
     },
 
-    generateSignUp: function (group, uuid) {
+    generateSignUp: async function (group, uuid) {
         this.storage.signUp[uuid] = group;
         this.save();
     },
 
-    expendSignUp: function (uuid) {
+    expendSignUp: async function (uuid) {
         if (uuid in this.storage.signUp) {
             var group = this.storage.signUp[uuid];
             delete this.storage.signUp[uuid];
@@ -277,16 +277,16 @@ var storage = {
         return null;
     },
 
-    setAccountPassword: function (userid, password) {
+    setAccountPassword: async function (userid, password) {
         var hash = bcrypt.hashSync(password, 10);
-        this.getAccountByID(userid).password = hash;
+        (await this.getAccountByID(userid)).password = hash;
         this.save();
     },
 
     /**
      * Called at start of server
      */
-    start: function () {
+    start: async function () {
         if (fs.existsSync(this.fileName)) {
             this.storage = JSON.parse(
                 fs.readFileSync(this.fileName)
@@ -308,7 +308,7 @@ var storage = {
          * @param {string} key
          * @param {string} value
          */
-    setPluginData: function (pluginName, key, value) {
+    setPluginData: async function (pluginName, key, value) {
         if (!(pluginName in this.storage.plugin)) {
             this.storage.plugin[pluginName] = {}
         }
@@ -322,7 +322,7 @@ var storage = {
      * @param {string} key
      * @returns a string value
      */
-    getPluginData: function (pluginName, key) {
+    getPluginData: async function (pluginName, key) {
         if (!(pluginName in this.storage.plugin)) {
             return null;
         }
@@ -337,7 +337,7 @@ var storage = {
      * @param {string} pluginName
      * @returns associative array of key & values
      */
-    getAllPluginData: function (pluginName) {
+    getAllPluginData: async function (pluginName) {
         if (!(pluginName in this.storage.plugin)) {
             return null;
         }
@@ -349,7 +349,7 @@ var storage = {
      * @param {string} pluginName
      * @param {string} key
      */
-    deletePluginData: function (pluginName, key) {
+    deletePluginData: async function (pluginName, key) {
         if (!(pluginName in this.storage.plugin)) {
             return;
         }
@@ -361,7 +361,7 @@ var storage = {
      * Delete all plugin data for a plugin
      * @param {string} pluginName
      */
-    deleteAllPluginData: function (pluginName) {
+    deleteAllPluginData: async function (pluginName) {
         this.storage.plugin[pluginName] = {};
         this.save();
     },
@@ -369,7 +369,7 @@ var storage = {
     /**
      * Not called by server. The storage plugin needs to ensure the integrity of the stored data on its own.
      */
-    save: function () {
+    save: async function () {
         if (this.fileName !== null) {
             fs.writeFileSync(this.fileName, JSON.stringify(this.storage));
         }
@@ -378,16 +378,16 @@ var storage = {
     /**
      * Called before server stops. Probably. Most likely. Don't bet on it though
      */
-    exit: function () {
+    exit: async function () {
         this.save();
     },
 
-    test_mode: function () {
+    test_mode: async function () {
         this.fileName = null;
     },
 
-    test_passalong: function (f) {
+    test_passalong: async function (f) {
         f();
     }
 }
-module.exports = storage;
+module.exports = jsonstorage

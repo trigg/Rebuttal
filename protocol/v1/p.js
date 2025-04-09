@@ -4,10 +4,10 @@ const path = require('path');
 const { Readable } = require('stream');
 const sizeOfImage = require('buffer-image-size');
 
-var protocol = {
-    uploadDir: '/uploads',
-    uploadUri :'/uploads',
-    switch: function (server, socket, user) {
+var protocolv1 = {
+    uploadDir: './uploads',
+    uploadUri: './uploads',
+    switch_protocol: async function (server, socket, user) {
         // Connection has just transfered from another protocol to v1.
         // Give them the information they'd expect to have
         socket.suppress = false;
@@ -16,16 +16,7 @@ var protocol = {
             userid: socket.id,
             success: true
         });
-        server.sendTo(socket, {
-            type: 'updateUsers',
-            userList: server.updateUsers()
-        });
-        server.sendTo(socket, {
-            type: 'updateRooms',
-            roomList: server.updateRooms()
-        });
-
-        var perms = server.storage.getGroupPermissionList(user.group);
+        var perms = await server.storage.getGroupPermissionList(user.group);
         server.sendTo(socket, {
             type: 'updatePerms',
             perms: perms
@@ -40,7 +31,7 @@ var protocol = {
         server.sendUpdateUsers();
 
     },
-    handle: function (server, socket, data) {
+    handle: async function (server, socket, data) {
         var uuid;
         const {
             type,
@@ -73,21 +64,27 @@ var protocol = {
         switch (type) {
             case 'invite':
                 uuid = uuidv4();
-
-                server.storage.generateSignUp(groupName, uuid);
-                server.sendTo(socket, {
-                    type: 'invite',
-                    url: server.config.url + 'invite/' + uuid
-                });
+                // TODO Invites from anyone outside of admin
+                if (await server.getAccountPermission(socket.id, "inviteUserAny")) {
+                    await server.storage.generateSignUp(groupName, uuid);
+                    server.sendTo(socket, {
+                        type: 'invite',
+                        url: server.config.url + 'invite/' + uuid
+                    });
+                } else {
+                    server.sendTo(socket, {
+                        type: 'error', message: 'Permission denied'
+                    })
+                }
                 break
             case "getmessages":
                 var getsegment;
                 if (segment === undefined || segment === null) {
-                    getsegment = server.storage.getTextRoomNewestSegment(roomid);
+                    getsegment = await server.storage.getTextRoomNewestSegment(roomid);
                 } else {
                     getsegment = segment;
                 }
-                var returnsegment = server.storage.getTextForRoom(roomid, getsegment);
+                var returnsegment = await server.storage.getTextForRoom(roomid, getsegment);
                 var ret = { type: 'updateText', roomid: roomid, segment: getsegment, messages: returnsegment };
                 server.sendToID(socket.id, ret);
                 break;
@@ -98,7 +95,7 @@ var protocol = {
                 var allow2 = server.event.trigger('messagesend', { userUuid: socket.id, userName: socket.name, roomUuid: roomid, message: message });
                 if (allow1 && allow2) {
                     if (filename && rawfile) {
-                        // TODO File upload in message event?
+                        // TODO File upload before message event?
                         fs.mkdirSync(path.join(this.uploadDir, socket.id), { recursive: true });
                         const reg = /[^a-z0-9-_]/gi;
                         outputfilename = filename;
@@ -124,7 +121,7 @@ var protocol = {
                         }
                     }
                     message.userid = socket.id;
-                    server.storage.addNewMessage(roomid, message);
+                    await server.storage.addNewMessage(roomid, message);
                     server.sendUpdatesMessages(roomid);
                     server.sendToAll(server.connections, { type: 'sendMessage', roomid: roomid, message: message })
                 } else {
@@ -143,6 +140,7 @@ var protocol = {
                 server.sendUpdateRooms();
                 break;
             case "video":
+                fromuserid = socket.id;
                 if (touserid && fromuserid && payload) {
                     server.sendToID(touserid, data);
                 }
@@ -158,6 +156,7 @@ var protocol = {
                 server.sendUpdateRooms();
                 break;
             case "letmesee":
+                fromuserid = socket.id;
                 server.sendToID(touserid, {
                     type: "letmesee",
                     touserid,
@@ -166,15 +165,15 @@ var protocol = {
                 });
                 break;
             case "createroom":
-                if (server.storage.getAccountPermission(socket.id, 'createRoom')) {
+                if (await server.storage.getAccountPermission(socket.id, 'createRoom')) {
                     if (roomType && roomName) {
                         var roomUuid = uuidv4();
-                        server.storage.createRoom({
+                        await server.storage.createRoom({
                             type: roomType,
                             name: roomName,
                             id: roomUuid
                         });
-                        server.event.trigger('roomdelete', { roomUuid: roomUuid })
+                        server.event.trigger('roomcreate', { roomUuid: roomUuid })
                         server.sendUpdateRooms();
                     } else {
                         server.sendTo(socket, { type: 'error', message: 'Not enough info' });
@@ -184,11 +183,11 @@ var protocol = {
                 }
                 break;
             case "createuser":
-                if (server.storage.getAccountPermission(socket.id, 'createUser')) {
+                if (await server.storage.getAccountPermission(socket.id, 'createUser')) {
                     if (userName && groupName && email) {
                         var password2 = uuidv4();
                         var userUuid = uuidv4();
-                        server.storage.createAccount({
+                        await server.storage.createAccount({
                             id: userUuid,
                             name: userName,
                             group: groupName,
@@ -206,11 +205,11 @@ var protocol = {
                 }
                 break;
             case "updateroom":
-                if (server.storage.getAccountPermission(socket.id, 'renameRoom')) {
+                if (await server.storage.getAccountPermission(socket.id, 'renameRoom')) {
                     if (roomName && roomid) {
-                        var room = server.storage.getRoomByID(roomid);
+                        var room = await server.storage.getRoomByID(roomid);
                         room.name = roomName;
-                        server.storage.updateRoom(roomid, room);
+                        await server.storage.updateRoom(roomid, room);
                         server.sendUpdateRooms();
                     } else {
                         server.sendTo(socket, { type: 'error', message: 'Not enough info' });
@@ -220,11 +219,11 @@ var protocol = {
                 }
                 break
             case "updateuser":
-                if (server.storage.getAccountPermission(socket.id, 'renameUser') || socket.id === userid) {
+                if (await server.storage.getAccountPermission(socket.id, 'renameUser') || socket.id === userid) {
                     if (userid && userName && userName.match(/^[a-zA-Z0-9-_ ]+$/)) {
-                        var user2 = server.storage.getAccountByID(userid);
+                        var user2 = await server.storage.getAccountByID(userid);
                         user2.name = userName;
-                        server.storage.updateAccount(userid, user2);
+                        await server.storage.updateAccount(userid, user2);
                         server.sendUpdateUsers();
                     } else {
                         server.sendTo(socket, { type: 'error', message: 'Not enough info' });
@@ -234,10 +233,10 @@ var protocol = {
                 }
                 break;
             case "removeroom":
-                if (server.storage.getAccountPermission(socket.id, 'removeRoom')) {
+                if (await server.storage.getAccountPermission(socket.id, 'removeRoom')) {
                     if (roomid) {
                         server.event.trigger('roomdelete', { roomUuid: roomid })
-                        server.storage.removeRoom(roomid);
+                        await server.storage.removeRoom(roomid);
                         server.sendUpdateRooms();
                     } else {
                         server.sendTo(socket, { type: 'error', message: 'Not enough info' });
@@ -247,7 +246,7 @@ var protocol = {
                 }
                 break;
             case "removeuser":
-                if (server.storage.getAccountPermission(socket.id, 'removeUser')) {
+                if (await server.storage.getAccountPermission(socket.id, 'removeUser')) {
                     var deleteuser = touserid;
                     if (touserid === null) {
                         deleteuser = socket.id
@@ -259,7 +258,7 @@ var protocol = {
                         }
                         server.event.trigger('userdelete', { userUuid: deleteuser })
                         server.disconnectId(deleteuser);
-                        server.storage.removeAccount(deleteuser);
+                        await server.storage.removeAccount(deleteuser);
                         server.sendUpdateUsers();
                     } else {
                         server.sendTo(socket, { type: 'error', message: 'Not enough info' });
@@ -270,10 +269,10 @@ var protocol = {
                 }
                 break;
             case "updatemessage":
-                if (server.storage.getAccountPermission(socket.id, 'changeMessage')) {
+                if (await server.storage.getAccountPermission(socket.id, 'changeMessage')) {
                     if (roomid && messageid && message) {
                         server.event.trigger('messagechange', { roomUuid: roomid, newMessage: message, oldMessage: "NOT IMPLEMENTED" })//TODO
-                        server.storage.updateMessage(roomid, messageid, message);
+                        await server.storage.updateMessage(roomid, messageid, message);
                         server.sendUpdatesMessages(roomid);
 
                     } else {
@@ -284,10 +283,10 @@ var protocol = {
                 }
                 break;
             case "removemessage":
-                if (server.storage.getAccountPermission(socket.id, 'removeMessage')) {
+                if (await server.storage.getAccountPermission(socket.id, 'removeMessage')) {
                     if (roomid && messageid) {
                         server.event.trigger('messagechange', { roomUuid: roomid, newMessage: 'removed', oldMessage: "NOT IMPLEMENTED" })//TODO
-                        server.storage.removeMessage(roomid, messageid);
+                        await server.storage.removeMessage(roomid, messageid);
                     } else {
                         server.sendTo(socket, { type: 'error', message: 'Not enough info' });
                     }
@@ -296,30 +295,30 @@ var protocol = {
                 }
                 break;
             case "creategroup":
-                if (server.storage.getAccountPermission(socket.id, 'setGroupPerm')) {
+                if (await server.storage.getAccountPermission(socket.id, 'setGroupPerm')) {
                     //TODO
                 } else {
                     server.sendTo(socket, { type: 'error', message: 'Permission denied "setGroupPerm"' });
                 }
                 break;
             case "updategroup":
-                if (server.storage.getAccountPermission(socket.id, 'setGroupPerm')) {
+                if (await server.storage.getAccountPermission(socket.id, 'setGroupPerm')) {
                     //TODO
                 } else {
                     server.sendTo(socket, { type: 'error', message: 'Permission denied "setGroupPerm"' });
                 }
                 break;
             case "removegroup":
-                if (server.storage.getAccountPermission(socket.id, 'setGroupPerm')) {
+                if (await server.storage.getAccountPermission(socket.id, 'setGroupPerm')) {
                     //TODO
                 } else {
                     server.sendTo(socket, { type: 'error', message: 'Permission denied "setGroupPerm"' });
                 }
                 break;
             case "setusergroup":
-                if (server.storage.getAccountPermission(socket.id, 'setUserGroup')) {
+                if (await server.storage.getAccountPermission(socket.id, 'setUserGroup')) {
                     if (userid && groupName) {
-                        server.storage.setAccountGroup(userid, groupName);
+                        await server.storage.setAccountGroup(userid, groupName);
                     } else {
                         server.sendTo(socket, { type: 'error', message: 'Not enough info' });
                     }
@@ -332,46 +331,22 @@ var protocol = {
                     server.sendToRoom(socket.currentRoom, { type: 'chatdev', video, audio, userid: socket.id });
                 }
                 break;
-            case 'fileupload':
-                // TODO Check permissions
-                var id = socket.id;
-                if (!id) {
-                    id = 'undefined'
-                }
-                fs.mkdir(path.join(this.uploadDir, id), { recursive: true }, (err) => {
-                    if (err) {
-                        console.error(err);
-                        process.exit(1);
-                    }
-                    const reg = /[^a-z0-9-_]/gi;
-                    var outputfilename = filename;
-                    outputfilename = outputfilename.replace(reg, '');
-                    outputfilename = path.join(this.uploadDir, id, outputfilename + uuidv4());
-                    const buffer = Buffer.from(rawfile, 'base64');
-                    try {
-                        var dim = sizeOfImage(buffer);
-                        console.log(dim.width, dim.height);
-                        var s = new Readable();
-                        s.push(buffer);
-                        s.push(null);
-                        s.pipe(fs.createWriteStream(outputfilename));
-                    } catch (e) {
-                        console.log("Could not accept uploaded file");
-                        console.log(e);
-                    }
-                });
-                break;
             case 'servermute':
-                if (userid && message) {
-                    server.setUserSuppressed(userid, message);
-                    server.sendToAll(server.connections, {
-                        type: 'servermute',
-                        userid,
-                        message
-                    })
+                if (await server.storage.getAccountPermission(socket.id, 'suppressUser')) {
+                    if (userid && message) {
+                        server.setUserSuppressed(userid, message);
+                        server.sendToAll(server.connections, {
+                            type: 'servermute',
+                            userid,
+                            message
+                        })
+                    }
+                } else {
+                    server.sendTo(socket, { type: 'error', message: 'Permission denied' })
                 }
                 break;
             case 'talking':
+                userid = socket.id;
                 if (userid && message) {
                     server.setUserTalking(userid, message);
                 }
@@ -393,9 +368,10 @@ var protocol = {
                 }
                 break;
             default:
+                console.log("v1 does not handle packet type : " + type);
                 server.sendTo(socket, { type: 'error', message: 'Unknown packet type : "' + type + '"' });
-                socket.close();
+                socket.close(3001, 'Unknown packet type : "' + type + '"');
         }
     }
 }
-module.exports = protocol;
+module.exports = protocolv1
