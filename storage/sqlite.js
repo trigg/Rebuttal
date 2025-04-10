@@ -1,7 +1,7 @@
 `use strict`;
-const sqlite = require('better-sqlite3')
-const bcrypt = require('bcrypt')
-const fs = require('fs')
+const sqlite = require('better-sqlite3');
+const bcrypt = require('bcrypt');
+const fs = require('fs');
 
 /**
  * Be aware that sanity checking data is NOT to be done in the storage modules.
@@ -10,36 +10,49 @@ const fs = require('fs')
  */
 var sqlitestorage = {
     db: null,
-    fileName: "data.sqlite",
+    fileName: 'data.sqlite',
     sqlGetRoomsByID: 'SELECT * FROM room WHERE id = ?',
     sqlGetAccountByLogin: 'SELECT * FROM user WHERE email = ?',
     sqlGetAccountById: 'SELECT * FROM user WHERE id = ?',
     sqlGetAllRooms: 'SELECT * FROM room',
     sqlGetAllAccounts: 'SELECT * FROM user',
-    sqlCreateAccount: 'INSERT INTO user (id,name,email,password,avatar,groupid,hidden) VALUES (?, ? ,?, ?, ?, ?, ?)',
+    sqlCreateAccount:
+        'INSERT INTO user (id,name,email,password,avatar,groupid,hidden) VALUES (?, ? ,?, ?, ?, ?, ?)',
     sqlCreateRoom: 'INSERT INTO room (id,name,type) VALUES (?, ?, ?)',
-    sqlUpdateAccount: 'UPDATE user SET name = ?, avatar = ?, groupid = ? WHERE id = ? ',
+    sqlUpdateAccount:
+        'UPDATE user SET name = ?, avatar = ?, groupid = ? WHERE id = ? ',
     sqlUpdateRoom: 'UPDATE room SET name = ?, type = ? WHERE id = ?',
     sqlRemoveAccount: 'DELETE FROM user WHERE id = ?',
     sqlRemoveRoom: 'DELETE FROM room where id = ?',
-    sqlGetTextForRoom: 'SELECT * FROM messages WHERE roomid = ? AND idx BETWEEN ? AND ? ORDER BY idx ASC LIMIT 5',
-    sqlGetTextRoomNextSegment: 'SELECT COUNT(idx) AS `count`  FROM messages WHERE roomid = ?',
-    sqlAddNewMessage: 'INSERT INTO messages (idx, roomid, text, url, userid, username, type, tags, img) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    sqlUpdateMessage: 'UPDATE messages SET text=?, url=?, type=?, img=? WHERE roomid = ? and idx = ?',
-    sqlGetGroupPermission: 'SELECT * FROM permission WHERE groupid = ? AND perm = ?',
+    sqlGetTextForRoom:
+        'SELECT * FROM messages WHERE roomid = ? AND idx BETWEEN ? AND ? ORDER BY idx ASC LIMIT 5',
+    sqlGetTextRoomNextSegment:
+        'SELECT COUNT(idx) AS `count`  FROM messages WHERE roomid = ?',
+    sqlAddNewMessage:
+        'INSERT INTO messages (idx, roomid, text, url, userid, username, type, tags, img) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    sqlUpdateMessage:
+        'UPDATE messages SET text=?, url=?, type=?, img=? WHERE roomid = ? and idx = ?',
+    sqlGetGroupPermission:
+        'SELECT * FROM permission WHERE groupid = ? AND perm = ?',
     sqlGetGroupPermissionList: 'SELECT perm FROM permission WHERE groupid = ?',
-    sqlAddGroupPermission: 'INSERT INTO permission (perm, groupid) VALUES (?, ?)',
-    sqlRemoveGroupPermission: 'DELETE FROM permission WHERE groupid = ? AND perm = ?',
+    sqlAddGroupPermission:
+        'INSERT INTO permission (perm, groupid) VALUES (?, ?)',
+    sqlRemoveGroupPermission:
+        'DELETE FROM permission WHERE groupid = ? AND perm = ?',
     sqlSetAccountGroup: 'UPDATE user SET groupid = ? WHERE id = ?',
     sqlGetGroups: 'SELECT DISTINCT groupid FROM permission',
     sqlGenerateSignUp: 'INSERT INTO signup (groupid, id) VALUES (?, ?)',
     sqlGetSignUp: 'SELECT groupid,id FROM signup WHERE id = ?',
     sqlRemoveSignUp: 'DELETE FROM signup WHERE id = ?',
-    sqlGetPluginDataKey: 'SELECT value FROM plugin WHERE pluginName = ? AND key = ?',
-    sqlSetPluginDataKey: 'INSERT INTO plugin (pluginName, key, value) VALUES (?, ?, ?) ON CONFLICT(pluginName,key) DO UPDATE SET value = ?',
+    sqlGetPluginDataKey:
+        'SELECT value FROM plugin WHERE pluginName = ? AND key = ?',
+    sqlSetPluginDataKey:
+        'INSERT INTO plugin (pluginName, key, value) VALUES (?, ?, ?) ON CONFLICT(pluginName,key) DO UPDATE SET value = ?',
     sqlGetPluginData: 'SELECT key, value FROM plugin WHERE pluginName = ?',
-    sqlDeletePluginDataKey: 'DELETE FROM plugin WHERE pluginName = ? AND key = ?',
+    sqlDeletePluginDataKey:
+        'DELETE FROM plugin WHERE pluginName = ? AND key = ?',
     sqlDeletePluginData: 'DELETE FROM plugin where pluginName = ?',
+    sqlSetAccountPassword: 'UPDATE user SET password = ? WHERE id = ?',
 
     stmtGetRoomsByID: null,
     stmtGetAccountByLogin: null,
@@ -70,6 +83,7 @@ var sqlitestorage = {
     stmtGetPluginData: null,
     stmtDeletePluginDataKey: null,
     stmtDeletePluginData: null,
+    stmtSetAccountPassword: null,
 
     coerceUser: async function (user) {
         user.group = user.groupid;
@@ -88,7 +102,9 @@ var sqlitestorage = {
      */
     getRoomByID: async function (roomid) {
         var room = this.stmtGetRoomsByID.get([roomid]);
-        if (!room) { return null; }
+        if (!room) {
+            return null;
+        }
         return room;
     },
 
@@ -100,7 +116,9 @@ var sqlitestorage = {
      */
     getAccountByLogin: async function (email, password) {
         var user = this.stmtGetAccountByLogin.get([email]);
-        if (!user) { return null; }
+        if (!user) {
+            return null;
+        }
         // SQL would not accept 'group' as field name
         if (bcrypt.compareSync(password, user.password)) {
             return this.coerceUser(user);
@@ -115,7 +133,9 @@ var sqlitestorage = {
      */
     getAccountByID: async function (userid) {
         var user = this.stmtGetAccountById.get(userid);
-        if (!user) { return null; }
+        if (!user) {
+            return null;
+        }
         return this.coerceUser(user);
     },
     /**
@@ -123,7 +143,7 @@ var sqlitestorage = {
      * @returns rooms
      */
     getAllRooms: async function () {
-        return this.stmtGetAllRooms.all();;
+        return this.stmtGetAllRooms.all();
     },
     /**
      * Get all accounts. This should NOT return password. Really. It shouldn't
@@ -132,9 +152,9 @@ var sqlitestorage = {
      */
     getAllAccounts: async function () {
         var a = this.stmtGetAllAccounts.all();
-        a.forEach(user => {
+        for (let user of a) {
             this.coerceUser(user);
-        });
+        }
         return a;
     },
 
@@ -155,8 +175,8 @@ var sqlitestorage = {
             hash,
             details.avatar ? details.avatar : null,
             details.group,
-            details.hidden ? 1 : 0
-        )
+            details.hidden ? 1 : 0,
+        );
     },
 
     /**
@@ -175,7 +195,12 @@ var sqlitestorage = {
      * @param {user} details
      */
     updateAccount: async function (userid, details) {
-        this.stmtUpdateAccount.run(details.name, details.avatar ? details.avatar : null, details.group, userid);
+        this.stmtUpdateAccount.run(
+            details.name,
+            details.avatar ? details.avatar : null,
+            details.group,
+            userid,
+        );
     },
 
     /**
@@ -212,7 +237,7 @@ var sqlitestorage = {
         var start = segment * 5;
         var end = (segment + 1) * 5;
         var a = this.stmtGetTextForRoom.all(uuid, start, end);
-        a.forEach(msg => {
+        for (let msg of a) {
             if (msg.url === 'null' || msg.url === null) {
                 delete msg.url;
             }
@@ -223,7 +248,7 @@ var sqlitestorage = {
                 delete msg.img;
             }
             msg.tags = JSON.parse(msg.tags);
-        })
+        }
         a.idx = a.id;
         a.id = undefined;
         return a;
@@ -236,7 +261,9 @@ var sqlitestorage = {
     getTextRoomNewestSegment: async function (uuid) {
         var a = this.stmtGetTextRoomNextSegment.get(uuid);
         var last = Math.floor((a.count - 1) / 5);
-        if (last < 0) { last = 0 }
+        if (last < 0) {
+            last = 0;
+        }
         return last;
     },
 
@@ -248,7 +275,8 @@ var sqlitestorage = {
      */
     addNewMessage: async function (roomid, message) {
         var idx = this.stmtGetTextRoomNextSegment.get(roomid);
-        this.stmtAddNewMessage.run(idx.count,
+        this.stmtAddNewMessage.run(
+            idx.count,
             roomid,
             message.text,
             message.url ? message.url : null,
@@ -256,7 +284,7 @@ var sqlitestorage = {
             message.username ? message.username : null,
             message.type ? message.type : null,
             JSON.stringify(message.tags),
-            message.img ? message.img : null
+            message.img ? message.img : null,
         );
     },
 
@@ -273,7 +301,8 @@ var sqlitestorage = {
             contents.type ? contents.type : null,
             contents.img ? contents.img : null,
             roomid,
-            messageid);
+            messageid,
+        );
     },
 
     /**
@@ -282,16 +311,15 @@ var sqlitestorage = {
      * @param {int} messageid
      */
     removeMessage: async function (roomid, messageid) {
-        this.updateMessage(roomid, messageid, { text: '*Message Removed*', });
+        this.updateMessage(roomid, messageid, { text: '*Message Removed*' });
     },
 
     getAccountPermission: async function (userid, permission) {
-        if (!userid) {
+        var user = await this.getAccountByID(userid);
+        if (!user) {
             return false;
         }
-        var user = this.getAccountByID(userid);
-        if (!user) { return false; }
-        return this.getGroupPermission(user.group, permission);
+        return await this.getGroupPermission(user.group, permission);
     },
 
     getGroupPermission: async function (groupname, permission) {
@@ -302,16 +330,16 @@ var sqlitestorage = {
     getGroupPermissionList: async function (groupname) {
         var list = [];
 
-        this.stmtGetGroupPermissionList.all(groupname).forEach(
-            perm => {
-                list.push(perm.perm);
-            }
-        )
+        for (let perm of this.stmtGetGroupPermissionList.all(groupname)) {
+            list.push(perm.perm);
+        }
         return list;
     },
 
     addGroupPermission: async function (groupname, permission) {
-        this.stmtAddGroupPermission.run(permission, groupname);
+        if ((await this.getGroupPermission(groupname, permission)) === false) {
+            this.stmtAddGroupPermission.run(permission, groupname);
+        }
     },
 
     removeGroupPermission: async function (groupname, permission) {
@@ -320,6 +348,17 @@ var sqlitestorage = {
 
     setAccountGroup: async function (userid, groupname) {
         this.stmtSetAccountGroup.run(groupname, userid);
+    },
+
+    createGroup: async function (groupname) {
+        // NOOP
+    },
+
+    removeGroup: async function (groupname) {
+        var list = await this.getGroupPermissionList(groupname);
+        for (var perm of list) {
+            await this.removeGroupPermission(groupname, perm);
+        }
     },
 
     setAccountPassword: async function (userid, password) {
@@ -332,10 +371,10 @@ var sqlitestorage = {
      * @returns List of group names
      */
     getGroups: async function () {
-        var list = []
-        this.stmtGetGroups.all().forEach(group => {
+        var list = [];
+        for (let group of this.stmtGetGroups.all()) {
             list.push(group.groupid);
-        });
+        }
         return list;
     },
 
@@ -359,7 +398,7 @@ var sqlitestorage = {
      * @param {string} value
      */
     setPluginData: async function (pluginName, key, value) {
-        this.stmtSetPluginDataKey.run(pluginName, key, value, value)
+        this.stmtSetPluginDataKey.run(pluginName, key, value, value);
     },
 
     /**
@@ -407,13 +446,15 @@ var sqlitestorage = {
         this.stmtDeletePluginData.run(pluginName);
     },
 
-
     /**
      * Called at start of server
      */
     start: async function () {
         // If we're in testing mode, delete the file first.
-        if (this.fileName == "test_mode.sqlite" && fs.existsSync(this.fileName)) {
+        if (
+            this.fileName == 'test_mode.sqlite' &&
+            fs.existsSync(this.fileName)
+        ) {
             fs.unlinkSync(this.fileName);
         }
         this.db = sqlite(this.fileName);
@@ -421,13 +462,25 @@ var sqlitestorage = {
     },
 
     createDatabase: async function () {
-        console.log("CREATING DATABASE");
-        this.db.exec('CREATE TABLE IF NOT EXISTS user (id TEXT NOT NULL UNIQUE, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL,avatar TEXT,groupid TEXT NOT NULL,hidden INTEGER NOT NULL)');
-        this.db.exec('CREATE TABLE IF NOT EXISTS room (id TEXT NOT NULL UNIQUE, name TEXT NOT NULL, type TEXT NOT NULL)');
-        this.db.exec('CREATE TABLE IF NOT EXISTS messages (idx INTEGER NOT NULL , roomid TEXT NOT NULL, text TEXT, url TEXT, userid TEXT, username TEXT, type TEXT, tags TEXT, img TEXT)');
-        this.db.exec('CREATE TABLE IF NOT EXISTS permission (perm TEXT NOT NULL, groupid TEXT NOT NULL)');
-        this.db.exec('CREATE TABLE IF NOT EXISTS signup (groupid TEXT NOT NULL, id TEXT NOT NULL UNIQUE)');
-        this.db.exec('CREATE TABLE IF NOT EXISTS plugin (pluginName TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY (pluginName, key))');
+        console.log('CREATING DATABASE');
+        this.db.exec(
+            'CREATE TABLE IF NOT EXISTS user (id TEXT NOT NULL UNIQUE, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL,avatar TEXT,groupid TEXT NOT NULL,hidden INTEGER NOT NULL)',
+        );
+        this.db.exec(
+            'CREATE TABLE IF NOT EXISTS room (id TEXT NOT NULL UNIQUE, name TEXT NOT NULL, type TEXT NOT NULL)',
+        );
+        this.db.exec(
+            'CREATE TABLE IF NOT EXISTS messages (idx INTEGER NOT NULL , roomid TEXT NOT NULL, text TEXT, url TEXT, userid TEXT, username TEXT, type TEXT, tags TEXT, img TEXT)',
+        );
+        this.db.exec(
+            'CREATE TABLE IF NOT EXISTS permission (perm TEXT NOT NULL, groupid TEXT NOT NULL)',
+        );
+        this.db.exec(
+            'CREATE TABLE IF NOT EXISTS signup (groupid TEXT NOT NULL, id TEXT NOT NULL UNIQUE)',
+        );
+        this.db.exec(
+            'CREATE TABLE IF NOT EXISTS plugin (pluginName TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY (pluginName, key))',
+        );
     },
 
     prepare: async function () {
@@ -445,13 +498,23 @@ var sqlitestorage = {
         this.stmtRemoveAccount = this.db.prepare(this.sqlRemoveAccount);
         this.stmtRemoveRoom = this.db.prepare(this.sqlRemoveRoom);
         this.stmtGetTextForRoom = this.db.prepare(this.sqlGetTextForRoom);
-        this.stmtGetTextRoomNextSegment = this.db.prepare(this.sqlGetTextRoomNextSegment);
+        this.stmtGetTextRoomNextSegment = this.db.prepare(
+            this.sqlGetTextRoomNextSegment,
+        );
         this.stmtAddNewMessage = this.db.prepare(this.sqlAddNewMessage);
         this.stmtUpdateMessage = this.db.prepare(this.sqlUpdateMessage);
-        this.stmtGetGroupPermission = this.db.prepare(this.sqlGetGroupPermission);
-        this.stmtGetGroupPermissionList = this.db.prepare(this.sqlGetGroupPermissionList);
-        this.stmtAddGroupPermission = this.db.prepare(this.sqlAddGroupPermission);
-        this.stmtRemoveGroupPermission = this.db.prepare(this.sqlRemoveGroupPermission);
+        this.stmtGetGroupPermission = this.db.prepare(
+            this.sqlGetGroupPermission,
+        );
+        this.stmtGetGroupPermissionList = this.db.prepare(
+            this.sqlGetGroupPermissionList,
+        );
+        this.stmtAddGroupPermission = this.db.prepare(
+            this.sqlAddGroupPermission,
+        );
+        this.stmtRemoveGroupPermission = this.db.prepare(
+            this.sqlRemoveGroupPermission,
+        );
         this.stmtSetAccountGroup = this.db.prepare(this.sqlSetAccountGroup);
         this.stmtGetGroups = this.db.prepare(this.sqlGetGroups);
         this.stmtGenerateSignUp = this.db.prepare(this.sqlGenerateSignUp);
@@ -461,23 +524,27 @@ var sqlitestorage = {
         this.stmtGetPluginDataKey = this.db.prepare(this.sqlGetPluginDataKey);
         this.stmtSetPluginDataKey = this.db.prepare(this.sqlSetPluginDataKey);
         this.stmtDeletePluginData = this.db.prepare(this.sqlDeletePluginData);
-        this.stmtDeletePluginDataKey = this.db.prepare(this.sqlDeletePluginDataKey);
-
+        this.stmtDeletePluginDataKey = this.db.prepare(
+            this.sqlDeletePluginDataKey,
+        );
+        this.stmtSetAccountPassword = this.db.prepare(
+            this.sqlSetAccountPassword,
+        );
     },
 
     /**
      * Called before server stops. Probably. Most likely. Don't bet on it though
      */
     exit: async function () {
-        sqlite.close();
+        this.db.close();
     },
 
     test_mode: async function () {
-        this.fileName = "test_mode.sqlite"
+        this.fileName = 'test_mode.sqlite';
     },
 
     test_passalong: async function (f) {
         f();
-    }
-}
+    },
+};
 module.exports = sqlitestorage;

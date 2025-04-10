@@ -1,8 +1,8 @@
-`use strict`
+`use strict`;
 const express = require('express');
-const WebSocket = require("ws");
+const WebSocket = require('ws');
 const https = require('https');
-const { v4: uuidv4 } = require("uuid");
+const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
 const gravatar = require('gravatar');
@@ -21,10 +21,16 @@ var server = {
     app: null,
     event: null,
     storage: null,
-    contextmenu: { user: [], room: [], textroom: [], voiceroom: [], message: [] },
+    contextmenu: {
+        user: [],
+        room: [],
+        textroom: [],
+        voiceroom: [],
+        message: [],
+    },
     connections: [],
     server: null,
-    protocols: ["v1"],
+    protocols: ['v1'],
 
     create: async function (config) {
         this.config = config;
@@ -33,32 +39,89 @@ var server = {
         var plugins = [];
 
         switch (config['storage']) {
-            case "mysql":
+            case 'mysql':
                 this.storage = mysqlstorage;
                 break;
-            case "sqlite":
+            case 'sqlite':
                 this.storage = sqlitestorage;
-                break
-            case "json":
+                break;
+            case 'json':
                 this.storage = jsonstorage;
-                break
+                break;
             default:
-                console.error("Storage option not available : " + config['storage']);
+                console.error(
+                    'Storage option not available : ' + config['storage'],
+                );
                 process.exit(1);
         }
         await this.storage.start();
+        await this.populateNewConfig();
+
+        if ('plugins' in config) {
+            for (let plugin of config.plugins) {
+                const pluginFileName = path.join('plugin', plugin + '.js');
+                var exist = false;
+                try {
+                    if (fs.existsSync(pluginFileName)) {
+                        exist = true;
+                    }
+                } catch (err) {
+                    console.log(err);
+                }
+                if (exist) {
+                    plugins.push(require('./' + pluginFileName));
+                } else {
+                    console.log("Could not load '" + pluginFileName + "'");
+                    process.exit(1);
+                }
+            }
+        }
+
+        var options = {
+            key: fs.readFileSync('key.pem'),
+            cert: fs.readFileSync('cert.pem'),
+        };
+        this.server = https.createServer(options, this.app, () => {
+            console.log('Started HTTPS server');
+        });
+
+        this.wss = new WebSocket.Server({ server: this.server, path: '/ipc' });
+        this.event = event;
+        this.port = config['port'];
+
+        // Prepare event system
+        this.event.init();
+
+        for (const plugin of plugins) {
+            this.event.trigger('pluginprep', {
+                pluginName: plugin.pluginName,
+                ref: plugin,
+            });
+            plugin.start(server);
+            this.event.trigger('pluginstart', {
+                pluginName: plugin.pluginName,
+                ref: plugin,
+            });
+        }
+
+        this.event.trigger('serverprep', {});
+        server.init();
+
+        this.event.trigger('serverstart', {});
+    },
+    populateNewConfig: async function () {
         if ((await this.storage.getAllAccounts()).length == 0) {
             // Should be run when no users are in config
             var userUuid = uuidv4();
             var password = uuidv4();
-            console.log("Created Root account : root@localhost");
-            console.log("Pass : " + password);
+            console.log('Created Root account : root@localhost');
+            console.log('Pass : ' + password);
             await this.storage.createAccount({
                 id: userUuid,
-                name: "root",
+                name: 'root',
                 password,
-                email: "root@localhost",
-                group: "admin"
+                email: 'root@localhost',
+                group: 'admin',
             });
             for (const perm of [
                 'createRoom',
@@ -70,95 +133,59 @@ var server = {
                 'removeUser',
                 'inviteUser',
                 'joinVoiceRoom',
-                "sendMessage",
-                "setUserGroup",
-                "setGroupPerm",
-                "changeMessage",
-                "noInviteFor",
-                "inviteUserAny"
+                'sendMessage',
+                'setUserGroup',
+                'setGroupPerm',
+                'changeMessage',
+                'noInviteFor',
+                'inviteUserAny',
             ]) {
                 await this.storage.addGroupPermission('admin', perm);
-            };
+            }
 
-            for (const perm of [
-                "joinVoiceRoom",
-                "sendMessage"
-            ]) {
+            for (const perm of ['joinVoiceRoom', 'sendMessage']) {
                 await this.storage.addGroupPermission('user', perm);
-            };
+            }
 
             var roomUuid = uuidv4();
-            await this.storage.createRoom({ id: roomUuid, name: "Main", type: "text" });
+            await this.storage.createRoom({
+                id: roomUuid,
+                name: 'Main',
+                type: 'text',
+            });
 
             var voiceUuid = uuidv4();
-            await this.storage.createRoom({ id: voiceUuid, name: "Chat", type: "voice" });
+            await this.storage.createRoom({
+                id: voiceUuid,
+                name: 'Chat',
+                type: 'voice',
+            });
 
             console.log(this.storage.storage);
         }
-
-        if ('plugins' in config) {
-            config.plugins.forEach(plugin => {
-                const pluginFileName = path.join('plugin', plugin + '.js');
-                var exist = false;
-                try {
-                    if (fs.existsSync(pluginFileName)) {
-                        exist = true;
-                    }
-                } catch (err) {
-                    console.log(err);
-                }
-                if (exist) {
-                    plugins.push(require("./" + pluginFileName));
-                } else {
-                    console.log('Could not load \'' + pluginFileName + '\'');
-                    process.exit(1);
-                }
-            });
-        }
-
-        var options = {
-            key: fs.readFileSync('key.pem'),
-            cert: fs.readFileSync('cert.pem')
-        }
-        this.server = https.createServer(options, this.app, () => {
-            console.log("Started HTTPS server")
-        })
-
-        this.wss = new WebSocket.Server({ server: this.server, path: "/ipc" });
-        this.event = event;
-        this.port = config['port'];
-
-        // Prepare event system
-        this.event.init();
-
-        for (const plugin of plugins) {
-            this.event.trigger('pluginprep', { pluginName: plugin.pluginName, ref: plugin });
-            plugin.start(server);
-            this.event.trigger('pluginstart', { pluginName: plugin.pluginName, ref: plugin });
-        }
-
-        this.event.trigger('serverprep', {});
-        server.init();
-
-        this.event.trigger('serverstart', {});
     },
 
     init: function () {
-        this.wss.on("connection", ws => { server.startConnection(ws) });
+        this.wss.on('connection', (ws) => {
+            server.startConnection(ws);
+        });
 
         // TODO Populate client context menu
 
         // TODO FINAL events for most events.
 
         // Get FINAL event callbacks
-        this.event.listen('connectionnew', this.event.priority.FINAL, function (event) {
-            if (!event.cancelled) {
-                event.ref.send(JSON.stringify(event.welcomeObj));
-            } else {
-                // TODO Decide what cancelling a new connection does
-            }
-        });
-
+        this.event.listen(
+            'connectionnew',
+            this.event.priority.FINAL,
+            function (event) {
+                if (!event.cancelled && event.ref) {
+                    event.ref.send(JSON.stringify(event.welcomeObj));
+                } else {
+                    // TODO Decide what cancelling a new connection does
+                }
+            },
+        );
     },
 
     presentCustomWindow: function (ws, window) {
@@ -167,126 +194,139 @@ var server = {
     },
 
     disconnectId: function (id) {
-        Object.values(this.connections).forEach(client => {
+        for (let client of Object.values(this.connections)) {
             if (client.id === id) {
                 client.terminate();
             }
-        })
+        }
     },
 
     sendToID: function (id, message) {
-        Object.values(this.connections).forEach(client => {
+        for (let client of Object.values(this.connections)) {
             if (client.id === id) {
                 this.sendTo(client, message);
             }
-        })
+        }
     },
     sendTo: function (connection, message) {
         connection.send(JSON.stringify(message));
     },
 
     sendToAll: function (clients, message, ownsocket) {
-        Object.values(clients).forEach(client => {
+        for (let client of Object.values(clients)) {
             if (client !== ownsocket) {
                 this.sendTo(client, message);
             }
-        })
+        }
     },
 
     sendToRoom: function (roomid, message) {
-        Object.values(this.connections).forEach(client => {
+        for (let client of Object.values(this.connections)) {
             if (client.currentRoom === roomid) {
                 this.sendTo(client, message);
             }
-        })
+        }
     },
 
     sendUpdateUsers: async function () {
         this.sendToAll(this.connections, {
             type: 'updateUsers',
-            userList: await this.updateUsers()
+            userList: await this.updateUsers(),
         });
     },
 
     sendUpdatesMessages: function (roomid) {
         var segnum = this.storage.getTextRoomNewestSegment(roomid);
-        this.sendToAll(this.connections, { type: 'updateText', roomid: roomid, segment: segnum, messages: this.storage.getTextForRoom(roomid, segnum) });
+        this.sendToAll(this.connections, {
+            type: 'updateText',
+            roomid: roomid,
+            segment: segnum,
+            messages: this.storage.getTextForRoom(roomid, segnum),
+        });
     },
 
     sendUpdateRooms: async function () {
         this.sendToAll(this.connections, {
             type: 'updateRooms',
-            roomList: await this.updateRooms()
+            roomList: await this.updateRooms(),
         });
     },
 
-    getUsersInRoom: function (roomid) {
+    getUsersInRoom: async function (roomid) {
         let users = [];
-        Object.values(this.connections).forEach(connection => {
+        for (let connection of Object.values(this.connections)) {
             if (connection.currentRoom === roomid) {
-                users.push({ id: connection.id, name: connection.name, livestate: connection.livestate, livelabel: connection.livelabel });
+                users.push({
+                    id: connection.id,
+                    name: connection.name,
+                    livestate: connection.livestate,
+                    livelabel: connection.livelabel,
+                });
             }
-        });
+        }
         return users;
     },
 
     isUserConnected: function (userid) {
         let conn = false;
-        Object.values(this.connections).forEach(connection => {
+        for (let connection of Object.values(this.connections)) {
             if (connection.id === userid) {
                 conn = true;
             }
-        })
+        }
         return conn;
     },
 
     isUserSuppressed: function (userid) {
         let supp = false;
-        Object.values(this.connections).forEach(connection => {
+        for (let connection of Object.values(this.connections)) {
             if (connection.id === userid && connection.suppress) {
                 supp = connection.suppress;
             }
-        })
+        }
         return supp;
     },
 
     setUserSuppressed: function (userid, suppress) {
-        Object.values(this.connections).forEach(connection => {
+        for (let connection of Object.values(this.connections)) {
             if (connection.id === userid) {
                 connection.suppress = suppress;
             }
-        })
+        }
     },
 
     isUserTalking: function (userid) {
         let conn = false;
-        Object.values(this.connections).forEach(connection => {
+        for (let connection of Object.values(this.connections)) {
             if (connection.id === userid && connection.talking) {
                 conn = connection.talking;
             }
-        })
+        }
         return conn;
     },
 
     setUserTalking: function (userid, talking) {
-        Object.values(this.connections).forEach(connection => {
+        for (let connection of Object.values(this.connections)) {
             if (connection.id === userid) {
                 connection.talking = talking;
             }
-        })
+        }
     },
-
 
     updateUsers: async function () {
         // Create a client-usable copy of users
         // Add transient data, hide private
         let users = [];
-        (await this.storage.getAllAccounts()).forEach(account => {
+        for (let account of await this.storage.getAllAccounts()) {
             if (!('hidden' in account)) {
                 account.hidden = false;
             }
             if (!('avatar' in account)) {
-                account.avatar = gravatar.url(account.email, { protocol: 'https', d: this.config.gravatarfallback }, true);
+                account.avatar = gravatar.url(
+                    account.email,
+                    { protocol: 'https', d: this.config.gravatarfallback },
+                    true,
+                );
             }
             if (!('livestate' in account)) {
                 account.livestate = false;
@@ -294,27 +334,24 @@ var server = {
             if (!('livelabel' in account)) {
                 account.livelabel = '';
             }
-            users.push(
-                {
-                    id: account.id,
-                    name: account.name,
-                    status: this.isUserConnected(account.id),
-                    avatar: account.avatar,
-                    hidden: account.hidden,
-                    suppress: this.isUserSuppressed(account.id),
-                    talking: this.isUserTalking(account.id),
-                    livestate: account.livestate,
-                    livelabel: account.livelabel
-                }
-            );
-
-        });
+            users.push({
+                id: account.id,
+                name: account.name,
+                status: this.isUserConnected(account.id),
+                avatar: account.avatar,
+                hidden: account.hidden,
+                suppress: this.isUserSuppressed(account.id),
+                talking: this.isUserTalking(account.id),
+                livestate: account.livestate,
+                livelabel: account.livelabel,
+            });
+        }
         return users;
     },
 
-    setRoom: function (socket, roomid) {
+    setRoom: async function (socket, roomid) {
         // TODO sendToAll appears to not do what I'd want
-        let room = this.storage.getRoomByID(roomid);
+        let room = await this.storage.getRoomByID(roomid);
         // Can only 'join' media rooms
         if (room && room.type !== 'voice') {
             return;
@@ -324,11 +361,27 @@ var server = {
             return;
         }
         if (socket.currentRoom) {
-            this.sendToAll(this.connections, { type: "leaveRoom", userid: socket.id, roomid: socket.currentRoom }, null);
+            this.sendToAll(
+                this.connections,
+                {
+                    type: 'leaveRoom',
+                    userid: socket.id,
+                    roomid: socket.currentRoom,
+                },
+                null,
+            );
         }
         socket.currentRoom = roomid;
         if (roomid) {
-            this.sendToAll(this.connections, { type: "joinRoom", userid: socket.id, roomid: socket.currentRoom }, null);
+            this.sendToAll(
+                this.connections,
+                {
+                    type: 'joinRoom',
+                    userid: socket.id,
+                    roomid: socket.currentRoom,
+                },
+                null,
+            );
         }
         this.sendUpdateRooms();
     },
@@ -337,34 +390,36 @@ var server = {
         // Create a client-usable copy of rooms
         // Add transient data
         let array = [];
-        (await this.storage.getAllRooms()).forEach(room => {
-            array.push(
-                {
-                    id: room.id,
-                    name: room.name,
-                    type: room.type,
-                    userlist: this.getUsersInRoom(room.id),
-                });
-        });
+        for (const room of await this.storage.getAllRooms()) {
+            array.push({
+                id: room.id,
+                name: room.name,
+                type: room.type,
+                userlist: await this.getUsersInRoom(room.id),
+            });
+        }
 
         return array;
     },
 
     getGroups: async function () {
         var list = {};
-        for (const group of (await this.storage.getGroups())) {
+        for (const group of await this.storage.getGroups()) {
             list[group] = await this.storage.getGroupPermissionList(group);
         }
         return list;
     },
 
     startConnection: function (ws) {
-        ws.protocol_version = "v0";
-        ws.on("close", () => {
+        ws.protocol_version = 'v0';
+        ws.on('close', () => {
             this.event.trigger('connectionclose', { ref: ws });
             // Can't cancel a disconnection
             if (ws.id) {
-                this.sendToAll(this.connections, { type: "disconnect", userid: ws.id });
+                this.sendToAll(this.connections, {
+                    type: 'disconnect',
+                    userid: ws.id,
+                });
                 var index = this.connections.indexOf(ws);
                 if (index !== -1) {
                     this.connections.splice(index, 1);
@@ -373,24 +428,31 @@ var server = {
                 this.sendUpdateUsers();
             }
         });
-        ws.on("message", async (msg) => {
+        ws.on('message', async (msg) => {
             let data;
             try {
                 data = JSON.parse(msg);
             } catch (e) {
-                console.log("Invalid JSON " + e);
-                data = {}
+                console.log('Invalid JSON ' + e);
+                data = {};
             }
             switch (ws.protocol_version) {
-                case "v0":
+                case 'v0':
                     await protocolv0.handle(this, ws, data);
                     break;
-                case "v1":
+                case 'v1':
                     await protocolv1.handle(this, ws, data);
                     break;
                 default:
-                    this.sendTo(ws, { type: 'error', message: 'Invalid protocol : "' + ws.protocol_version + '"' });
-                    ws.close(3001, 'Invalid protocol : "' + ws.protocol_version + '"');
+                    this.sendTo(ws, {
+                        type: 'error',
+                        message:
+                            'Invalid protocol : "' + ws.protocol_version + '"',
+                    });
+                    ws.close(
+                        3001,
+                        'Invalid protocol : "' + ws.protocol_version + '"',
+                    );
             }
         });
         var url = null;
@@ -398,17 +460,16 @@ var server = {
             url = this.config.url;
         }
         this.event.trigger('connectionnew', {
-            ref: ws, welcomeObj: {
-                type: "connect",
+            ref: ws,
+            welcomeObj: {
+                type: 'connect',
                 message: this.config.servername,
                 icon: this.config.serverimg,
                 url,
                 contextmenus: this.contextmenu,
-                protocols: this.protocols
-            }
+                protocols: this.protocols,
+            },
         });
-
-
-    }
-}
+    },
+};
 module.exports = server;

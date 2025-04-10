@@ -12,22 +12,23 @@ var event = {
         if (eventName in this.listeners) {
             this.listeners[eventName][priority].push(fn);
         } else {
-            throw new Error("Listening to non-existant event : " + eventName);
+            throw new Error('Listening to non-existant event : ' + eventName);
         }
     },
-    trigger: function (eventName, event) {
+    trigger: async function (eventName, event) {
         event.cancelled = false;
         event.eventtype = eventName;
         if (eventName in this.listeners) {
-            Object.keys(this.listeners[eventName]).forEach(pri => {
-                this.listeners[eventName][pri].forEach(fn => {
+            for (let pri of Object.keys(this.listeners[eventName])) {
+                for (let fn of this.listeners[eventName][pri]) {
                     fn(event);
-                    if (event.cancelled) { return false; }
-                });
-            });
+                    if (event.cancelled) {
+                        return false;
+                    }
+                }
+            }
         } else {
-
-            throw new Error("Trigger non-existant event : " + eventName);
+            throw new Error('Trigger non-existant event : ' + eventName);
         }
         return true;
     },
@@ -61,13 +62,16 @@ var event = {
         this.register('userchangename');
         this.register('usercontextmenucallback');
 
+        this.register('roomcreate');
+        this.register('roomdelete');
+
         this.register('messagesend');
         this.register('messagecreate');
         this.register('messagechange');
 
         this.register('pluginprep');
         this.register('pluginstart');
-    }
-}
+    },
+};
 
 module.exports = event;

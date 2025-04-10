@@ -20,8 +20,8 @@ Other tests should feed a JSON object into json storage, disable saving, and run
 
 ## AREAS WE NEED COVERING
 
-- Image uploads
-- Server Logos - aspect ratios, too large, too small, formats
-- plugins
-- - webhooks
-- v1 protocol, watching for storage object changes
+-   Image uploads
+-   Server Logos - aspect ratios, too large, too small, formats
+-   plugins
+-   -   webhooks
+-   v1 protocol, watching for storage object changes

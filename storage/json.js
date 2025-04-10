@@ -9,7 +9,7 @@ const bcrypt = require('bcrypt');
  */
 var jsonstorage = {
     storage: {},
-    fileName: "test.json",
+    fileName: 'test.json',
 
     /**
      * Get room by UUID
@@ -18,11 +18,11 @@ var jsonstorage = {
      */
     getRoomByID: async function (roomid) {
         let retroom = null;
-        this.storage.rooms.forEach(room => {
+        for (let room of this.storage.rooms) {
             if (room.id == roomid) {
                 retroom = room;
             }
-        })
+        }
         return retroom;
     },
 
@@ -34,11 +34,14 @@ var jsonstorage = {
      */
     getAccountByLogin: async function (email, password) {
         let retuser = null;
-        this.storage.accounts.forEach(user => {
-            if (user.email == email && bcrypt.compareSync(password, user.password)) {
+        for (let user of this.storage.accounts) {
+            if (
+                user.email == email &&
+                bcrypt.compareSync(password, user.password)
+            ) {
                 retuser = user;
             }
-        })
+        }
         return retuser;
     },
 
@@ -49,11 +52,11 @@ var jsonstorage = {
      */
     getAccountByID: async function (userid) {
         let retuser = null;
-        this.storage.accounts.forEach(user => {
+        for (let user of this.storage.accounts) {
             if (user.id === userid) {
                 retuser = user;
             }
-        })
+        }
         return retuser;
     },
     /**
@@ -172,7 +175,7 @@ var jsonstorage = {
      */
     addNewMessage: async function (roomid, message) {
         if (!(roomid in this.storage.messages)) {
-            this.storage.messages[roomid] = []
+            this.storage.messages[roomid] = [];
         }
         var idx = this.storage.messages[roomid].length;
         message.idx = idx;
@@ -204,11 +207,10 @@ var jsonstorage = {
     },
 
     getAccountPermission: async function (userid, permission) {
-        if (!userid) {
+        var user = await this.getAccountByID(userid);
+        if (!user) {
             return false;
         }
-        var user = await this.getAccountByID(userid);
-        if (!user) { return false; }
         return await this.getGroupPermission(user.group, permission);
     },
 
@@ -241,17 +243,24 @@ var jsonstorage = {
 
     removeGroupPermission: async function (groupname, permission) {
         var permList = this.storage.permissions[groupname];
-        if (permList.indexOf(permission) > -1) {
-            permList.push(permission);
-            this.storage.permissions[groupname] = permList;
-            this.save();
-        }
+        this.storage.permissions[groupname] = permList.filter(
+            (p) => p !== permission,
+        );
+        this.save();
     },
 
     setAccountGroup: async function (userid, groupname) {
         var account = await this.getAccountByID(userid);
         account.group = groupname;
         await this.updateAccount(userid, account);
+    },
+
+    removeGroup: async function (groupname) {
+        delete this.storage.permissions[groupname];
+    },
+
+    createGroup: async function (groupname) {
+        this.storage.permissions[groupname] = [];
     },
 
     /**
@@ -288,29 +297,27 @@ var jsonstorage = {
      */
     start: async function () {
         if (fs.existsSync(this.fileName)) {
-            this.storage = JSON.parse(
-                fs.readFileSync(this.fileName)
-            );
+            this.storage = JSON.parse(fs.readFileSync(this.fileName));
         } else {
             this.storage = {
-                'rooms': [],
-                'accounts': [],
-                "signUp": {},
-                'messages': {},
-                'permissions': {},
-                'plugin': {},
-            }
+                rooms: [],
+                accounts: [],
+                signUp: {},
+                messages: {},
+                permissions: {},
+                plugin: {},
+            };
         }
     },
     /**
-         * Create or update a key-value pair of data.
-         * @param {string} pluginName
-         * @param {string} key
-         * @param {string} value
-         */
+     * Create or update a key-value pair of data.
+     * @param {string} pluginName
+     * @param {string} key
+     * @param {string} value
+     */
     setPluginData: async function (pluginName, key, value) {
         if (!(pluginName in this.storage.plugin)) {
-            this.storage.plugin[pluginName] = {}
+            this.storage.plugin[pluginName] = {};
         }
         this.storage.plugin[pluginName][key] = value;
         this.save();
@@ -339,7 +346,7 @@ var jsonstorage = {
      */
     getAllPluginData: async function (pluginName) {
         if (!(pluginName in this.storage.plugin)) {
-            return null;
+            return {};
         }
         return this.storage.plugin[pluginName];
     },
@@ -388,6 +395,6 @@ var jsonstorage = {
 
     test_passalong: async function (f) {
         f();
-    }
-}
-module.exports = jsonstorage
+    },
+};
+module.exports = jsonstorage;
