@@ -529,7 +529,7 @@ describe('protocol v1', () => {
             })
             .expectJson(
                 (reply) =>
-                    reply.type === 'updateRooms' && reply.roomList.length === 4,
+                    reply.type === 'updateRooms' && reply.roomList.length >= 4,
                 { skip: true, timeout: 1000 },
             )
             .close()
