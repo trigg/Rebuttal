@@ -1,3 +1,11 @@
+const {
+    afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+} = require('@jest/globals');
 const rebuttal = require('../server.js');
 const requestws = require('superwstest');
 const iconv_lite = require('iconv-lite');
@@ -5,7 +13,7 @@ const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 iconv_lite.encodingExists('foo');
 
-describe('Protocol v1', () => {
+describe('protocol v1', () => {
     var admin_password = 'IHaveThisAmazingAdminPasswordForTesting';
     var room_voice = {
         id: uuidv4(),
@@ -74,7 +82,8 @@ describe('Protocol v1', () => {
     afterEach((done) => {
         rebuttal.server.close(done);
     });
-    it('Userlist sent after login', async () => {
+    it('userlist sent after login', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -97,7 +106,8 @@ describe('Protocol v1', () => {
     });
 
     // TODO Compare actually existant rooms. Somehow github testing gets a different answer to local...
-    it('Roomlist sent after login', async () => {
+    it('roomlist sent after login', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -119,7 +129,8 @@ describe('Protocol v1', () => {
             .expectClosed();
     });
 
-    it('User permissions are sent after login', async () => {
+    it('user permissions are sent after login', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -141,7 +152,8 @@ describe('Protocol v1', () => {
             .expectClosed();
     });
 
-    it('Sending a message to a text room', async () => {
+    it('sending a message to a text room', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -175,7 +187,8 @@ describe('Protocol v1', () => {
             .expectClosed();
     });
 
-    it('Sending an image to a text room', async () => {
+    it('sending an image to a text room', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -216,7 +229,8 @@ describe('Protocol v1', () => {
             .expectClosed();
     });
 
-    it('Sending a message with an intentionally wrong userid is overridden', async () => {
+    it('sending a message with an intentionally wrong userid is overridden', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -251,7 +265,8 @@ describe('Protocol v1', () => {
             .expectClosed();
     });
 
-    it('Generate invite', async () => {
+    it('generate invite', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -274,7 +289,8 @@ describe('Protocol v1', () => {
             .expectClosed();
     });
 
-    it('Request most recent chat', async () => {
+    it('request most recent chat', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -305,7 +321,8 @@ describe('Protocol v1', () => {
             .expectClosed();
     });
 
-    it('Request historical chat', async () => {
+    it('request historical chat', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -353,7 +370,8 @@ describe('Protocol v1', () => {
             .expectClosed();
     });
 
-    it('Join, check, and leave a voice room', async () => {
+    it('join, check, and leave a voice room', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -384,7 +402,8 @@ describe('Protocol v1', () => {
             .expectClosed();
     });
 
-    it('Can initiate a livestream', async () => {
+    it('can initiate a livestream', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -433,7 +452,8 @@ describe('Protocol v1', () => {
             .expectClosed();
     });
 
-    it('Can request viewing of a stream', async () => {
+    it('can request viewing of a stream', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -484,7 +504,8 @@ describe('Protocol v1', () => {
             .expectClosed();
     });
 
-    it('Can create room', async () => {
+    it('can create room', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -515,7 +536,8 @@ describe('Protocol v1', () => {
             .expectClosed();
     });
 
-    it('Can create user', async () => {
+    it('can create user', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -548,7 +570,8 @@ describe('Protocol v1', () => {
             .expectClosed();
     });
 
-    it('Can rename user', async () => {
+    it('can rename user', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -581,12 +604,33 @@ describe('Protocol v1', () => {
             .expectClosed();
     });
 
-    it('Can remove user', async () => {
-        let created_user_id = (await rebuttal.storage.getAllAccounts()).filter(
-            (user) => user.name === 'created_user',
-        )[0].id;
+    it('can remove user', async () => {
+        expect.assertions(0);
+        let kicking_user = {
+            id: uuidv4(),
+            name: 'kickee',
+            password: 'kickee',
+            email: 'kickee@example.com',
+        };
+        await rebuttal.storage.createAccount(kicking_user);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
+            .exec(async () => {
+                await requestws(rebuttal.server)
+                    .ws('/ipc', { rejectUnauthorized: false })
+                    .expectJson(
+                        (reply) =>
+                            reply.type === 'connect' &&
+                            reply.protocols.includes('v1'),
+                    )
+                    .sendJson({
+                        type: 'login',
+                        email: kicking_user.email,
+                        password: kicking_user.password,
+                        protocol: 'v1',
+                    })
+                    .expectClosed();
+            })
             .expectJson(
                 (reply) =>
                     reply.type === 'connect' && reply.protocols.includes('v1'),
@@ -597,24 +641,30 @@ describe('Protocol v1', () => {
                 password: admin_password,
                 protocol: 'v1',
             })
-            .expectJson((reply) => reply.type === 'updateUsers', {
-                skip: true,
-                timeout: 1000,
-            })
-            .sendJson({ type: 'removeuser', touserid: created_user_id })
             .expectJson(
                 (reply) =>
                     reply.type === 'updateUsers' &&
-                    reply.userList.filter(
-                        (user) => user.name === 'created_user',
-                    ).length == 0,
+                    reply.userList.filter((u) => u.name == 'kickee').length ==
+                        1,
+                {
+                    skip: true,
+                    timeout: 1000,
+                },
+            )
+            .sendJson({ type: 'removeuser', touserid: kicking_user.id })
+            .expectJson(
+                (reply) =>
+                    reply.type === 'updateUsers' &&
+                    reply.userList.filter((user) => user.name === 'kickee')
+                        .length == 0,
                 { skip: true, timeout: 1000 },
             )
             .close()
             .expectClosed();
     });
 
-    it('Can remove room', async () => {
+    it('can remove room', async () => {
+        expect.assertions(0);
         let created_room_id = (await rebuttal.storage.getAllRooms()).filter(
             (room) => room.name === 'new_room',
         )[0].id;
@@ -646,7 +696,8 @@ describe('Protocol v1', () => {
             .expectClosed();
     });
 
-    it('Can update message', async () => {
+    it('can update message', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -680,7 +731,8 @@ describe('Protocol v1', () => {
             .expectClosed();
     });
 
-    it('Can remove message', async () => {
+    it('can remove message', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -707,14 +759,17 @@ describe('Protocol v1', () => {
             .expectJson(
                 (reply) =>
                     reply.type === 'updateText' &&
-                    reply.roomid === room_prefilled.id,
-                { skip: true, timeout: 1000 },
+                    reply.roomid === room_prefilled.id && {
+                        skip: true,
+                        timeout: 1000,
+                    },
             )
             .close()
             .expectClosed();
     });
 
-    it('Can create and update usergroup', async () => {
+    it('can create and update usergroup', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -749,7 +804,8 @@ describe('Protocol v1', () => {
             .expectClosed();
     });
 
-    it('Can remove usergroup', async () => {
+    it('can remove usergroup', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -777,7 +833,8 @@ describe('Protocol v1', () => {
             .expectClosed();
     });
 
-    it('Can set usergroup', async () => {
+    it('can set usergroup', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -808,7 +865,8 @@ describe('Protocol v1', () => {
             .expectClosed();
     });
 
-    it('Can change chat device states', async () => {
+    it('can change chat device states', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -866,7 +924,8 @@ describe('Protocol v1', () => {
             .expectClosed();
     });
 
-    it('Can toggle talking state', async () => {
+    it('can toggle talking state', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -888,6 +947,7 @@ describe('Protocol v1', () => {
                 skip: true,
                 timeout: 1000,
             })
+            .sendJson({ type: 'joinroom', roomid: room_voice.id })
             .sendJson({ type: 'talking', message: true })
             .expectJson(
                 (reply) => reply.type === 'talking' && reply.message === true,

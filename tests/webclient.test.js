@@ -2,11 +2,11 @@
  * Actual checks on client should be done in its own repo. This just needs to check the plugin layer works fine
  */
 
+const { beforeAll, describe, expect, it } = require('@jest/globals');
 const rebuttal = require('../server.js');
 const request = require('supertest');
-const fs = require('fs');
 
-describe('Webserver works', () => {
+describe('webserver works', () => {
     beforeAll(async () => {
         // Create a server with made up config
         var config = {
@@ -23,19 +23,22 @@ describe('Webserver works', () => {
         rebuttal.storage.fileName = null;
     });
 
-    it('Web client answers index', async () => {
+    it('web client answers index', async () => {
+        expect.assertions(1);
         const res = await request(rebuttal.app).get('/').send();
         expect(res.statusCode).toEqual(200);
     });
 
-    it('Web client provides default theme', async () => {
+    it('web client provides default theme', async () => {
+        expect.assertions(1);
         const res = (
             await request(rebuttal.app).get('/img/bubblegum/theme.json')
         ).setEncoding();
         expect(res.statusCode).toEqual(200);
     });
 
-    it('Injects themes into welcome object', () => {
+    it('injects themes into welcome object', () => {
+        expect.assertions(1);
         rebuttal.event.listen(
             'connectionnew',
             rebuttal.event.priority.MONITOR,

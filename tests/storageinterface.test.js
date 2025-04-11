@@ -1,3 +1,4 @@
+const { describe, expect, it } = require('@jest/globals');
 const StorageInterface = require('../storage/interface');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
@@ -6,8 +7,9 @@ const jsonstorage = require('../storage/json.js');
 const mysqlstorage = require('../storage/mysql.js');
 const sqlitestorage = require('../storage/sqlite.js');
 
-describe('Storage systems have a full interface', () => {
-    it('JSON Storage matches interface', async () => {
+describe('storage systems have a full interface', () => {
+    it('json storage matches interface', async () => {
+        expect.hasAssertions();
         jsonstorage.test_mode();
         jsonstorage.start();
         for (const method in StorageInterface) {
@@ -18,7 +20,8 @@ describe('Storage systems have a full interface', () => {
         }
     });
 
-    it('Sqlite Storage matches interface', async () => {
+    it('sqlite storage matches interface', async () => {
+        expect.hasAssertions();
         sqlitestorage.test_mode();
         sqlitestorage.start();
         for (const method in StorageInterface) {
@@ -29,22 +32,26 @@ describe('Storage systems have a full interface', () => {
         }
     });
 
-    /*it('MySQL Storage matches interface', async () => {
-        mysqlstorage.test_mode()
-        mysqlstorage.start()
+    it('mysql storage matches interface', async () => {
+        expect.hasAssertions();
+        mysqlstorage.test_mode();
+        mysqlstorage.start();
         for (const method in StorageInterface) {
-            expect(mysqlstorage).toHaveProperty(method)
-            expect(typeof mysqlstorage[method]).toBe(typeof StorageInterface[method])
+            expect(mysqlstorage).toHaveProperty(method);
+            expect(typeof mysqlstorage[method]).toBe(
+                typeof StorageInterface[method],
+            );
         }
-    })*/
+    });
 });
 
 describe.each([
     ['json', jsonstorage],
     ['sqlite', sqlitestorage],
     //    ['mysql', mysqlstorage],
-])('Storage handles data', (sname, storage) => {
+])('storage handles data', (sname, storage) => {
     it('Storage ' + sname + ' holds user data correctly', () => {
+        expect.hasAssertions();
         storage.test_passalong(async () => {
             var userUuid = uuidv4();
             var userUuid2 = uuidv4();
@@ -95,6 +102,7 @@ describe.each([
         });
     });
     it('Storage ' + sname + ' holds plugin data correctly', async () => {
+        expect.hasAssertions();
         // Twiddle plugin to see if it keeps sane
         await storage.setPluginData('testPlugin', 'key1', 'value1');
         await storage.setPluginData('testPlugin', 'key2', 'value2');
@@ -129,6 +137,7 @@ describe.each([
         });
     });
     it('Storage ' + sname + ' holds message data correctly', async () => {
+        expect.assertions(6);
         var roomUuid = uuidv4();
         var userUuid = uuidv4();
         await storage.addNewMessage(roomUuid, {
@@ -202,6 +211,7 @@ describe.each([
             {
                 idx: 0,
                 text: '*Message Removed*',
+                userid: null,
             },
             {
                 idx: 1,
@@ -212,10 +222,18 @@ describe.each([
                 username: 'userName',
             },
         ]);
+
+        expect(await storage.getMessage(uuidv4(), 0)).toBeNull();
+        expect(await storage.getMessage(roomUuid, 10000)).toBeNull();
+        expect(await storage.getMessage(roomUuid, 0)).toMatchObject({
+            text: '*Message Removed*',
+            userid: null,
+        });
     });
     it(
         'Storage ' + sname + " doesn't crash when dealing with invites",
         async () => {
+            expect.assertions(2);
             // Prove invites don't crash
             // This gets covered by invite.test.js
             var inviteUuid = uuidv4();
@@ -225,6 +243,7 @@ describe.each([
         },
     );
     it('Storage ' + sname + ' holds group data correctly', async () => {
+        expect.assertions(10);
         var userUuid = uuidv4();
         await storage.addGroupPermission('admin', 'createRoom');
         await storage.createAccount({
@@ -281,6 +300,7 @@ describe.each([
     });
 
     it('Storage ' + sname + ' updates account details', async () => {
+        expect.assertions(2);
         var userUuid = uuidv4();
         await storage.addGroupPermission('admin', 'createRoom');
         let user = {
@@ -305,6 +325,7 @@ describe.each([
         );
     });
     it('Storage ' + sname + ' holds room data correctly', async () => {
+        expect.assertions(5);
         var roomUuid = uuidv4();
         var roomUuid2 = uuidv4();
         // Test room operations
@@ -359,15 +380,21 @@ describe.each([
     it(
         'Storage ' + sname + ' returns null for non-existant user id',
         async () => {
+            expect.assertions(1);
+
             expect(await storage.getAccountByID(uuidv4())).toBeNull();
         },
     );
     it('Storage ' + sname + ' return null for failed login', async () => {
+        expect.assertions(1);
+
         expect(await storage.getAccountByLogin('name', 'password')).toBeNull();
     });
     it(
         'Storage ' + sname + ' returns empty array for empty message segment',
         async () => {
+            expect.assertions(1);
+
             var roomUuid = uuidv4();
             await storage.createRoom({
                 id: roomUuid,
@@ -384,6 +411,8 @@ describe.each([
             sname +
             ' returns segment zero when asked for newest segment of non-existant room',
         async () => {
+            expect.assertions(1);
+
             expect(await storage.getTextRoomNewestSegment(uuidv4())).toBe(0);
         },
     );
@@ -392,6 +421,8 @@ describe.each([
             sname +
             ' returns false when asked for non-existant users permission',
         async () => {
+            expect.assertions(1);
+
             expect(await storage.getAccountPermission(uuidv4(), 'canfly')).toBe(
                 false,
             );
@@ -402,6 +433,8 @@ describe.each([
             sname +
             ' returns empty array when asked for permission list for non-existant group',
         async () => {
+            expect.assertions(1);
+
             expect(await storage.getGroupPermissionList('akira')).toEqual(
                 expect.arrayContaining([]),
             );
@@ -412,12 +445,16 @@ describe.each([
             sname +
             ' returns false when asked if non-existant group has a permission',
         async () => {
+            expect.assertions(1);
+
             expect(await storage.getGroupPermission('akira', 'canfly')).toEqual(
                 false,
             );
         },
     );
     it('Storage ' + sname + ' can change account password', async () => {
+        expect.assertions(4);
+
         let userid = uuidv4();
         let userPassword1 = 'super1';
         let userPassword2 = 'super2';
@@ -454,6 +491,8 @@ describe.each([
     it(
         'Storage ' + sname + ' returns null for unknown plugin data',
         async () => {
+            expect.assertions(2);
+
             await storage.setPluginData('webclient', 'realdata', '1');
             expect(
                 await storage.getPluginData('fakeplugin', 'fakeindex'),
@@ -465,8 +504,10 @@ describe.each([
     );
 });
 
-describe('Storage can successfully save to disk', () => {
-    it('JSON can write to a file', async () => {
+describe('storage can successfully save to disk', () => {
+    it('json can write to a file', async () => {
+        expect.assertions(1);
+
         jsonstorage.fileName = uuidv4() + '.testing.json';
         await jsonstorage.exit();
         expect(fs.statSync(jsonstorage.fileName).size).toBeGreaterThan(0);
@@ -474,7 +515,9 @@ describe('Storage can successfully save to disk', () => {
         jsonstorage.fileName = null;
     });
 
-    it('Sqlite can write to a file', async () => {
+    it('sqlite can write to a file', async () => {
+        expect.assertions(1);
+
         await sqlitestorage.exit();
         expect(fs.statSync(sqlitestorage.fileName).size).toBeGreaterThan(0);
         sqlitestorage.start();

@@ -49,10 +49,7 @@ var server = {
                 this.storage = jsonstorage;
                 break;
             default:
-                console.error(
-                    'Storage option not available : ' + config['storage'],
-                );
-                process.exit(1);
+                throw new Error('no storage');
         }
         await this.storage.start();
         await this.populateNewConfig();
@@ -61,25 +58,35 @@ var server = {
             for (let plugin of config.plugins) {
                 const pluginFileName = path.join('plugin', plugin + '.js');
                 var exist = false;
-                try {
-                    if (fs.existsSync(pluginFileName)) {
-                        exist = true;
-                    }
-                } catch (err) {
-                    console.log(err);
+                if (fs.existsSync(pluginFileName)) {
+                    exist = true;
                 }
+
                 if (exist) {
                     plugins.push(require('./' + pluginFileName));
                 } else {
                     console.log("Could not load '" + pluginFileName + "'");
-                    process.exit(1);
+                    throw new Error('unknown plugin');
                 }
             }
         }
-
+        var key_path = './key.pem';
+        var cert_path = './cert.pem';
+        if (this.config.keypath) {
+            key_path = this.config.key_path;
+        }
+        if (this.config.certpath) {
+            cert_path = this.config.cert_path;
+        }
+        if (!fs.existsSync(key_path)) {
+            throw new Error('key file not found');
+        }
+        if (!fs.existsSync(cert_path)) {
+            throw new Error('cert file not found');
+        }
         var options = {
-            key: fs.readFileSync('key.pem'),
-            cert: fs.readFileSync('cert.pem'),
+            key: fs.readFileSync(key_path),
+            cert: fs.readFileSync(cert_path),
         };
         this.server = https.createServer(options, this.app, () => {
             console.log('Started HTTPS server');
@@ -160,8 +167,6 @@ var server = {
                 name: 'Chat',
                 type: 'voice',
             });
-
-            console.log(this.storage.storage);
         }
     },
 
@@ -196,7 +201,7 @@ var server = {
     disconnectId: function (id) {
         for (let client of Object.values(this.connections)) {
             if (client.id === id) {
-                client.terminate();
+                client.close();
             }
         }
     },
@@ -235,13 +240,13 @@ var server = {
         });
     },
 
-    sendUpdatesMessages: function (roomid) {
-        var segnum = this.storage.getTextRoomNewestSegment(roomid);
+    sendUpdatesMessages: async function (roomid) {
+        var segnum = await this.storage.getTextRoomNewestSegment(roomid);
         this.sendToAll(this.connections, {
             type: 'updateText',
             roomid: roomid,
             segment: segnum,
-            messages: this.storage.getTextForRoom(roomid, segnum),
+            messages: await this.storage.getTextForRoom(roomid, segnum),
         });
     },
 
@@ -432,9 +437,9 @@ var server = {
             let data;
             try {
                 data = JSON.parse(msg);
-            } catch (e) {
-                console.log('Invalid JSON ' + e);
-                data = {};
+            } catch (_e) {
+                ws.close(3001, "Invalid JSON");
+                return;
             }
             switch (ws.protocol_version) {
                 case 'v0':

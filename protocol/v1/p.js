@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { Readable } = require('stream');
 const sizeOfImage = require('buffer-image-size');
+const { Buffer } = require('node:buffer');
 
 var protocolv1 = {
     uploadDir: './uploads',
@@ -107,11 +108,11 @@ var protocolv1 = {
             case 'message':
                 var outputfilename = null;
                 // Send a notice that this single message has arrived.
-                var allow1 = server.event.trigger('messagecreate', {
+                var allow1 = await server.event.trigger('messagecreate', {
                     roomUuid: roomid,
                     message: message,
                 });
-                var allow2 = server.event.trigger('messagesend', {
+                var allow2 = await server.event.trigger('messagesend', {
                     userUuid: socket.id,
                     userName: socket.name,
                     roomUuid: roomid,
@@ -156,7 +157,7 @@ var protocolv1 = {
                     }
                     message.userid = socket.id;
                     await server.storage.addNewMessage(roomid, message);
-                    server.sendUpdatesMessages(roomid);
+                    await server.sendUpdatesMessages(roomid);
                     server.sendToAll(server.connections, {
                         type: 'sendMessage',
                         roomid: roomid,
@@ -168,7 +169,7 @@ var protocolv1 = {
                 break;
             case 'joinroom':
                 // TODO Validate room exists
-                server.event.trigger('userjoinroom', {
+                await server.event.trigger('userjoinroom', {
                     userUuid: socket.id,
                     userName: socket.name,
                     roomUuid: roomid,
@@ -177,7 +178,7 @@ var protocolv1 = {
                 server.sendUpdateRooms();
                 break;
             case 'leaveroom':
-                server.event.trigger('userleaveroom', {
+                await server.event.trigger('userleaveroom', {
                     userUuid: socket.id,
                     userName: socket.name,
                     roomUuid: roomid,
@@ -186,9 +187,13 @@ var protocolv1 = {
                 server.sendUpdateRooms();
                 break;
             case 'video':
-                fromuserid = socket.id;
+                var new_data = {
+                    fromuserid: socket.id,
+                    touserid,
+                    payload
+                }
                 if (touserid && fromuserid && payload) {
-                    server.sendToID(touserid, data);
+                    server.sendToID(touserid, new_data);
                 }
                 break;
             case 'golive':
@@ -229,7 +234,7 @@ var protocolv1 = {
                             name: roomName,
                             id: roomUuid,
                         });
-                        server.event.trigger('roomcreate', {
+                        await server.event.trigger('roomcreate', {
                             roomUuid: roomUuid,
                         });
                         server.sendUpdateRooms();
@@ -263,7 +268,7 @@ var protocolv1 = {
                             email: email,
                             password: password2,
                         });
-                        server.event.trigger('usercreate', {
+                        await server.event.trigger('usercreate', {
                             userName,
                             userUuid,
                         });
@@ -349,7 +354,7 @@ var protocolv1 = {
                     )
                 ) {
                     if (roomid) {
-                        server.event.trigger('roomdelete', {
+                        await server.event.trigger('roomdelete', {
                             roomUuid: roomid,
                         });
                         await server.storage.removeRoom(roomid);
@@ -380,7 +385,8 @@ var protocolv1 = {
                             // TODO Delete Messages
                             // TODO Delete Uploads
                         }
-                        server.event.trigger('userdelete', {
+                        server.disconnectId(deleteuser);
+                        await server.event.trigger('userdelete', {
                             userUuid: deleteuser,
                         });
                         server.disconnectId(deleteuser);
@@ -413,17 +419,23 @@ var protocolv1 = {
                         messageid !== null &&
                         message
                     ) {
-                        server.event.trigger('messagechange', {
-                            roomUuid: roomid,
-                            newMessage: message,
-                            oldMessage: 'NOT IMPLEMENTED',
-                        }); //TODO
-                        await server.storage.updateMessage(
-                            roomid,
-                            messageid,
-                            message,
+                        let previous_message = await server.storage.getMessage(roomid, messageid);
+                        let allow = await server.event.trigger(
+                            'messagechange',
+                            {
+                                roomUuid: roomid,
+                                newMessage: message,
+                                oldMessage: previous_message,
+                            },
                         );
-                        server.sendUpdatesMessages(roomid);
+                        if (allow) {
+                            await server.storage.updateMessage(
+                                roomid,
+                                messageid,
+                                message,
+                            );
+                            await server.sendUpdatesMessages(roomid);
+                        }
                     } else {
                         server.sendTo(socket, {
                             type: 'error',
@@ -449,13 +461,23 @@ var protocolv1 = {
                         messageid !== undefined &&
                         messageid !== null
                     ) {
-                        server.event.trigger('messagechange', {
-                            roomUuid: roomid,
-                            newMessage: 'removed',
-                            oldMessage: 'NOT IMPLEMENTED',
-                        }); //TODO
-                        await server.storage.removeMessage(roomid, messageid);
-                        server.sendUpdatesMessages(roomid);
+                        let previous_message = await server.storage.getMessage(roomid, messageid);
+                        let message = { text: '*Message Removed*', userid: null }
+                        let allow = await server.event.trigger(
+                            'messagechange',
+                            {
+                                roomUuid: roomid,
+                                newMessage: message,
+                                oldMessage: previous_message,
+                            },
+                        );
+                        if (allow) {
+                            await server.storage.removeMessage(
+                                roomid,
+                                messageid,
+                            );
+                            await server.sendUpdatesMessages(roomid);
+                        }
                     } else {
                         server.sendTo(socket, {
                             type: 'error',
@@ -477,7 +499,8 @@ var protocolv1 = {
                     )
                 ) {
                     if (groupName) {
-                        server.storage.createGroup(groupName);
+                        await server.storage.createGroup(groupName);
+                        // TODO Reply confirmation?
                     } else {
                         server.sendTo(socket, {
                             type: 'error',
@@ -620,7 +643,7 @@ var protocolv1 = {
                 }
                 break;
             case 'talking':
-                talker_id = socket.id;
+                var talker_id = socket.id;
                 if (talker_id && message) {
                     server.setUserTalking(talker_id, message);
                 }

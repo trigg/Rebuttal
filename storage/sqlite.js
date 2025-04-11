@@ -31,7 +31,8 @@ var sqlitestorage = {
     sqlAddNewMessage:
         'INSERT INTO messages (idx, roomid, text, url, userid, username, type, tags, img) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
     sqlUpdateMessage:
-        'UPDATE messages SET text=?, url=?, type=?, img=? WHERE roomid = ? and idx = ?',
+        'UPDATE messages SET text=?, url=?, type=?, img=?, userid = ? WHERE roomid = ? and idx = ?',
+    sqlGetMessage: 'SELECT * from messages WHERE roomid = ? and idx = ?',
     sqlGetGroupPermission:
         'SELECT * FROM permission WHERE groupid = ? AND perm = ?',
     sqlGetGroupPermissionList: 'SELECT perm FROM permission WHERE groupid = ?',
@@ -69,6 +70,7 @@ var sqlitestorage = {
     stmtGetTextRoomNextSegment: null,
     stmtAddNewMessage: null,
     stmtUpdateMessage: null,
+    stmtGetMessage: null,
     stmtGetGroupPermission: null,
     stmtGetGroupPermissionList: null,
     stmtAddGroupPermission: null,
@@ -300,6 +302,7 @@ var sqlitestorage = {
             contents.url ? contents.url : null,
             contents.type ? contents.type : null,
             contents.img ? contents.img : null,
+            contents.userid ? contents.userid : null,
             roomid,
             messageid,
         );
@@ -311,7 +314,18 @@ var sqlitestorage = {
      * @param {int} messageid
      */
     removeMessage: async function (roomid, messageid) {
-        this.updateMessage(roomid, messageid, { text: '*Message Removed*' });
+        await this.updateMessage(roomid, messageid, {
+            text: '*Message Removed*',
+            userid: null,
+        });
+    },
+
+    getMessage: async function (roomid, messageid) {
+        let a = this.stmtGetMessage.get(roomid, messageid);
+        if (a) {
+            return a;
+        }
+        return null;
     },
 
     getAccountPermission: async function (userid, permission) {
@@ -350,7 +364,7 @@ var sqlitestorage = {
         this.stmtSetAccountGroup.run(groupname, userid);
     },
 
-    createGroup: async function (groupname) {
+    createGroup: async function (_groupname) {
         // NOOP
     },
 
@@ -530,6 +544,7 @@ var sqlitestorage = {
         this.stmtSetAccountPassword = this.db.prepare(
             this.sqlSetAccountPassword,
         );
+        this.stmtGetMessage = this.db.prepare(this.sqlGetMessage);
     },
 
     /**

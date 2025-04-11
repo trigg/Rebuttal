@@ -1,23 +1,27 @@
+const { beforeAll, describe, expect, it } = require('@jest/globals');
 const event = require('../events.js');
 
-describe('Events', () => {
+describe('events', () => {
     var eventstage = -1;
     beforeAll(async () => {
         event.init();
     });
 
-    it('Fails to listen to unregistered event', async () => {
-        await expect(() => {
+    it('fails to listen to unregistered event', async () => {
+        expect.assertions(1);
+        expect(() => {
             event.listen('doesnotexist', event.priority.EARLY, () => {});
-        }).toThrow();
+        }).toThrow('Listening to non-existant event : doesnotexist');
     });
 
-    it('Register new event', async () => {
+    it('register new event', async () => {
+        expect.assertions(1);
         event.register('testevent');
         await expect(event.listeners).toHaveProperty('testevent');
     });
 
-    it('Can add event listeners', async () => {
+    it('can add event listeners', async () => {
+        expect.assertions(0);
         event.listen('testevent', event.priority.MONITOR, function (e) {
             console.log('Sanity test-  should be last ' + e);
             if (eventstage >= event.priority.MONITOR) {
@@ -46,11 +50,13 @@ describe('Events', () => {
         });
     });
 
-    it('Can trigger event', async () => {
+    it('can trigger event', async () => {
+        expect.assertions(0);
         event.trigger('testevent', {});
     });
 
-    it('Can mutate values in a triggered event', async () => {
+    it('can mutate values in a triggered event', async () => {
+        expect.assertions(5);
         event.register('mutateevent');
 
         event.listen('mutateevent', event.priority.EARLY, (e) => {
@@ -72,7 +78,8 @@ describe('Events', () => {
         await event.trigger('mutateevent', { a: 1, b: 2, c: 3 });
     });
 
-    it('Can cancel a triggered event', async () => {
+    it('can cancel a triggered event', async () => {
+        expect.assertions(0);
         event.register('cancelevent');
         event.listen('cancelevent', event.priority.EARLY, (e) => {
             e.cancelled = true;
@@ -86,13 +93,15 @@ describe('Events', () => {
         await event.trigger('cancelevent', {});
     });
 
-    it('Failed to trigger unregistered event', async () => {
+    it('failed to trigger unregistered event', async () => {
+        expect.assertions(1);
         await expect(async () => {
             await event.trigger('doesnotexist', {});
-        }).rejects.toThrow();
+        }).rejects.toThrow('Trigger non-existant event : doesnotexist');
     });
 
-    it('Fails to reregister the same event', () => {
+    it('fails to reregister the same event', () => {
+        expect.assertions(3);
         expect(event.listeners).not.toHaveProperty('duplicate');
         event.register('duplicate');
         expect(event.listeners).toHaveProperty('duplicate');

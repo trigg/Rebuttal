@@ -4,8 +4,8 @@
     "servername": "Rebuttal",
     "serverimg": "img/logo.svg",
     "gravatarfallback": "monsterid",
-    "plugins": [
-        "webhook"
-    ],
-    "url": "https://example.com/"
+    "plugins": ["webhook"],
+    "url": "https://example.com/",
+    "keypath": "key.pem",
+    "certpath": "cert.pem"
 }

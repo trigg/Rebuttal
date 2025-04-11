@@ -1,9 +1,16 @@
+const {
+    afterAll,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+} = require('@jest/globals');
 const rebuttal = require('../server.js');
-const requestws = require('superwstest');
 const request = require('supertest');
 const fs = require('fs');
 
-describe('Webserver works', () => {
+describe('webserver works', () => {
     var test_moved_uploads = false;
     beforeAll(() => {
         if (fs.existsSync('uploads')) {
@@ -40,11 +47,16 @@ describe('Webserver works', () => {
         rebuttal.storage.fileName = null;
     });
 
-    it('Invite page answers', async () => {
-        const res = await request(rebuttal.app)
-            .get('/invite/index.html')
-            .send();
-        expect(res.statusCode).toEqual(200);
-        expect('<title>Rebuttal Webapp</title>' in res.body);
+    it('invite page answers', async () => {
+        expect.assertions(0);
+        await request(rebuttal.app).get('/invite/index.html').expect(200);
+    });
+
+    it('populates new storage', async () => {
+        expect.hasAssertions();
+        await rebuttal.populateNewConfig();
+        expect(
+            (await rebuttal.storage.getAllAccounts()).length,
+        ).toBeGreaterThan(0);
     });
 });

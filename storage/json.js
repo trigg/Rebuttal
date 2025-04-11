@@ -202,8 +202,19 @@ var jsonstorage = {
      */
     removeMessage: async function (roomid, messageid) {
         this.storage.messages[roomid][messageid]['text'] = '*Message Removed*';
+        this.storage.messages[roomid][messageid]['userid'] = null;
 
         this.save();
+    },
+
+    getMessage: async function (roomid, messageid) {
+        if (!(roomid in this.storage.messages)) {
+            return null;
+        }
+        if (!(messageid in this.storage.messages[roomid])) {
+            return null;
+        }
+        return this.storage.messages[roomid][messageid];
     },
 
     getAccountPermission: async function (userid, permission) {

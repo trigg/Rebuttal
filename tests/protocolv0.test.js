@@ -1,9 +1,17 @@
+const {
+    afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+} = require('@jest/globals');
 const rebuttal = require('../server.js');
 const requestws = require('superwstest');
 const iconv_lite = require('iconv-lite');
 iconv_lite.encodingExists('foo');
 
-describe('Protocol v0', () => {
+describe('protocol v0', () => {
     var admin_password = 'IHaveThisAmazingAdminPasswordForTesting';
 
     beforeAll(async () => {
@@ -44,7 +52,19 @@ describe('Protocol v0', () => {
     afterEach((done) => {
         rebuttal.server.close(done);
     });
+    it('turns away clients using malformed JSON', async () => {
+        expect.assertions(0);
+        await requestws(rebuttal.server)
+            .ws('/ipc', { rejectUnauthorized: false })
+            .expectJson(
+                (reply) =>
+                    reply.type === 'connect' && reply.protocols.includes('v1'),
+            )
+            .sendText("{type:'message, error:'error;}")
+            .expectClosed();
+    });
     it("'login' passes", async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -65,6 +85,7 @@ describe('Protocol v0', () => {
     });
 
     it("'login' fails with bad login", async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -87,6 +108,7 @@ describe('Protocol v0', () => {
     });
 
     it("attempting 'create room' from protocol v1 without switching", async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -103,6 +125,7 @@ describe('Protocol v0', () => {
     });
 
     it("'signup' works", async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -122,6 +145,7 @@ describe('Protocol v0', () => {
     });
 
     it("'signup' fails with bad signup", async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -141,6 +165,7 @@ describe('Protocol v0', () => {
     });
 
     it("'signup' followed by 'login' works", async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -168,7 +193,8 @@ describe('Protocol v0', () => {
             .expectClosed();
     });
 
-    it('Infinite signup', async () => {
+    it('infinite signup', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -195,7 +221,8 @@ describe('Protocol v0', () => {
             .close()
             .expectClosed();
     });
-    it('Signup fails without enough information', async () => {
+    it('signup fails without enough information', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -212,7 +239,8 @@ describe('Protocol v0', () => {
             .close()
             .expectClosed();
     });
-    it('Login with unknown protocol fails', async () => {
+    it('login with unknown protocol fails', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -230,7 +258,8 @@ describe('Protocol v0', () => {
             .expectClosed();
     });
 
-    it('Login with attempt to remain on protocol v0 fails', async () => {
+    it('login with attempt to remain on protocol v0 fails', async () => {
+        expect.assertions(0);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -248,7 +277,8 @@ describe('Protocol v0', () => {
             .expectClosed();
     });
 
-    it('Plugin may deny a valid signup', async () => {
+    it('plugin may deny a valid signup', async () => {
+        expect.assertions(0);
         await rebuttal.event.listen(
             'usercreate',
             rebuttal.event.priority.EARLY,
@@ -274,7 +304,8 @@ describe('Protocol v0', () => {
             .expectClosed();
     });
 
-    it('Plugin may deny valid login', async () => {
+    it('plugin may deny valid login', async () => {
+        expect.assertions(0);
         await rebuttal.event.listen(
             'userauth',
             rebuttal.event.priority.EARLY,

@@ -21,7 +21,9 @@ Other tests should feed a JSON object into json storage, disable saving, and run
 ## AREAS WE NEED COVERING
 
 -   Image uploads
+-   -   We need to test error handling, intentionally bad images
+-   -   Currently we try to decode and check it has a size. That's not enough
+-   -   At some point we need to decide on a subset of image formats we explicitly allow
 -   Server Logos - aspect ratios, too large, too small, formats
 -   plugins
 -   -   webhooks
--   v1 protocol, watching for storage object changes
