@@ -3,10 +3,14 @@
 
   Will allow a lower bar to join chat but some features may not be possible if this is the primary client
 */
-const shell = require('shelljs');
-const fs = require('fs');
-const express = require('express');
-const path = require('path');
+import shell from 'shelljs';
+import fs from 'fs';
+import express from 'express';
+import path from 'path';
+import event, { Priority, type Event } from '../events.ts';
+
+import { type pluginInterface } from './interface.ts';
+import { type rebuttal } from '../server.ts';
 
 // Get client
 if (!fs.existsSync('client')) {
@@ -17,13 +21,17 @@ shell.cd('client');
 shell.exec('git pull');
 shell.cd('-');
 
-var plugin = {
+interface Theme {
+    name: string;
+    description: string;
+    id?: string;
+}
+
+export const webclientplugin: pluginInterface = {
     pluginName: 'webclient',
-    server: null,
-    themelist: null,
-    start: function (server) {
-        this.server = server;
-        this.themelist = [];
+    // eslint-disable-next-line @typescript-eslint/require-await
+    start: async (server: rebuttal) => {
+        const themelist: Theme[] = [];
 
         // Enumerate all themes on the server side
         fs.readdirSync(path.join('client', 'public', 'img'), {
@@ -31,7 +39,7 @@ var plugin = {
         })
             .filter((entry) => entry.isDirectory())
             .forEach((entry) => {
-                var themefile = path.join(
+                const themefile = path.join(
                     'client',
                     'public',
                     'img',
@@ -39,9 +47,11 @@ var plugin = {
                     'theme.json',
                 );
                 if (fs.existsSync(themefile)) {
-                    var data = JSON.parse(fs.readFileSync(themefile));
+                    const string = fs.readFileSync(themefile).toString();
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    const data: Theme = JSON.parse(string);
                     data.id = entry.name;
-                    this.themelist.push(data);
+                    themelist.push(data);
                 }
             });
         console.log('Webclient started');
@@ -50,14 +60,10 @@ var plugin = {
         server.app.use('/', express.static('client/public/'));
 
         // Inject themes into welcomeObj
-        server.event.listen(
-            'connectionnew',
-            server.event.priority.NORMAL,
-            function (event) {
-                event.welcomeObj.themelist = plugin.themelist;
-            },
-        );
+        event.listen('connectionnew', Priority.NORMAL, (event: Event) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            event.welcomeObj.themelist = themelist;
+        });
     },
 };
-
-module.exports = plugin;
+export default webclientplugin;
