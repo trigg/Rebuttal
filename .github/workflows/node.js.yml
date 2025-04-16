@@ -28,11 +28,6 @@ jobs:
               with:
                   cmd: install
 
-            - name: Yarn bundle
-              uses: borales/actions-yarn@v4
-              with:
-                  cmd: build:prod
-
             - name: Yarn test
               uses: borales/actions-yarn@v4
               with:
