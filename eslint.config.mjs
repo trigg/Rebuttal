@@ -1,6 +1,8 @@
 import { defineConfig, globalIgnores } from 'eslint/config';
 import js from '@eslint/js';
 import globals from 'globals';
+import tseslint from 'typescript-eslint';
+import eslint from '@eslint/js';
 import jest from 'eslint-plugin-jest';
 
 export default defineConfig([
@@ -23,22 +25,23 @@ export default defineConfig([
         },
     },
     {
-        files: ['**/*.js'],
+        files: ['**/*.ts'],
         rules: {
             'no-unused-vars': [
                 'error',
                 { argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
             ],
+            '@typescript-eslint/no-misused-promises': 'error',
+            '@typescript-eslint/no-floating-promises': 'error',
         },
     },
+    eslint.configs.recommended,
+    tseslint.configs.recommendedTypeChecked,
     {
-        files: ['**/*.{js,mjs,cjs}'],
-        plugins: { js },
-        extends: ['js/recommended'],
-    },
-    { files: ['**/*.js'], languageOptions: { sourceType: 'commonjs' } },
-    {
-        files: ['**/*.{js,mjs,cjs}'],
-        languageOptions: { globals: globals.browser },
+        languageOptions: {
+            parserOptions: {
+                projectService: true,
+            },
+        },
     },
 ]);

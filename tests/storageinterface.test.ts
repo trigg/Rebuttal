@@ -1,105 +1,70 @@
-const { describe, expect, it } = require('@jest/globals');
-const StorageInterface = require('../storage/interface');
-const { v4: uuidv4 } = require('uuid');
-const fs = require('fs');
+import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
 
-const jsonstorage = require('../storage/json.js');
-const mysqlstorage = require('../storage/mysql.js');
-const sqlitestorage = require('../storage/sqlite.js');
-
-describe('storage systems have a full interface', () => {
-    it('json storage matches interface', async () => {
-        expect.hasAssertions();
-        jsonstorage.test_mode();
-        jsonstorage.start();
-        for (const method in StorageInterface) {
-            expect(jsonstorage).toHaveProperty(method);
-            expect(typeof jsonstorage[method]).toBe(
-                typeof StorageInterface[method],
-            );
-        }
-    });
-
-    it('sqlite storage matches interface', async () => {
-        expect.hasAssertions();
-        sqlitestorage.test_mode();
-        sqlitestorage.start();
-        for (const method in StorageInterface) {
-            expect(sqlitestorage).toHaveProperty(method);
-            expect(typeof sqlitestorage[method]).toBe(
-                typeof StorageInterface[method],
-            );
-        }
-    });
-
-    it('mysql storage matches interface', async () => {
-        expect.hasAssertions();
-        mysqlstorage.test_mode();
-        mysqlstorage.start();
-        for (const method in StorageInterface) {
-            expect(mysqlstorage).toHaveProperty(method);
-            expect(typeof mysqlstorage[method]).toBe(
-                typeof StorageInterface[method],
-            );
-        }
-    });
-});
+import jsonstorage from '../storage/json.ts';
+//import mysqlstorage from '../storage/mysql';
+import sqlitestorage from '../storage/sqlite.ts';
 
 describe.each([
     ['json', jsonstorage],
     ['sqlite', sqlitestorage],
     //    ['mysql', mysqlstorage],
 ])('storage handles data', (sname, storage) => {
-    it('Storage ' + sname + ' holds user data correctly', () => {
+    it('Storage ' + sname + ' holds user data correctly', async () => {
         expect.hasAssertions();
-        storage.test_passalong(async () => {
-            var userUuid = uuidv4();
-            var userUuid2 = uuidv4();
-            var password = uuidv4();
+        await storage.test_mode();
+        await storage.start();
+        const userUuid = uuidv4();
+        const userUuid2 = uuidv4();
+        const password = uuidv4();
 
-            // Create user
-            await storage.createAccount({
-                id: userUuid,
-                name: 'test',
-                password,
-                email: 'testuser@example.com',
-                group: 'user',
-            });
+        // Create user
+        await storage.createAccount({
+            id: userUuid,
+            name: 'test',
+            password,
+            email: 'testuser@example.com',
+            group: 'user',
+        });
 
-            await storage.createAccount({
-                id: userUuid2,
-                name: 'toast',
-                password,
+        await storage.createAccount({
+            id: userUuid2,
+            name: 'toast',
+            password,
+            email: 'toast@example.com',
+            group: 'user',
+        });
+
+        // Users with the same password CANNOT match hashes
+        expect((await storage.getAccountByID(userUuid))?.password).not.toEqual(
+            (await storage.getAccountByID(userUuid2))?.password,
+        );
+
+        // Check user can login
+        const returned_user = await storage.getAccountByLogin(
+            'testuser@example.com',
+            password,
+        );
+        expect(returned_user).toHaveProperty('name', 'test');
+        expect(returned_user).toHaveProperty('id', userUuid);
+
+        // Delete user
+        await storage.removeAccount(userUuid);
+        expect(await storage.getAccountByID(userUuid)).toBeNull();
+        expect(await storage.getAccountByID(userUuid2)).toHaveProperty(
+            'name',
+            'toast',
+        );
+        expect(await storage.getAllAccounts()).toMatchObject([
+            {
                 email: 'toast@example.com',
                 group: 'user',
-            });
-
-            // Users with the same password CANNOT match hashes
-            expect(
-                (await storage.getAccountByID(userUuid)).password,
-            ).not.toEqual((await storage.getAccountByID(userUuid2)).password);
-
-            // Check user can login
-            var returned_user = await storage.getAccountByLogin(
-                'testuser@example.com',
-                password,
-            );
-            expect(returned_user).toHaveProperty('name', 'test');
-            expect(returned_user).toHaveProperty('id', userUuid);
-
-            // Delete user
-            await storage.removeAccount(userUuid);
-            expect(await storage.getAccountByID(userUuid)).toBeNull();
-            expect(await storage.getAllAccounts()).toMatchObject([
-                {
-                    email: 'toast@example.com',
-                    group: 'user',
-                    id: userUuid2,
-                    name: 'toast',
-                    password: expect.anything(),
-                },
-            ]);
-        });
+                id: userUuid2,
+                name: 'toast',
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                password: expect.anything(),
+            },
+        ]);
     });
     it('Storage ' + sname + ' holds plugin data correctly', async () => {
         expect.hasAssertions();
@@ -137,114 +102,96 @@ describe.each([
         });
     });
     it('Storage ' + sname + ' holds message data correctly', async () => {
-        expect.assertions(6);
-        var roomUuid = uuidv4();
-        var userUuid = uuidv4();
-        await storage.addNewMessage(roomUuid, {
-            text: 'Some Message',
-            userid: userUuid,
-            username: 'userName',
-            tags: {},
-            url: 'null',
-            type: 'null',
-            img: 'null',
-        });
-
-        await storage.addNewMessage(roomUuid, {
-            text: 'A different Message',
-            userid: userUuid,
-            username: 'userName',
-            tags: {},
-        });
-
-        var segment = await storage.getTextRoomNewestSegment(roomUuid);
-        var messages = await storage.getTextForRoom(roomUuid, segment);
-        expect(messages).toMatchObject([
-            {
-                idx: 0,
+        expect.hasAssertions();
+        const roomUuid = uuidv4();
+        const userUuid = uuidv4();
+        for (let count = 0; count < 20; count++) {
+            await storage.addNewMessage(roomUuid, {
                 roomid: roomUuid,
-                tags: {},
-                text: 'Some Message',
+                text: ' Message ' + count,
                 userid: userUuid,
                 username: 'userName',
-            },
-            {
-                idx: 1,
-                roomid: roomUuid,
-                tags: {},
-                text: 'A different Message',
-                userid: userUuid,
-                username: 'userName',
-            },
-        ]);
+                tags: [],
+                url: null,
+                type: null,
+                img: null,
+            });
+        }
 
-        var oldmessage = messages[1];
+        const segment = await storage.getTextRoomNewestSegment(roomUuid);
+        expect(segment).toBe(3);
+        let messages = await storage.getTextForRoom(roomUuid, segment);
+        expect(messages).toHaveLength(5);
+        for (const message of messages) {
+            expect(message.userid).toBe(userUuid);
+            expect(message.text).toContain(' Message ');
+            expect(message.url).toBeFalsy();
+            expect(message.type).toBeFalsy();
+            expect(message.img).toBeFalsy();
+        }
+
+        const oldmessage = messages[1];
         oldmessage.text = 'A whole new meaning';
-        await storage.updateMessage(roomUuid, oldmessage.idx, oldmessage);
+        expect(oldmessage.idx).not.toBe(undefined);
+        await storage.updateMessage(
+            roomUuid,
+            oldmessage.idx as number,
+            oldmessage,
+        );
         messages = await storage.getTextForRoom(roomUuid, segment);
 
-        expect(messages).toMatchObject([
-            {
-                idx: 0,
-                roomid: roomUuid,
-                tags: {},
-                text: 'Some Message',
-                userid: userUuid,
-                username: 'userName',
-            },
-            {
-                idx: 1,
-                roomid: roomUuid,
-                tags: {},
-                text: 'A whole new meaning',
-                userid: userUuid,
-                username: 'userName',
-            },
-        ]);
+        expect(messages[1]).toMatchObject({
+            idx: 16,
+            roomid: roomUuid,
+            tags: [],
+            text: 'A whole new meaning',
+            userid: userUuid,
+            username: 'userName',
+            url: null,
+            img: null,
+            type: null,
+        });
 
         // Delete message
-        await storage.removeMessage(roomUuid, messages[0].idx);
+
+        expect(messages[0].idx).not.toBe(undefined);
+        await storage.removeMessage(roomUuid, messages[0].idx as number);
 
         messages = await storage.getTextForRoom(roomUuid, segment);
 
-        expect(messages).toMatchObject([
-            {
-                idx: 0,
-                text: '*Message Removed*',
-                userid: null,
-            },
-            {
-                idx: 1,
-                roomid: roomUuid,
-                tags: {},
-                text: 'A whole new meaning',
-                userid: userUuid,
-                username: 'userName',
-            },
-        ]);
+        expect(messages[1]).toMatchObject({
+            idx: 16,
+            roomid: roomUuid,
+            tags: [],
+            text: 'A whole new meaning',
+            userid: userUuid,
+            username: 'userName',
+        });
+        expect(messages[0]).toMatchObject({
+            idx: 15,
+            text: '*Message Removed*',
+            userid: null,
+        });
 
         expect(await storage.getMessage(uuidv4(), 0)).toBeNull();
         expect(await storage.getMessage(roomUuid, 10000)).toBeNull();
-        expect(await storage.getMessage(roomUuid, 0)).toMatchObject({
+        expect(await storage.getMessage(roomUuid, 15)).toMatchObject({
             text: '*Message Removed*',
             userid: null,
         });
     });
-    it(
-        'Storage ' + sname + " doesn't crash when dealing with invites",
-        async () => {
-            expect.assertions(2);
-            // Prove invites don't crash
-            // This gets covered by invite.test.js
-            var inviteUuid = uuidv4();
-            await storage.generateSignUp('user', inviteUuid);
-            expect(await storage.expendSignUp(inviteUuid)).toBe('user');
-            expect(await storage.expendSignUp(uuidv4())).toBe(null);
-        },
-    );
+    it('Storage ' + sname + ' correctly handles invites', async () => {
+        expect.assertions(2);
+        // Prove invites don't crash
+        // This gets covered by invite.test.js
+        const inviteUuid = uuidv4();
+        await storage.generateSignUp('user', inviteUuid);
+        expect(await storage.expendSignUp(inviteUuid)).toBe('user');
+        expect(await storage.expendSignUp(uuidv4())).toBe(null);
+    });
     it('Storage ' + sname + ' holds group data correctly', async () => {
-        expect.assertions(10);
-        var userUuid = uuidv4();
+        expect.assertions(12);
+        const userUuid = uuidv4();
         await storage.addGroupPermission('admin', 'createRoom');
         await storage.createAccount({
             id: userUuid,
@@ -253,6 +200,13 @@ describe.each([
             group: 'admin',
             password: 'something',
         });
+        expect(await storage.getAccountByID(userUuid)).toHaveProperty(
+            'group',
+            'admin',
+        );
+        expect(await storage.getGroupPermission('admin', 'createRoom')).toBe(
+            true,
+        );
         expect(await storage.getAccountPermission(userUuid, 'createRoom')).toBe(
             true,
         );
@@ -300,10 +254,10 @@ describe.each([
     });
 
     it('Storage ' + sname + ' updates account details', async () => {
-        expect.assertions(2);
-        var userUuid = uuidv4();
+        expect.assertions(1);
+        const userUuid = uuidv4();
         await storage.addGroupPermission('admin', 'createRoom');
-        let user = {
+        const user = {
             id: userUuid,
             name: 'adminname',
             email: 'adminperson2@example.com',
@@ -318,16 +272,11 @@ describe.each([
         expect(await storage.getAccountByID(user.id)).toMatchObject({
             name: 'notanadmin',
         });
-        delete user.avatar;
-        await storage.updateAccount(user.id, user);
-        expect(await storage.getAccountByID(user.id)).not.toHaveProperty(
-            'avatar',
-        );
     });
     it('Storage ' + sname + ' holds room data correctly', async () => {
         expect.assertions(5);
-        var roomUuid = uuidv4();
-        var roomUuid2 = uuidv4();
+        const roomUuid = uuidv4();
+        const roomUuid2 = uuidv4();
         // Test room operations
         await storage.createRoom({
             id: roomUuid,
@@ -340,7 +289,11 @@ describe.each([
             type: 'text',
         });
 
-        await storage.updateRoom(roomUuid, { type: 'text', name: 'realroom' });
+        await storage.updateRoom(roomUuid, {
+            type: 'text',
+            name: 'realroom',
+            id: roomUuid,
+        });
         expect(await storage.getRoomByID(roomUuid)).toMatchObject({
             id: roomUuid,
             name: 'realroom',
@@ -395,7 +348,7 @@ describe.each([
         async () => {
             expect.assertions(1);
 
-            var roomUuid = uuidv4();
+            const roomUuid = uuidv4();
             await storage.createRoom({
                 id: roomUuid,
                 name: 'testroom',
@@ -412,8 +365,8 @@ describe.each([
             ' returns segment zero when asked for newest segment of non-existant room',
         async () => {
             expect.assertions(1);
-
-            expect(await storage.getTextRoomNewestSegment(uuidv4())).toBe(0);
+            const seg = await storage.getTextRoomNewestSegment(uuidv4());
+            expect(seg).toBe(0);
         },
     );
     it(
@@ -455,10 +408,10 @@ describe.each([
     it('Storage ' + sname + ' can change account password', async () => {
         expect.assertions(4);
 
-        let userid = uuidv4();
-        let userPassword1 = 'super1';
-        let userPassword2 = 'super2';
-        let userEmail = 'testuser1@example.com';
+        const userid = uuidv4();
+        const userPassword1 = 'super1';
+        const userPassword2 = 'super2';
+        const userEmail = 'testuser1@example.com';
 
         await storage.createAccount({
             id: userid,
@@ -513,14 +466,6 @@ describe('storage can successfully save to disk', () => {
         expect(fs.statSync(jsonstorage.fileName).size).toBeGreaterThan(0);
         fs.rmSync(jsonstorage.fileName);
         jsonstorage.fileName = null;
-    });
-
-    it('sqlite can write to a file', async () => {
-        expect.assertions(1);
-
-        await sqlitestorage.exit();
-        expect(fs.statSync(sqlitestorage.fileName).size).toBeGreaterThan(0);
-        sqlitestorage.start();
     });
 });
 

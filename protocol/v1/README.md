@@ -150,16 +150,16 @@ Requires permission `setUserGroup`. Client Should steer users towards a list of 
 
 Sent whenever the client either loses/gains a device or toggles a device state. If false, the user doesn't have or has disabled a device. This will result in an equal `chatdev` message sent to every client in the same voice room as the sending user, with this users `userid` also attached.
 
-| type      | `servermute`  |                                              |
-| --------- | ------------- | -------------------------------------------- |
-| `userid`  | string (uuid) | the user to affect                           |
-| `message` | string        | the message chosen when server muting a user |
+| type       | `servermute`  |                             |
+| ---------- | ------------- | --------------------------- |
+| `userid`   | string (uuid) | the user to affect          |
+| `suppress` | boolean       | If the user is server muted |
 
 Requires permission `suppressUser`. Sends a `servermute` message to all connected clients. Indicates to clients that audiostreams from this user should be muted.
 
 | type      | `talking` |                                                                                                                                                             |
 | --------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `message` | boolean   | if the user is currently talking. The client should monitor the microphone audio stream and send `true` when considered to be talking and `false` when not. |
+| `talking` | boolean   | if the user is currently talking. The client should monitor the microphone audio stream and send `true` when considered to be talking and `false` when not. |
 
 This sends a `talking` message to all connected clients to allow users to see at a glance who is talking at any time.
 

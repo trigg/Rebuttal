@@ -1,21 +1,19 @@
-const {
-    afterEach,
-    beforeAll,
-    beforeEach,
-    describe,
-    expect,
-    it,
-} = require('@jest/globals');
-const rebuttal = require('../server.js');
-const requestws = require('superwstest');
-const iconv_lite = require('iconv-lite');
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+import { rebuttal, create_rebuttal } from '../server.ts';
+import requestws from 'superwstest';
+import iconv_lite from 'iconv-lite';
 iconv_lite.encodingExists('foo');
+import event, { Priority } from '../events.ts';
+import assert from 'assert';
 
 describe('protocol v0', () => {
-    var admin_password = 'IHaveThisAmazingAdminPasswordForTesting';
+    const admin_password = 'IHaveThisAmazingAdminPasswordForTesting';
+    let rebuttal: rebuttal | null = null;
 
     beforeAll(async () => {
-        var config = {
+        const config = {
             storage: 'json',
             port: 9000,
             servername: 'testing server',
@@ -23,20 +21,21 @@ describe('protocol v0', () => {
             gravatarfallback: 'monsterid',
             url: 'https://localhost:9000/',
             infinitesignup: 'user',
+            plugins: [],
+            test_mode: true,
         };
-        await rebuttal.create(config);
+        rebuttal = await create_rebuttal(config);
 
         // Don't save storage to disk for tests.
-        rebuttal.storage.fileName = null;
-        await rebuttal.storage.generateSignUp(
+        await rebuttal?.storage.generateSignUp(
             'user',
             '00000000-0000-0000-0000-000000000000',
         );
-        await rebuttal.storage.generateSignUp(
+        await rebuttal?.storage.generateSignUp(
             'admin',
             '11111111-1111-1111-1111-111111111111',
         );
-        await rebuttal.storage.createAccount({
+        await rebuttal?.storage.createAccount({
             id: '00000000-0000-1111-0000-000000000000',
             name: 'testadmin',
             email: 'test.admin@example.com',
@@ -44,16 +43,16 @@ describe('protocol v0', () => {
             group: 'admin',
         });
     });
-
     beforeEach((done) => {
-        rebuttal.server.listen(0, 'localhost', done);
+        rebuttal?.listen(0, 'localhost', done);
     });
 
     afterEach((done) => {
-        rebuttal.server.close(done);
+        rebuttal?.close(done);
     });
     it('turns away clients using malformed JSON', async () => {
         expect.assertions(0);
+        assert(rebuttal !== null);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -65,6 +64,8 @@ describe('protocol v0', () => {
     });
     it("'login' passes", async () => {
         expect.assertions(0);
+        assert(rebuttal !== null);
+
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -86,6 +87,8 @@ describe('protocol v0', () => {
 
     it("'login' fails with bad login", async () => {
         expect.assertions(0);
+        assert(rebuttal !== null);
+
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -109,6 +112,8 @@ describe('protocol v0', () => {
 
     it("attempting 'create room' from protocol v1 without switching", async () => {
         expect.assertions(0);
+        assert(rebuttal !== null);
+
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -126,6 +131,8 @@ describe('protocol v0', () => {
 
     it("'signup' works", async () => {
         expect.assertions(0);
+        assert(rebuttal !== null);
+
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -146,6 +153,8 @@ describe('protocol v0', () => {
 
     it("'signup' fails with bad signup", async () => {
         expect.assertions(0);
+        assert(rebuttal !== null);
+
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -166,6 +175,8 @@ describe('protocol v0', () => {
 
     it("'signup' followed by 'login' works", async () => {
         expect.assertions(0);
+        assert(rebuttal !== null);
+
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -195,6 +206,8 @@ describe('protocol v0', () => {
 
     it('infinite signup', async () => {
         expect.assertions(0);
+        assert(rebuttal !== null);
+
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -223,6 +236,8 @@ describe('protocol v0', () => {
     });
     it('signup fails without enough information', async () => {
         expect.assertions(0);
+        assert(rebuttal !== null);
+
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -241,6 +256,8 @@ describe('protocol v0', () => {
     });
     it('login with unknown protocol fails', async () => {
         expect.assertions(0);
+        assert(rebuttal !== null);
+
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -260,6 +277,8 @@ describe('protocol v0', () => {
 
     it('login with attempt to remain on protocol v0 fails', async () => {
         expect.assertions(0);
+        assert(rebuttal !== null);
+
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -279,13 +298,11 @@ describe('protocol v0', () => {
 
     it('plugin may deny a valid signup', async () => {
         expect.assertions(0);
-        await rebuttal.event.listen(
-            'usercreate',
-            rebuttal.event.priority.EARLY,
-            (e) => {
-                e.cancelled = true;
-            },
-        );
+        event.listen('usercreate', Priority.EARLY, (e) => {
+            e.cancelled = true;
+        });
+        assert(rebuttal !== null);
+
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
@@ -306,13 +323,11 @@ describe('protocol v0', () => {
 
     it('plugin may deny valid login', async () => {
         expect.assertions(0);
-        await rebuttal.event.listen(
-            'userauth',
-            rebuttal.event.priority.EARLY,
-            (e) => {
-                e.cancelled = true;
-            },
-        );
+        event.listen('userauth', Priority.EARLY, (e) => {
+            e.cancelled = true;
+        });
+        assert(rebuttal !== null);
+
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .expectJson(
