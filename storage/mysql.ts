@@ -266,16 +266,6 @@ export const mysqlstorage = {
             user: this.mysql_username,
             password: this.mysql_password,
         }).await;
-        console.log(
-            'Connecting DB : ' +
-                this.mysql_host +
-                ' uN : ' +
-                this.mysql_username +
-                ' pW : ' +
-                this.mysql_password +
-                ' DB : ' +
-                this.mysql_password,
-        );
     },
 
     /**

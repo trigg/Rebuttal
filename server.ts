@@ -254,7 +254,8 @@ export async function create_rebuttal(config: config) {
                 const userUuid = uuidv4();
                 const password = uuidv4();
                 console.log('Created Root account : root@localhost');
-                console.log('Pass : ' + password);
+                // TODO Pass the admin a one-use URL to login with this password
+                //console.log('Pass : ' + password);
                 await this.storage.createAccount({
                     id: userUuid,
                     name: 'root',
