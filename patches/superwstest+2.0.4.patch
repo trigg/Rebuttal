@@ -24,6 +24,18 @@ index 37f2e59..3b0c318 100644
        throw new Error(`Expected message ${stringify(check)}, got ${stringify(received)}`);
      }
    },
+diff --git a/node_modules/superwstest/index.d.ts b/node_modules/superwstest/index.d.ts
+index bd22880..e5bc397 100644
+--- a/node_modules/superwstest/index.d.ts
++++ b/node_modules/superwstest/index.d.ts
+@@ -15,6 +15,7 @@ declare module 'superwstest' {
+ 
+   export interface ExpectMessageOptions {
+     timeout?: number | undefined;
++    skip? : boolean | undefined;
+   }
+ 
+   export interface RequestOptions {
 diff --git a/node_modules/superwstest/src/superwstest.mjs b/node_modules/superwstest/src/superwstest.mjs
 index 72fffdd..e2bf224 100644
 --- a/node_modules/superwstest/src/superwstest.mjs

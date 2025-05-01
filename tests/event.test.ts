@@ -1,75 +1,74 @@
-const { beforeAll, describe, expect, it } = require('@jest/globals');
-const event = require('../events.js');
+import event, { Priority } from '../events.ts';
 
 describe('events', () => {
-    var eventstage = -1;
-    beforeAll(async () => {
+    let eventstage = -1;
+    beforeAll(() => {
         event.init();
     });
 
-    it('fails to listen to unregistered event', async () => {
+    it('fails to listen to unregistered event', () => {
         expect.assertions(1);
         expect(() => {
-            event.listen('doesnotexist', event.priority.EARLY, () => {});
+            event.listen('doesnotexist', Priority.EARLY, () => {});
         }).toThrow('Listening to non-existant event : doesnotexist');
     });
 
-    it('register new event', async () => {
+    it('register new event', () => {
         expect.assertions(1);
         event.register('testevent');
-        await expect(event.listeners).toHaveProperty('testevent');
+        expect(event.listeners).toHaveProperty('testevent');
     });
 
-    it('can add event listeners', async () => {
+    it('can add event listeners', () => {
         expect.assertions(0);
-        event.listen('testevent', event.priority.MONITOR, function (e) {
-            console.log('Sanity test-  should be last ' + e);
-            if (eventstage >= event.priority.MONITOR) {
+        event.listen('testevent', Priority.MONITOR, function () {
+            console.log('Sanity test-  should be last');
+            if (eventstage >= Priority.MONITOR) {
                 throw new Error('Event priorities called out of order');
             }
             if (eventstage === 0) {
                 throw new Error('Event priority MONITOR called first');
             }
-            eventstage = event.priority.MONITOR;
+            eventstage = Priority.MONITOR;
         });
 
-        event.listen('testevent', event.priority.EARLY, function (e) {
-            console.log('Sanity test-  should be first ' + e);
-            if (eventstage >= event.priority.EARLY) {
+        event.listen('testevent', Priority.EARLY, function () {
+            console.log('Sanity test-  should be first');
+            if (eventstage >= Priority.EARLY) {
                 throw new Error('Event priorities called out of order');
             }
 
-            eventstage = event.priority.EARLY;
+            eventstage = Priority.EARLY;
         });
-        event.listen('testevent', event.priority.LATE, function (e) {
-            console.log('Sanity test-  should be middle ' + e);
-            if (eventstage >= event.priority.LATE) {
+        event.listen('testevent', Priority.LATE, function () {
+            console.log('Sanity test-  should be middle');
+            if (eventstage >= Priority.LATE) {
                 throw new Error('Event priorities called out of order');
             }
-            eventstage = event.priority.LATE;
+            eventstage = Priority.LATE;
         });
     });
 
     it('can trigger event', async () => {
         expect.assertions(0);
-        event.trigger('testevent', {});
+        await event.trigger('testevent', {});
     });
 
     it('can mutate values in a triggered event', async () => {
         expect.assertions(5);
         event.register('mutateevent');
 
-        event.listen('mutateevent', event.priority.EARLY, (e) => {
+        event.listen('mutateevent', Priority.EARLY, (e) => {
             e.a = 2;
         });
 
-        event.listen('mutateevent', event.priority.NORMAL, (e) => {
+        event.listen('mutateevent', Priority.NORMAL, (e) => {
             expect(e.a).toBe(2);
             expect(e.b).toBe(2);
             e.a = 1;
         });
 
-        event.listen('mutateevent', event.priority.FINAL, (e) => {
+        event.listen('mutateevent', Priority.FINAL, (e) => {
             expect(e.a).toBe(1);
             expect(e.b).toBe(2);
             expect(e.c).toBe(3);
@@ -81,13 +80,13 @@ describe('events', () => {
     it('can cancel a triggered event', async () => {
         expect.assertions(0);
         event.register('cancelevent');
-        event.listen('cancelevent', event.priority.EARLY, (e) => {
+        event.listen('cancelevent', Priority.EARLY, (e) => {
             e.cancelled = true;
         });
-        event.listen('cancelevent', event.priority.NORMAL, (_e) => {
+        event.listen('cancelevent', Priority.NORMAL, () => {
             throw new Error('Continued with cancelled event');
         });
-        event.listen('cancelevent', event.priority.MONITOR, (_e) => {
+        event.listen('cancelevent', Priority.MONITOR, () => {
             throw new Error('Monitored cancelled event');
         });
         await event.trigger('cancelevent', {});

@@ -2,16 +2,17 @@
     "name": "rebuttal",
     "version": "1.0.0",
     "description": "",
-    "main": "index.js",
-    "type": "commonjs",
+    "main": "index.ts",
+    "type": "module",
     "scripts": {
-        "run": "node index.js",
+        "run": "node index.ts",
         "test": "jest",
         "postinstall": "patch-package"
     },
     "author": "trigg <triggerhapp@gmail.com>",
     "license": "GPL-3.0-or-later",
     "dependencies": {
+        "@types/ws": "^8.18.1",
         "bcrypt": "^5.0.1",
         "better-sqlite3": "^11.9.1",
         "body-parser": "^1.19.0",
@@ -22,11 +23,19 @@
         "shelljs": "^0.8.4",
         "socket.io": "^4.0.2",
         "uuid": "^8.3.2",
-        "ws": "^7.4.5"
+        "ws": "^8.18.1"
     },
     "devDependencies": {
+        "@babel/preset-env": "^7.26.9",
+        "@babel/preset-typescript": "^7.27.0",
         "@eslint/js": "^9.24.0",
+        "@types/bcrypt": "^5.0.2",
+        "@types/better-sqlite3": "^7.6.13",
+        "@types/express": "^5.0.1",
+        "@types/gravatar": "^1.8.6",
         "@types/jest": "^29.5.14",
+        "@types/shelljs": "^0.8.15",
+        "@types/uuid": "^10.0.0",
         "@typescript-eslint/eslint-plugin": "^8.29.1",
         "@typescript-eslint/parser": "^8.29.1",
         "cross-env": "^7.0.3",
@@ -43,6 +52,7 @@
         "prettier": "^2.5.1",
         "supertest": "^7.1.0",
         "superwstest": "^2.0.4",
-        "typescript": "^5.8.3"
+        "typescript": "^5.8.3",
+        "typescript-eslint": "^8.29.1"
     }
 }

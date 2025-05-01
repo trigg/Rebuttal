@@ -1,17 +1,11 @@
-const {
-    afterAll,
-    beforeAll,
-    beforeEach,
-    describe,
-    expect,
-    it,
-} = require('@jest/globals');
-const rebuttal = require('../server.js');
-const request = require('supertest');
-const fs = require('fs');
+import { create_rebuttal, rebuttal, rebuttalInternal } from '../server.ts';
+import request from 'supertest';
+import fs from 'fs';
+import assert from 'assert';
 
 describe('webserver works', () => {
-    var test_moved_uploads = false;
+    let rebuttal: rebuttal | null;
+    let test_moved_uploads = false;
     beforeAll(() => {
         if (fs.existsSync('uploads')) {
             if (!fs.existsSync('uploads-nottesting')) {
@@ -34,29 +28,32 @@ describe('webserver works', () => {
     });
     beforeEach(async () => {
         // Create a server with made up config
-        var config = {
+        const config = {
             storage: 'json',
             port: 9000,
             servername: 'testing server',
             serverimg: 'img/server.png',
             gravatarfallback: 'monsterid',
             url: 'https://localhost:9000/',
+            plugins: [],
+            test_mode: true,
         };
-        await rebuttal.create(config);
+        rebuttal = await create_rebuttal(config);
         // Don't save storage to disk for tests.
-        rebuttal.storage.fileName = null;
     });
 
     it('invite page answers', async () => {
         expect.assertions(0);
+        assert(rebuttal !== null);
         await request(rebuttal.app).get('/invite/index.html').expect(200);
     });
 
     it('populates new storage', async () => {
         expect.hasAssertions();
-        await rebuttal.populateNewConfig();
-        expect(
-            (await rebuttal.storage.getAllAccounts()).length,
-        ).toBeGreaterThan(0);
+        const rebuttal_internal = rebuttal as rebuttalInternal;
+        await rebuttal_internal?.populateNewConfig();
+        const val = await rebuttal?.storage.getAllAccounts();
+        expect(val).not.toBeFalsy();
+        expect(val?.length).toBeGreaterThan(0);
     });
 });

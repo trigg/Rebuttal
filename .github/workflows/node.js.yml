@@ -1,6 +1,8 @@
 name: Test Package
 
 on: [push]
+permissions:
+    contents: read
 
 permissions:
   contents: read
