@@ -26,7 +26,8 @@ jobs:
               run: openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 3650 -nodes -subj "/C=XX/ST=StateName/L=CityName/O=CompanyName/OU=CompanySectionName/CN=CommonNameOrHostname"
 
             - name: Yarn Build Webapp
-              run: cd webapp && yarn && yarn run build
+              run: yarn && yarn run build
+              working-directory: ./webapp
 
             - name: Yarn install
               uses: borales/actions-yarn@v4
