@@ -1,6 +1,7 @@
 import express from 'express';
 import { WebSocket, WebSocketServer } from 'ws';
 import https from 'https';
+import http from 'http';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
@@ -255,7 +256,6 @@ export async function create_rebuttal(config: config) {
                 const password = uuidv4();
                 console.log('Created Root account : root@localhost');
                 // TODO Pass the admin a one-use URL to login with this password
-                //console.log('Pass : ' + password);
                 await this.storage.createAccount({
                     id: userUuid,
                     name: 'root',

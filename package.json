@@ -5,6 +5,7 @@
     "main": "index.ts",
     "type": "module",
     "scripts": {
+        "build-webapp": "cd webapp && yarn && yarn build",
         "run": "node index.ts",
         "test": "jest",
         "postinstall": "patch-package"
