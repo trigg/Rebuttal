@@ -143,7 +143,7 @@ export const protocolv1 = {
                 break;
             case 'getmessages':
                 {
-                    const getsegment = packet.segment ? packet.segment : await server.storage.getTextRoomNewestSegment(packet.roomid);
+                    const getsegment = packet.segment == undefined ? packet.segment : await server.storage.getTextRoomNewestSegment(packet.roomid);
                     const returnsegment = await server.storage.getTextForRoom(
                         packet.roomid,
                         getsegment,
