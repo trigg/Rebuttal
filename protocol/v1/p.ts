@@ -131,7 +131,7 @@ export const protocolv1 = {
                         );
                         server.sendTo(socket, {
                             type: 'invite',
-                            url: server.config.url + 'invite/' + uuid,
+                            url: server.config.url + '/?invite=' + uuid,
                         });
                     } else {
                         server.sendTo(socket, {
@@ -143,18 +143,7 @@ export const protocolv1 = {
                 break;
             case 'getmessages':
                 {
-                    let getsegment;
-                    if (
-                        packet.segment === undefined ||
-                        packet.segment === null
-                    ) {
-                        getsegment =
-                            await server.storage.getTextRoomNewestSegment(
-                                packet.roomid,
-                            );
-                    } else {
-                        getsegment = packet.segment;
-                    }
+                    const getsegment = (packet.segment != undefined) ? packet.segment : await server.storage.getTextRoomNewestSegment(packet.roomid);
                     const returnsegment = await server.storage.getTextForRoom(
                         packet.roomid,
                         getsegment,
@@ -260,7 +249,6 @@ export const protocolv1 = {
                 {
                     if (
                         packet.touserid &&
-                        packet.fromuserid &&
                         packet.payload
                     ) {
                         server.sendToID(packet.touserid, {

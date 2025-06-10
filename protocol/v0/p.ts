@@ -163,6 +163,12 @@ export const protocolv0 = {
                             });
                             socket.close(3001, 'Permission denied');
                         }
+                    } else {
+                        server.sendTo(socket, {
+                            type: 'error',
+                            message: 'Malformed login',
+                        });
+                        socket.close(3001, 'Malformed login');
                     }
                 }
                 break;

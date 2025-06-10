@@ -3,7 +3,6 @@
 
   Will allow a lower bar to join chat but some features may not be possible if this is the primary client
 */
-import shell from 'shelljs';
 import fs from 'fs';
 import express from 'express';
 import path from 'path';
@@ -11,15 +10,6 @@ import event, { Priority, type Event } from '../events.ts';
 
 import { type pluginInterface } from './interface.ts';
 import { type rebuttal } from '../server.ts';
-
-// Get client
-if (!fs.existsSync('client')) {
-    shell.exec('git clone https://github.com/trigg/Rebuttal-Client.git client');
-}
-// Update it
-shell.cd('client');
-shell.exec('git pull');
-shell.cd('-');
 
 interface Theme {
     name: string;
@@ -34,14 +24,14 @@ export const webclientplugin: pluginInterface = {
         const themelist: Theme[] = [];
 
         // Enumerate all themes on the server side
-        fs.readdirSync(path.join('client', 'public', 'img'), {
+        fs.readdirSync(path.join('webapp', 'dist', 'img'), {
             withFileTypes: true,
         })
             .filter((entry) => entry.isDirectory())
             .forEach((entry) => {
                 const themefile = path.join(
-                    'client',
-                    'public',
+                    'webapp',
+                    'dist',
                     'img',
                     entry.name,
                     'theme.json',
@@ -57,7 +47,7 @@ export const webclientplugin: pluginInterface = {
         console.log('Webclient started');
 
         // Allow access to the client files
-        server.app.use('/', express.static('client/public/'));
+        server.app.use('/', express.static('webapp/dist/'));
 
         // Inject themes into welcomeObj
         event.listen('connectionnew', Priority.NORMAL, (event: Event) => {
