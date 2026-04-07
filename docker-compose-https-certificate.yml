@@ -1,0 +1,12 @@
+version: '3.9'
+
+services:
+    rebuttal-server:
+        image: triggerhapp/rebuttal:main # Use latest git
+        volumes:
+            - './config.json:/config.json'
+            - './data.sqlite:/data.sqlite' # Skip if using another storage type in config
+            - './key.pem:/key.pem'
+            - './cert.pen:/cert.pem' # Assuming you have a valid domain key & cert
+        ports:
+            - '443:9000'

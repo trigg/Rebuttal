@@ -21,6 +21,7 @@ import {
     type RoomStorage,
     type AccountStorage,
 } from './storage/interface.ts';
+import { env } from 'process';
 
 export interface config {
     storage: string;
@@ -101,7 +102,7 @@ export interface Room {
 export interface rebuttal {
     config: config;
     storage: StorageInterface;
-    server: https.Server;
+    server: https.Server | http.Server;
     app: typeof express.application;
     protocols: string[];
     connections: rebuttalSocket[];
@@ -191,26 +192,35 @@ export async function create_rebuttal(config: config) {
             }
         }
     }
-    let key_path = './key.pem';
-    let cert_path = './cert.pem';
-    if (config.keypath) {
-        key_path = config.keypath;
-    }
-    if (config.certpath) {
-        cert_path = config.certpath;
-    }
-    if (!fs.existsSync(key_path)) {
-        throw new Error('key file not found');
-    }
-    if (!fs.existsSync(cert_path)) {
-        throw new Error('cert file not found');
-    }
-    const options = {
-        key: fs.readFileSync(key_path),
-        cert: fs.readFileSync(cert_path),
+    function create_server(app: typeof express.application) {
+        if (env.HTTP) {
+            // eslint-disable-next-line @typescript-eslint/no-misused-promises
+            return http.createServer({}, app);
+        }
+        let key_path = './key.pem';
+        let cert_path = './cert.pem';
+        if (config.keypath) {
+            key_path = config.keypath;
+        }
+        if (config.certpath) {
+            cert_path = config.certpath;
+        }
+        if (!fs.existsSync(key_path)) {
+            throw new Error('key file not found');
+        }
+        if (!fs.existsSync(cert_path)) {
+            throw new Error('cert file not found');
+        }
+        const options = {
+            key: fs.readFileSync(key_path),
+            cert: fs.readFileSync(cert_path),
+        };
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        return https.createServer(options, app);
     };
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    const server = https.createServer(options, app);
+    const server = create_server(app);
+
 
     const wss = new WebSocketServer({
         server: server,
