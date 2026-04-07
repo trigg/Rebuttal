@@ -11,6 +11,6 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/webapp/dist ./webapp/dist
 # TODO : Consider having a build step rather than moving src into runner
 
-COPY index.ts server.ts events.ts plugin storage package.json ./
+COPY index.ts server.ts events.ts plugin storage protocol package.json ./
 EXPOSE 9000
 CMD ["yarn", "run", "run"]
