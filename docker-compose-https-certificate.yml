@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
     rebuttal-server:
         image: triggerhapp/rebuttal:main # Use latest git

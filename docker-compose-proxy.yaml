@@ -1,0 +1,26 @@
+# This Docker Compose template assumes you have a reverse proxy like
+# - steveltn/https-portal
+# - nginxproxy/nginx-proxy
+#
+# With it set up to use VIRTUALHOST & VIRTUALPORT
+#
+# Make sure to change the network name to match your own
+# and the HOST to match the expected virtual host
+
+networks:
+    nginx-reverse-proxy:
+        external: true
+        name: 'nginx-reverse-proxy'
+
+services:
+    rebuttal-server:
+        image: triggerhapp/rebuttal:main # Use latest git
+        volumes:
+            - './config.json:/config.json'
+            - './data.sqlite:/data.sqlite'
+        environment:
+            - VIRTUAL_HOST=chat.example.com
+            - VIRTUAL_PORT=9000
+            - HTTP=true # Tell the Rebuttal server to accept unencrypted proxy requests
+        networks:
+            - nginx-reverse-proxy
