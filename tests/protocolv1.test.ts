@@ -102,10 +102,10 @@ describe('protocol v1', () => {
                 password: admin_password,
                 protocol: 'v1',
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'updateUsers' && reply.userList.length == 2,
-                { skip: true, timeout: 500 },
+                { timeout: 500 },
             )
             .close()
             .expectClosed();
@@ -127,10 +127,10 @@ describe('protocol v1', () => {
                 password: admin_password,
                 protocol: 'v1',
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'updateRooms' && reply.roomList.length > 0,
-                { skip: true, timeout: 500 },
+                { timeout: 500 },
             )
             .close()
             .expectClosed();
@@ -151,10 +151,10 @@ describe('protocol v1', () => {
                 password: admin_password,
                 protocol: 'v1',
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'updatePerms' && reply.perms.length > 0,
-                { skip: true, timeout: 500 },
+                { timeout: 500 },
             )
             .close()
             .expectClosed();
@@ -175,22 +175,22 @@ describe('protocol v1', () => {
                 password: admin_password,
                 protocol: 'v1',
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'updateRooms' && reply.roomList.length > 0,
-                { skip: true, timeout: 500 },
+                { timeout: 500 },
             )
             .sendJson({
                 type: 'message',
                 roomid: room.id,
                 message: { text: 'test text' },
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type == 'sendMessage' &&
                     reply.roomid == room.id &&
                     reply.message.text === 'test text',
-                { skip: true, timeout: 500 },
+                { timeout: 500 },
             )
             .close()
             .expectClosed();
@@ -211,10 +211,10 @@ describe('protocol v1', () => {
                 password: admin_password,
                 protocol: 'v1',
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'updateRooms' && reply.roomList.length > 0,
-                { skip: true, timeout: 500 },
+                { timeout: 500 },
             )
             .sendJson({
                 type: 'message',
@@ -223,7 +223,7 @@ describe('protocol v1', () => {
                 rawfile: fs.readFileSync('./tests/white.b64').toString(),
                 filename: 'white.png',
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type == 'sendMessage' &&
                     reply.roomid == room.id &&
@@ -233,7 +233,7 @@ describe('protocol v1', () => {
                     ) &&
                     reply.message.width == 128 &&
                     reply.message.height == 128,
-                { skip: true, timeout: 500 },
+                { timeout: 500 },
             )
             .close()
             .expectClosed();
@@ -254,23 +254,23 @@ describe('protocol v1', () => {
                 password: admin_password,
                 protocol: 'v1',
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'updateRooms' && reply.roomList.length > 0,
-                { skip: true, timeout: 500 },
+                { timeout: 500 },
             )
             .sendJson({
                 type: 'message',
                 roomid: room.id,
                 message: { text: 'test text', userid: 4000 },
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type == 'sendMessage' &&
                     reply.roomid == room.id &&
                     reply.message.text === 'test text' &&
                     reply.message.userid == user.id,
-                { skip: true, timeout: 500 },
+                { timeout: 500 },
             )
             .close()
             .expectClosed();
@@ -293,8 +293,8 @@ describe('protocol v1', () => {
             })
             .expectJson((reply) => reply.type === 'login' && reply.success)
             .sendJson({ type: 'invite', groupName: 'user' })
-            .expectJson((reply) => reply.type === 'invite', {
-                skip: true,
+            .waitForJson((reply) => reply.type === 'invite', {
+
                 timeout: 500,
             })
             .close()
@@ -322,13 +322,13 @@ describe('protocol v1', () => {
                 roomid: room_prefilled.id,
                 segment: null,
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'updateText' &&
                     reply.roomid === room_prefilled.id &&
                     reply.segment > 0 &&
                     reply.messages.length > 0,
-                { skip: true, timeout: 500 },
+                { timeout: 500 },
             )
             .close()
             .expectClosed();
@@ -355,37 +355,37 @@ describe('protocol v1', () => {
                 roomid: room_prefilled.id,
                 segment: 0,
             })
-            .expectJson(
+            .waitForJson(
                 // TODO This test is brittle, it accidentally checks the order of indexes in objects, which is not intended.
                 (reply) =>
                     reply.type === 'updateText' &&
                     reply.roomid === room_prefilled.id &&
                     reply.segment === 0 &&
                     JSON.stringify(reply.messages[0]) ==
-                        JSON.stringify({
-                            roomid: room_prefilled.id,
-                            userid: user.id,
-                            text: 'Message 0',
-                            username: user.name,
-                            tags: [],
-                            url: null,
-                            type: null,
-                            img: null,
-                            idx: 0,
-                        }) &&
+                    JSON.stringify({
+                        roomid: room_prefilled.id,
+                        userid: user.id,
+                        text: 'Message 0',
+                        username: user.name,
+                        tags: [],
+                        url: null,
+                        type: null,
+                        img: null,
+                        idx: 0,
+                    }) &&
                     JSON.stringify(reply.messages[4]) ==
-                        JSON.stringify({
-                            roomid: room_prefilled.id,
-                            userid: user.id,
-                            text: 'Message 4',
-                            username: user.name,
-                            tags: [],
-                            url: null,
-                            type: null,
-                            img: null,
-                            idx: 4,
-                        }),
-                { skip: true, timeout: 1000 },
+                    JSON.stringify({
+                        roomid: room_prefilled.id,
+                        userid: user.id,
+                        text: 'Message 4',
+                        username: user.name,
+                        tags: [],
+                        url: null,
+                        type: null,
+                        img: null,
+                        idx: 4,
+                    }),
+                { timeout: 1000 },
             )
             .close()
             .expectClosed();
@@ -406,18 +406,18 @@ describe('protocol v1', () => {
                 password: admin_password,
                 protocol: 'v1',
             })
-            .expectJson((reply) => reply.type === 'updateRooms', {
-                skip: true,
+            .waitForJson((reply) => reply.type === 'updateRooms', {
+
                 timeout: 1000,
             })
             .sendJson({ type: 'joinroom', roomid: room_voice.id })
-            .expectJson((reply) => reply.type === 'joinRoom', {
-                skip: true,
+            .waitForJson((reply) => reply.type === 'joinRoom', {
+
                 timeout: 1000,
             })
             .sendJson({ type: 'leaveroom', roomid: room_voice.id })
-            .expectJson((reply) => reply.type === 'leaveRoom', {
-                skip: true,
+            .waitForJson((reply) => reply.type === 'leaveRoom', {
+
                 timeout: 1000,
             })
             .close()
@@ -439,13 +439,13 @@ describe('protocol v1', () => {
                 password: admin_password,
                 protocol: 'v1',
             })
-            .expectJson((reply) => reply.type === 'updateRooms', {
-                skip: true,
+            .waitForJson((reply) => reply.type === 'updateRooms', {
+
                 timeout: 1000,
             })
             .sendJson({ type: 'joinroom', roomid: room_voice.id })
-            .expectJson((reply) => reply.type === 'joinRoom', {
-                skip: true,
+            .waitForJson((reply) => reply.type === 'joinRoom', {
+
                 timeout: 1000,
             })
             .sendJson({
@@ -453,23 +453,23 @@ describe('protocol v1', () => {
                 livestate: true,
                 livelabel: 'Terminal - yarn test',
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'golive' &&
                     reply.userid === user.id &&
                     reply.roomid === room_voice.id &&
                     reply.livestate &&
                     reply.livelabel == 'Terminal - yarn test',
-                { skip: true, timeout: 1000 },
+                { timeout: 1000 },
             )
             .sendJson({ type: 'golive', livestate: false, livelabel: '' })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'golive' &&
                     reply.userid === user.id &&
                     reply.roomid === room_voice.id &&
                     !reply.livestate,
-                { skip: true, timeout: 1000 },
+                { timeout: 1000 },
             )
             .close()
             .expectClosed();
@@ -490,13 +490,13 @@ describe('protocol v1', () => {
                 password: admin_password,
                 protocol: 'v1',
             })
-            .expectJson((reply) => reply.type === 'updateRooms', {
-                skip: true,
+            .waitForJson((reply) => reply.type === 'updateRooms', {
+
                 timeout: 1000,
             })
             .sendJson({ type: 'joinroom', roomid: room_voice.id })
-            .expectJson((reply) => reply.type === 'joinRoom', {
-                skip: true,
+            .waitForJson((reply) => reply.type === 'joinRoom', {
+
                 timeout: 1000,
             })
             .sendJson({
@@ -504,25 +504,25 @@ describe('protocol v1', () => {
                 livestate: true,
                 livelabel: 'Terminal - yarn test',
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'golive' &&
                     reply.userid === user.id &&
                     reply.roomid === room_voice.id &&
                     reply.livestate &&
                     reply.livelabel == 'Terminal - yarn test',
-                { skip: true, timeout: 1000 },
+                { timeout: 1000 },
             )
             .sendJson({
                 type: 'letmesee',
                 touserid: user.id,
                 message: 'test webrtc message',
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type == 'letmesee' &&
                     reply.message == 'test webrtc message',
-                { skip: true, timeout: 1000 },
+                { timeout: 1000 },
             )
             .close()
             .expectClosed();
@@ -543,8 +543,8 @@ describe('protocol v1', () => {
                 password: admin_password,
                 protocol: 'v1',
             })
-            .expectJson((reply) => reply.type === 'updateRooms', {
-                skip: true,
+            .waitForJson((reply) => reply.type === 'updateRooms', {
+
                 timeout: 1000,
             })
             .sendJson({
@@ -552,10 +552,10 @@ describe('protocol v1', () => {
                 roomName: 'new_room',
                 roomType: 'text',
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'updateRooms' && reply.roomList.length >= 4,
-                { skip: true, timeout: 1000 },
+                { timeout: 1000 },
             )
             .close()
             .expectClosed();
@@ -576,8 +576,8 @@ describe('protocol v1', () => {
                 password: admin_password,
                 protocol: 'v1',
             })
-            .expectJson((reply) => reply.type === 'updateUsers', {
-                skip: true,
+            .waitForJson((reply) => reply.type === 'updateUsers', {
+
                 timeout: 1000,
             })
             .sendJson({
@@ -586,11 +586,11 @@ describe('protocol v1', () => {
                 groupName: 'homunculus',
                 email: 'organism@example.com',
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'updateUsers' &&
                     reply.userList[2].name === 'created_user',
-                { skip: true, timeout: 1000 },
+                { timeout: 1000 },
             )
             .close()
             .expectClosed();
@@ -611,8 +611,8 @@ describe('protocol v1', () => {
                 password: admin_password,
                 protocol: 'v1',
             })
-            .expectJson((reply) => reply.type === 'updateUsers', {
-                skip: true,
+            .waitForJson((reply) => reply.type === 'updateUsers', {
+
                 timeout: 1000,
             })
             .sendJson({
@@ -620,13 +620,13 @@ describe('protocol v1', () => {
                 userName: 'cucumber',
                 userid: user.id,
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'updateUsers' &&
                     reply.userList.filter(
                         (user: User) => user.name === 'cucumber',
                     ).length == 1,
-                { skip: true, timeout: 1000 },
+                { timeout: 1000 },
             )
             .close()
             .expectClosed();
@@ -672,24 +672,24 @@ describe('protocol v1', () => {
                 password: admin_password,
                 protocol: 'v1',
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'updateUsers' &&
                     reply.userList.filter((u: User) => u.name == 'kickee')
                         .length == 1,
                 {
-                    skip: true,
+
                     timeout: 1000,
                 },
             )
             .sendJson({ type: 'removeuser', touserid: kicking_user.id })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'updateUsers' &&
                     reply.userList.filter(
                         (user: User) => user.name === 'kickee',
                     ).length == 0,
-                { skip: true, timeout: 1000 },
+                { timeout: 1000 },
             )
             .close()
             .expectClosed();
@@ -713,18 +713,18 @@ describe('protocol v1', () => {
                 password: admin_password,
                 protocol: 'v1',
             })
-            .expectJson((reply) => reply.type === 'updateRooms', {
-                skip: true,
+            .waitForJson((reply) => reply.type === 'updateRooms', {
+
                 timeout: 1000,
             })
             .sendJson({ type: 'removeroom', roomid: created_room_id })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'updateRooms' &&
                     reply.roomList.filter(
                         (room: Room) => room.name === 'new_room',
                     ).length == 0,
-                { skip: true, timeout: 1000 },
+                { timeout: 1000 },
             )
             .close()
             .expectClosed();
@@ -745,10 +745,10 @@ describe('protocol v1', () => {
                 password: admin_password,
                 protocol: 'v1',
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'updateRooms' && reply.roomList.length > 0,
-                { skip: true, timeout: 500 },
+                { timeout: 500 },
             )
             .sendJson({
                 type: 'updatemessage',
@@ -756,11 +756,11 @@ describe('protocol v1', () => {
                 messageid: 0,
                 message: { text: 'test text' },
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'updateText' &&
                     reply.roomid === room_prefilled.id,
-                { skip: true, timeout: 1000 },
+                { timeout: 1000 },
             )
             .close()
             .expectClosed();
@@ -781,10 +781,10 @@ describe('protocol v1', () => {
                 password: admin_password,
                 protocol: 'v1',
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'updateRooms' && reply.roomList.length > 0,
-                { skip: true, timeout: 500 },
+                { timeout: 500 },
             )
             .sendJson({
                 type: 'removemessage',
@@ -792,12 +792,12 @@ describe('protocol v1', () => {
                 messageid: 0,
                 message: { text: 'test text' },
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'updateText' &&
                     reply.roomid === room_prefilled.id,
                 {
-                    skip: true,
+
                     timeout: 1000,
                 },
             )
@@ -820,8 +820,8 @@ describe('protocol v1', () => {
                 password: admin_password,
                 protocol: 'v1',
             })
-            .expectJson((reply) => reply.type === 'updateGroups', {
-                skip: true,
+            .waitForJson((reply) => reply.type === 'updateGroups', {
+
                 timeout: 1000,
             })
             .sendJson({ type: 'creategroup', groupName: 'testgroup' })
@@ -830,12 +830,12 @@ describe('protocol v1', () => {
                 groupName: 'testgroup',
                 changes: [{ add: 'candoaloop' }, { add: 'canfly' }],
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'updateGroups' &&
                     'testgroup' in reply.groups &&
                     reply.groups['testgroup'].length == 2,
-                { skip: true, timeout: 1000 },
+                { timeout: 1000 },
             )
 
             .close()
@@ -857,16 +857,16 @@ describe('protocol v1', () => {
                 password: admin_password,
                 protocol: 'v1',
             })
-            .expectJson((reply) => reply.type === 'updateGroups', {
-                skip: true,
+            .waitForJson((reply) => reply.type === 'updateGroups', {
+
                 timeout: 1000,
             })
             .sendJson({ type: 'removegroup', groupName: 'testgroup' })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'updateGroups' &&
                     !('testgroup' in reply.groups),
-                { skip: true, timeout: 1000 },
+                { timeout: 1000 },
             )
             .close()
             .expectClosed();
@@ -887,8 +887,8 @@ describe('protocol v1', () => {
                 password: admin_password,
                 protocol: 'v1',
             })
-            .expectJson((reply) => reply.type === 'updateUsers', {
-                skip: true,
+            .waitForJson((reply) => reply.type === 'updateUsers', {
+
                 timeout: 1000,
             })
             .sendJson({
@@ -896,10 +896,10 @@ describe('protocol v1', () => {
                 userid: user.id,
                 groupName: 'user',
             })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'updatePerms' && reply.perms.length == 2,
-                { skip: true, timeout: 1000 },
+                { timeout: 1000 },
             )
             .close()
             .expectClosed();
@@ -920,46 +920,46 @@ describe('protocol v1', () => {
                 password: admin_password,
                 protocol: 'v1',
             })
-            .expectJson((reply) => reply.type === 'updateRooms', {
-                skip: true,
+            .waitForJson((reply) => reply.type === 'updateRooms', {
+
                 timeout: 1000,
             })
             .sendJson({ type: 'joinroom', roomid: room_voice.id })
-            .expectJson((reply) => reply.type === 'joinRoom', {
-                skip: true,
+            .waitForJson((reply) => reply.type === 'joinRoom', {
+
                 timeout: 1000,
             })
             .sendJson({ type: 'chatdev', video: true, audio: true })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'chatdev' &&
                     reply.video === true &&
                     reply.audio === true,
-                { skip: true, timeout: 1000 },
+                { timeout: 1000 },
             )
             .sendJson({ type: 'chatdev', video: false, audio: true })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'chatdev' &&
                     reply.video === false &&
                     reply.audio === true,
-                { skip: true, timeout: 1000 },
+                { timeout: 1000 },
             )
             .sendJson({ type: 'chatdev', video: true, audio: false })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'chatdev' &&
                     reply.video === true &&
                     reply.audio === false,
-                { skip: true, timeout: 1000 },
+                { timeout: 1000 },
             )
             .sendJson({ type: 'chatdev', video: false, audio: false })
-            .expectJson(
+            .waitForJson(
                 (reply) =>
                     reply.type === 'chatdev' &&
                     reply.video === false &&
                     reply.audio === false,
-                { skip: true, timeout: 1000 },
+                { timeout: 1000 },
             )
             .close()
             .expectClosed();
@@ -980,25 +980,25 @@ describe('protocol v1', () => {
                 password: admin_password,
                 protocol: 'v1',
             })
-            .expectJson((reply) => reply.type === 'updateRooms', {
-                skip: true,
+            .waitForJson((reply) => reply.type === 'updateRooms', {
+
                 timeout: 500,
             })
             .sendJson({ type: 'joinroom', roomid: room_voice.id })
-            .expectJson((reply) => reply.type === 'joinRoom', {
-                skip: true,
+            .waitForJson((reply) => reply.type === 'joinRoom', {
+
                 timeout: 500,
             })
             .sendJson({ type: 'joinroom', roomid: room_voice.id })
             .sendJson({ type: 'talking', talking: true })
-            .expectJson(
+            .waitForJson(
                 (reply) => reply.type === 'talking' && reply.talking === true,
-                { skip: true, timeout: 500 },
+                { timeout: 500 },
             )
             .sendJson({ type: 'talking', talking: false })
-            .expectJson(
+            .waitForJson(
                 (reply) => reply.type === 'talking' && reply.talking === false,
-                { skip: true, timeout: 500 },
+                { timeout: 500 },
             )
 
             .close()

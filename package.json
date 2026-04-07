@@ -7,8 +7,7 @@
     "scripts": {
         "build-webapp": "cd webapp && yarn && yarn build",
         "run": "node index.ts",
-        "test": "jest",
-        "postinstall": "patch-package"
+        "test": "jest"
     },
     "author": "trigg <triggerhapp@gmail.com>",
     "license": "GPL-3.0-or-later",
@@ -48,8 +47,6 @@
         "jest": "^29.7.0",
         "node-gyp": "^11.1.0",
         "nodejs": "^0.0.0",
-        "patch-package": "^8.0.0",
-        "postinstall-postinstall": "^2.1.0",
         "prettier": "^2.5.1",
         "supertest": "^7.1.0",
         "superwstest": "^2.0.4",
@@ -57,6 +54,8 @@
         "typescript-eslint": "^8.29.1"
     },
     "jest": {
-        "testPathIgnorePatterns": ["webapp"]
-      }
+        "testPathIgnorePatterns": [
+            "webapp"
+        ]
+    }
 }

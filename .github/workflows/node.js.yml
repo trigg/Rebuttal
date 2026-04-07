@@ -21,7 +21,7 @@ jobs:
             - name: Setup Node
               uses: actions/setup-node@v3
               with:
-                  node-version: 22
+                  node-version: 25
 
             #      - name: Start MySQL
             #        run: sudo /etc/init.d/mysql start
