@@ -5,7 +5,7 @@
     "main": "index.ts",
     "type": "module",
     "scripts": {
-        "build-webapp": "cd webapp && yarn && yarn build",
+        "build-webapp": "cd webapp && yarn && yarn run build",
         "run": "node index.ts",
         "test": "jest"
     },
