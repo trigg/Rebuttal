@@ -19,7 +19,6 @@ describe('protocol v0', () => {
             servername: 'testing server',
             serverimg: 'img/server.png',
             gravatarfallback: 'monsterid',
-            url: 'https://localhost:9000/',
             infinitesignup: 'user',
             plugins: [],
             test_mode: true,

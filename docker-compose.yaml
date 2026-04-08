@@ -1,0 +1,18 @@
+# Used for local testing directly from a `git clone`
+# Definately do not use this for a real container
+
+services:
+    server:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: no
+        environment:
+            HTTP: 1
+            REBUTTAL_STORAGE: json
+            REBUTTAL_PLUGINS: 'webclient webhook'
+            REBUTTAL_NAME: 'Trial Server'
+            REBUTTAL_AVATARS: monsterid
+            REBUTTAL_INFINITE_SIGNUP: false
+        ports:
+            - '9000:9000'

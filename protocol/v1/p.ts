@@ -131,7 +131,7 @@ export const protocolv1 = {
                         );
                         server.sendTo(socket, {
                             type: 'invite',
-                            url: server.config.url + '/?invite=' + uuid,
+                            invite_code: uuid,
                         });
                     } else {
                         server.sendTo(socket, {

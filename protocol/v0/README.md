@@ -6,7 +6,6 @@
 | -------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `message`      | string    | Contains a short MOTD style message. Ideally from the server config.                                                                                                                                                         |
 | `icon`         | string    | A URL to be used as image source for the server. Ideally PNG or SVG, but other formats may be allowed depending on client.                                                                                                   |
-| `url`          | string    | A Fragment or URL encompassing the protocol, domain and optionally port. This is passed from server config and is used to create links for invites on the client                                                             |
 | `contextmenus` | object    | an object with keys `user`, `room`, `textroom`, `voiceroom`, `message` which each have a list. Each item in each list is an object describing extra contextual actions that plugins have added to each.                      |
 | `protocols`    | array     | a list of strings of protocols this server is capable of speaking. Exactly one must be chosen by the client which they can speak in common. If no protocols in this list can be used by client it is expected to disconnect. |
 

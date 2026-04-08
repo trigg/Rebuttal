@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/require-await */
 import fs from 'fs';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import {
     type RoomStorage,
     type AccountStorage,
@@ -103,7 +103,7 @@ export const jsonstorage: JsonStorageInterface = {
     },
 
     createAccount: async function (details: AccountStorage) {
-        if (!details.password) {
+        if (!details.password || details.password?.length < 1) {
             throw new Error('No password in create account');
         }
         details.password = bcrypt.hashSync(details.password, 10);

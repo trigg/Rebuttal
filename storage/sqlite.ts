@@ -5,7 +5,7 @@
 /* eslint-disable @typescript-eslint/require-await */
 // Async is a requirement for Storage Interface. maybe later we'll get async/await sorted here, but for now ignore it
 
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import {
     type RoomStorage,
     type MessageStorage,
@@ -20,129 +20,129 @@ type SqliteStorageInterface = StorageInterface & {
     prepare(): Promise<void>;
     createDatabase(): Promise<void>;
     stmtGetRoomsByID:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtGetAccountByLogin:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtGetAccountById:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtGetAllRooms:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtGetAllAccounts:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtCreateAccount:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtCreateRoom:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtUpdateAccount:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtUpdateRoom:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtRemoveAccount:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtRemoveRoom:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtGetTextForRoom:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtGetTextRoomNextSegment:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtAddNewMessage:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtUpdateMessage:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtGetMessage:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtGetGroupPermission:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtGetGroupPermissionList:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtAddGroupPermission:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtRemoveGroupPermission:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtSetAccountGroup:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtGetGroups:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtGenerateSignUp:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtGetSignUp:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtRemoveSignUp:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtGetPluginDataKey:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtSetPluginDataKey:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtGetPluginData:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtDeletePluginDataKey:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtDeletePluginData:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
     stmtSetAccountPassword:
-        | Sqlite.Statement<unknown[], unknown>
-        | Sqlite.Statement<[{}], unknown>
-        | undefined;
+    | Sqlite.Statement<unknown[], unknown>
+    | Sqlite.Statement<[{}], unknown>
+    | undefined;
 };
 
 /**

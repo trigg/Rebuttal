@@ -32,7 +32,6 @@ export interface config {
     servername?: string;
     serverimg?: string;
     gravatarfallback?: string;
-    url?: string;
     infinitesignup?: string;
     test_mode?: boolean;
 }
@@ -176,12 +175,7 @@ export async function create_rebuttal(config: config) {
     if ('plugins' in config) {
         for (const plugin of config['plugins']) {
             const pluginFileName = path.join('plugin', plugin + '.ts');
-            let exist = false;
             if (fs.existsSync(pluginFileName)) {
-                exist = true;
-            }
-
-            if (exist) {
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 const plugin_actual = await import('./' + pluginFileName);
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
@@ -194,8 +188,11 @@ export async function create_rebuttal(config: config) {
     }
     function create_server(app: typeof express.application) {
         if (env.HTTP) {
-            // eslint-disable-next-line @typescript-eslint/no-misused-promises
-            return http.createServer({}, app);
+            if (env.HTTP == "1") {
+                return http.createServer({}, app);
+            } else if (env.HTTP != "0") {
+                throw new Error("Environment Variable HTTP can only be '1' or '0'. '1' Allows Unsecured connections to server");
+            }
         }
         let key_path = './key.pem';
         let cert_path = './cert.pem';
@@ -215,10 +212,8 @@ export async function create_rebuttal(config: config) {
             key: fs.readFileSync(key_path),
             cert: fs.readFileSync(cert_path),
         };
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises
         return https.createServer(options, app);
     };
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     const server = create_server(app);
 
 
@@ -701,10 +696,6 @@ export async function create_rebuttal(config: config) {
                         );
                 }
             });
-            let url = null;
-            if ('url' in this.config) {
-                url = this.config.url;
-            }
             event
                 .trigger('connectionnew', {
                     ref: ws,
@@ -712,7 +703,6 @@ export async function create_rebuttal(config: config) {
                         type: 'connect',
                         message: this.config.servername,
                         icon: this.config.serverimg,
-                        url,
                         contextmenus: this.contextmenu,
                         protocols: this.protocols,
                     },
