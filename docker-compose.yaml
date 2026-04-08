@@ -9,10 +9,10 @@ services:
         restart: no
         environment:
             HTTP: 1
-            REBUTTAL_STORAGE: json
-            REBUTTAL_PLUGINS: 'webclient webhook'
-            REBUTTAL_NAME: 'Trial Server'
-            REBUTTAL_AVATARS: monsterid
-            REBUTTAL_INFINITE_SIGNUP: false
+            REBUTTAL_STORAGE: json # The type of storage to use from ['json', 'sqlite'] ... MySQL is planned
+            REBUTTAL_PLUGINS: 'webclient webhook' # Space separated list of plugins to load
+            REBUTTAL_NAME: 'Trial Server' # Name for the server shown to users
+            REBUTTAL_AVATARS: monsterid # Which Gravatar fallback to use
+            #REBUTTAL_INFINITE_SIGNUP: user # If set, contains the user-group name which anyone anywhere can sign up for without checks. Advised only for servers with limited access like a LAN
         ports:
             - '9000:9000'

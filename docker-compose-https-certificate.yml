@@ -2,8 +2,7 @@ services:
     rebuttal-server:
         image: triggerhapp/rebuttal:main # Use latest git
         volumes:
-            - './config.json:/config.json'
-            - './data.sqlite:/data.sqlite' # Skip if using another storage type in config
+            - './data:/data' # Both JSON and SQLite storage need a storage directory
             - './key.pem:/key.pem'
             - './cert.pen:/cert.pem' # Assuming you have a valid domain key & cert
         ports:

@@ -57,7 +57,7 @@ export const jsonstorage: JsonStorageInterface = {
         permissions: {},
         plugin: {},
     } as internalStorage,
-    fileName: 'test.json',
+    fileName: 'data/test.json',
 
     getRoomByID: async function (roomid: string) {
         let retroom = null;

@@ -152,7 +152,7 @@ type SqliteStorageInterface = StorageInterface & {
  */
 export const sqlitestorage: SqliteStorageInterface = {
     db: null,
-    fileName: 'data.sqlite',
+    fileName: 'data/data.sqlite',
     stmtGetRoomsByID: undefined,
     stmtGetAccountByLogin: undefined,
     stmtGetAccountById: undefined,

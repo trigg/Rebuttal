@@ -5,7 +5,9 @@ import { env } from 'process';
 import segfaultHandler from 'node-segfault-handler';
 
 segfaultHandler.registerHandler(undefined);
-
+if (!fs.existsSync("data")) {
+    fs.mkdirSync("data");
+}
 const default_config = {
     port: 9000,
     storage: env['REBUTTAL_STORAGE'] ? env['REBUTTAL_STORAGE'] : 'sqlite',

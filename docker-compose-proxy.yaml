@@ -16,8 +16,7 @@ services:
     rebuttal-server:
         image: triggerhapp/rebuttal:main # Use latest git
         volumes:
-            - './config.json:/config.json'
-            - './data.sqlite:/data.sqlite'
+            - './data:/data' # Both JSON and SQLite storage need a storage directory
         environment:
             - VIRTUAL_HOST=chat.example.com
             - VIRTUAL_PORT=9000
