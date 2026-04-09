@@ -258,9 +258,15 @@ export async function create_rebuttal(config: config) {
             if (!users || users.length == 0) {
                 // Should be run when no users are in config
                 const userUuid = uuidv4();
-                const password = uuidv4();
+                let password = uuidv4();
                 console.log('Created Root account : root@localhost');
-                // TODO Pass the admin a one-use URL to login with this password
+                if (env.REBUTTAL_ADMIN_PASSWORD && env.REBUTTAL_ADMIN_PASSWORD.length > 6) {
+                    password = env.REBUTTAL_ADMIN_PASSWORD;
+                } else {
+                    console.log("Fallback randomly assigned password : " + password);
+                    console.log("Make sure you reset this as soon as possible");
+                }
+
                 await this.storage.createAccount({
                     id: userUuid,
                     name: 'root',
