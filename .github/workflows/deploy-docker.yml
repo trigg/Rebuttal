@@ -25,6 +25,11 @@ jobs:
       uses: actions/checkout@v3
       with:
         submodules: 'true'
+      
+    - uses: actions/checkout@v3
+      with:
+        repository: 'RebuttalChat/RebuttalWebapp'
+        path: 'webapp'
 
     - name: Extract metadata (tags, labels) for Docker
       id: meta

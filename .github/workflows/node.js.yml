@@ -18,6 +18,11 @@ jobs:
               with:
                   submodules: 'true'
 
+            - uses: actions/checkout@v3
+              with:
+                  repository: 'RebuttalChat/RebuttalWebapp'
+                  path: 'webapp'
+
             - name: Setup Node
               uses: actions/setup-node@v3
               with:
