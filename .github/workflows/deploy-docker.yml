@@ -28,6 +28,7 @@ jobs:
               with:
                   repository: 'RebuttalChat/RebuttalWebapp'
                   path: 'webapp'
+                  submodules: 'true'
 
             - name: Setup Node
               uses: actions/setup-node@v3
