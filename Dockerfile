@@ -18,6 +18,6 @@ COPY --from=webapp /app/webapp/dist ./webapp/dist
 COPY index.ts server.ts events.ts package.json ./
 COPY plugin/ ./plugin
 COPY storage/ ./storage
-COPY protocol/ ./protocol
+COPY protocols/ ./protocols
 EXPOSE 9000
 CMD ["yarn", "run", "run"]
