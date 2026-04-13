@@ -10,7 +10,7 @@ import crypto from 'crypto';
 import { type pluginInterface } from './interface.ts';
 import event, { Priority } from '../events.ts';
 import { type rebuttal } from '../server.ts';
-import { type RoomStorage, type MessageStorage } from '../storage/interface.ts';
+import { type RoomStorage } from '../storage/interface.ts';
 
 type WebhookPlugin = pluginInterface & {
     getRoomForHash(hash: string, payload: string): Promise<RoomStorage | null>;
@@ -110,7 +110,6 @@ export const webhookplugin: WebhookPlugin = {
                 return;
             }
             let m = '';
-            let message;
             if ('action' in payload) {
                 switch (payload.action) {
                     case 'opened':
@@ -122,14 +121,19 @@ export const webhookplugin: WebhookPlugin = {
                         if (payload.issue.body && payload.issue.body !== '') {
                             m += '  \n' + payload.issue.body;
                         }
-                        message = {
+                        await server.storage.addNewMessage(room.id, {
                             type: 'webhook',
                             img: payload.sender.avatar_url,
                             username: payload.sender.login,
                             text: m,
                             url: payload.issue.html_url,
-                        } as MessageStorage;
-                        await server.storage.addNewMessage(room.id, message);
+                            roomid: '',
+                            idx: null,
+                            height: null,
+                            width: null,
+                            userid: null,
+                            tags: []
+                        });
                         await server.sendUpdatesMessages(room.id);
                         break;
                     case 'labeled':
@@ -138,14 +142,19 @@ export const webhookplugin: WebhookPlugin = {
                             payload.issue.title +
                             "' in " +
                             payload.repository.full_name;
-                        message = {
+                        await server.storage.addNewMessage(room.id, {
                             type: 'webhook',
                             img: payload.sender.avatar_url,
                             username: payload.sender.login,
                             text: m,
                             url: payload.issue.html_url,
-                        } as MessageStorage;
-                        await server.storage.addNewMessage(room.id, message);
+                            roomid: '',
+                            idx: null,
+                            height: null,
+                            width: null,
+                            userid: null,
+                            tags: []
+                        });
                         await server.sendUpdatesMessages(room.id);
                         break;
                     case 'created': // Commented
@@ -160,14 +169,19 @@ export const webhookplugin: WebhookPlugin = {
                                 '  \n',
                             );
                         }
-                        message = {
+                        await server.storage.addNewMessage(room.id, {
                             type: 'webhook',
                             img: payload.sender.avatar_url,
                             username: payload.sender.login,
                             text: m,
                             url: payload.issue.html_url,
-                        } as MessageStorage;
-                        await server.storage.addNewMessage(room.id, message);
+                            roomid: '',
+                            idx: null,
+                            height: null,
+                            width: null,
+                            userid: null,
+                            tags: []
+                        });
                         await server.sendUpdatesMessages(room.id);
                         break;
                     case 'edited':
@@ -176,14 +190,19 @@ export const webhookplugin: WebhookPlugin = {
                             payload.issue.title +
                             "' in " +
                             payload.repository.full_name;
-                        message = {
+                        await server.storage.addNewMessage(room.id, {
                             type: 'webhook',
                             img: payload.sender.avatar_url,
                             username: payload.sender.login,
                             text: m,
                             url: payload.issue.html_url,
-                        } as MessageStorage;
-                        await server.storage.addNewMessage(room.id, message);
+                            roomid: '',
+                            idx: null,
+                            height: null,
+                            width: null,
+                            userid: null,
+                            tags: []
+                        });
                         await server.sendUpdatesMessages(room.id);
                         break;
                     case 'deleted':
@@ -192,26 +211,36 @@ export const webhookplugin: WebhookPlugin = {
                             payload.issue.title +
                             "' in " +
                             payload.repository.full_name;
-                        message = {
+                        await server.storage.addNewMessage(room.id, {
                             type: 'webhook',
                             img: payload.sender.avatar_url,
                             username: payload.sender.login,
                             text: m,
                             url: payload.issue.html_url,
-                        } as MessageStorage;
-                        await server.storage.addNewMessage(room.id, message);
+                            roomid: '',
+                            idx: null,
+                            height: null,
+                            width: null,
+                            userid: null,
+                            tags: []
+                        });
                         await server.sendUpdatesMessages(room.id);
                         break;
                     case 'started':
                         m = 'Starred ' + payload.repository.full_name;
-                        message = {
+                        await server.storage.addNewMessage(room.id, {
                             type: 'webhook',
                             img: payload.sender.avatar_url,
                             username: payload.sender.login,
                             text: m,
                             url: payload.repository.html_url,
-                        } as MessageStorage;
-                        await server.storage.addNewMessage(room.id, message);
+                            roomid: '',
+                            idx: null,
+                            height: null,
+                            width: null,
+                            userid: null,
+                            tags: []
+                        });
                         await server.sendUpdatesMessages(room.id);
                         break;
                     case 'closed':
@@ -220,14 +249,19 @@ export const webhookplugin: WebhookPlugin = {
                             payload.issue.title +
                             "' on " +
                             payload.repository.full_name;
-                        message = {
+                        await server.storage.addNewMessage(room.id, {
                             type: 'webhook',
                             img: payload.sender.avatar_url,
                             username: payload.sender.login,
                             text: m,
                             url: payload.issue.html_url,
-                        } as MessageStorage;
-                        await server.storage.addNewMessage(room.id, message);
+                            roomid: '',
+                            idx: null,
+                            height: null,
+                            width: null,
+                            userid: null,
+                            tags: []
+                        });
                         await server.sendUpdatesMessages(room.id);
                         break;
                     default:
@@ -239,14 +273,19 @@ export const webhookplugin: WebhookPlugin = {
                 for (const commit of payload.commits) {
                     m += '\n```\n' + commit.message + '\n```';
                 }
-                message = {
+                await server.storage.addNewMessage(room.id, {
                     type: 'webhook',
                     img: payload.sender.avatar_url,
                     username: payload.sender.login,
                     text: m,
                     url: payload.repository.html_url,
-                } as MessageStorage;
-                await server.storage.addNewMessage(room.id, message);
+                    roomid: '',
+                    idx: null,
+                    height: null,
+                    width: null,
+                    userid: null,
+                    tags: []
+                });
                 await server.sendUpdatesMessages(room.id);
             } else if (payload.forkee) {
                 m =
@@ -254,14 +293,19 @@ export const webhookplugin: WebhookPlugin = {
                     payload.forkee.full_name +
                     ' forked from ' +
                     payload.repository.full_name;
-                message = {
+                await server.storage.addNewMessage(room.id, {
                     type: 'webhook',
                     img: payload.sender.avatar_url,
                     username: payload.sender.full_name,
                     text: m,
                     url: payload.forkee.html_url,
-                } as MessageStorage;
-                await server.storage.addNewMessage(room.id, message);
+                    roomid: '',
+                    idx: null,
+                    height: null,
+                    width: null,
+                    userid: null,
+                    tags: []
+                });
                 await server.sendUpdatesMessages(room.id);
             } else {
                 // No idea what it is

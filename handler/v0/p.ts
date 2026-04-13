@@ -1,26 +1,41 @@
-import { v4 as uuidv4 } from 'uuid';
 import { protocolv1 } from '../v1/p.ts';
 import event from '../../events.ts';
 import { type rebuttalSocket, type rebuttal } from '../../server.ts';
+import { type v0_cts_packet } from '../../protocols/v0/client_to_server.ts';
+import { createCheckers } from 'ts-interface-checker';
+import v0_cts_iface from '../../protocols/v0/client_to_server-ti.ts';
+import { v4 as uuidv4 } from 'uuid';
 
-interface v0packet {
-    type: string;
-    userName?: string;
-    email?: string;
-    password?: string;
-    signUp?: string;
-    userUuid?: string;
-    protocol?: string;
+const checker = createCheckers(v0_cts_iface);
+
+/* Heavy handed get an error message to user and close connection */
+function invalid_packet(server: rebuttal, socket: rebuttalSocket, data: unknown) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+    console.log('v0 got malformed packet : ' + (data as any).type);
+    console.log(data);
+    server.sendTo(socket, {
+        type: 'error',
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+        message: 'Malformed packet of type : "' + (data as any).type + '"',
+    });
+    socket.close(
+        3001,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+        'Malformed packet of type : "' + (data as any).type + '"',
+    );
 }
 
 export const protocolv0 = {
     handle: async function (
         server: rebuttal,
         socket: rebuttalSocket,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        data: any,
+        data: unknown,
     ) {
-        const packet = data as v0packet;
+        if (!checker.v0_cts_packet.test(data)) {
+            invalid_packet(server, socket, data);
+            return
+        }
+        const packet = data as v0_cts_packet;
         switch (packet.type) {
             case 'signup':
                 {
@@ -38,11 +53,10 @@ export const protocolv0 = {
                     ) {
                         console.log('Checking invite');
                         let group = null;
-                        if (
-                            'infinitesignup' in server.config &&
-                            packet.signUp === 'signup'
-                        ) {
-                            group = server.config.infinitesignup;
+                        if (packet.signUp === 'signup') {
+                            if ('infinitesignup' in server.config) {
+                                group = server.config.infinitesignup;
+                            }
                         } else {
                             group = await server.storage.expendSignUp(
                                 packet.signUp,
@@ -51,7 +65,6 @@ export const protocolv0 = {
                         if (group) {
                             const allow = await event.trigger('usercreate', {
                                 userName: packet.userName,
-                                userUuid: packet.userUuid,
                             });
                             // In this case we don't use FINAL event as it won't have email/password
                             // If we put email/password in the event it'll be plaintext for every plugin
@@ -62,10 +75,10 @@ export const protocolv0 = {
                                 await server.storage.createAccount({
                                     id: userUuid,
                                     name: packet.userName,
-                                    password: packet.password,
+                                    passwordHash: '',
                                     email: packet.email,
                                     group,
-                                });
+                                }, packet.password);
 
                                 server.sendTo(socket, { type: 'refreshNow' });
                             } else {
@@ -91,7 +104,7 @@ export const protocolv0 = {
                         });
                     }
                 }
-                break;
+                return;
             case 'login':
                 {
                     if (packet.email && packet.password && packet.protocol) {
@@ -171,19 +184,10 @@ export const protocolv0 = {
                         socket.close(3001, 'Malformed login');
                     }
                 }
-                break;
-            default: {
-                console.log('v0 does not handle packet type : ' + packet.type);
-                server.sendTo(socket, {
-                    type: 'error',
-                    message: 'Unknown packet type : "' + packet.type + '"',
-                });
-                socket.close(
-                    3001,
-                    'Unknown packet type : "' + packet.type + '"',
-                );
-            }
+                return;
         }
+        invalid_packet(server, socket, data);
+
     },
 };
 export default protocolv0;

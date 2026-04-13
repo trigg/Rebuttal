@@ -5,7 +5,8 @@
     "main": "index.ts",
     "type": "module",
     "scripts": {
-        "build-webapp": "cd webapp && yarn && yarn run build",
+        "build-webapp": "if [ ! -d \"webapp\" ]; then git clone --recurse-submodules git@github.com:RebuttalChat/RebuttalWebapp.git webapp ; fi ; cd webapp && git pull &&  yarn && yarn run build ; cd -",
+        "build-protocol-iface": "rm protocols/*/*-ti.ts; yarn ts-interface-builder protocols/*/*.ts",
         "run": "node index.ts",
         "test": "jest"
     },
@@ -18,11 +19,13 @@
         "body-parser": "^1.19.0",
         "buffer-image-size": "^0.6.4",
         "express": "^4.17.1",
+        "express-static-gzip": "^3.0.0",
         "gravatar": "^1.8.1",
         "mysql2": "^3.14.0",
         "node-segfault-handler": "^1.4.2",
         "shelljs": "^0.8.4",
         "socket.io": "^4.0.2",
+        "ts-interface-checker": "^1.0.2",
         "uuid": "^8.3.2",
         "ws": "^8.18.1"
     },
@@ -50,7 +53,10 @@
         "prettier": "^3.8.1",
         "supertest": "^7.1.0",
         "superwstest": "^2.0.4",
-        "typescript": "^6.0.2",
+        "ts-interface-builder": "^0.3.3",
+        "ts-json-schema-generator": "^2.9.0",
+        "ts-patch": "^3.3.0",
+        "typescript": "~5.9.3",
         "typescript-eslint": "^8.58.1"
     },
     "jest": {

@@ -2,14 +2,13 @@ import express from 'express';
 import { WebSocket, WebSocketServer } from 'ws';
 import https from 'https';
 import http from 'http';
-import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
 import gravatar from 'gravatar';
 
 import { event, Priority, type Event } from './events.ts';
-import { protocolv0 } from './protocol/v0/p.ts';
-import { protocolv1 } from './protocol/v1/p.ts';
+import { protocolv0 } from './handler/v0/p.ts';
+import { protocolv1 } from './handler/v1/p.ts';
 
 import jsonstorage from './storage/json.ts';
 //import mysqlstorage from './storage/mysql.ts';
@@ -18,10 +17,21 @@ import { type pluginInterface } from './plugin/interface.ts';
 import {
     type PermissionsStorage,
     type StorageInterface,
-    type RoomStorage,
     type AccountStorage,
 } from './storage/interface.ts';
 import { env } from 'process';
+import { v4 as uuidv4 } from 'uuid';
+import { type v0_stc_packet } from './protocols/v0/server_to_client.ts';
+import { type v1_stc_update_users, type v1_stc_packet } from './protocols/v1/server_to_client.ts';
+import { type v1_shared_room, type v1_shared_user, type UserUUID, type RoomUUID } from './protocols/v1/shared.ts';
+import { createCheckers } from 'ts-interface-checker';
+import v0_stc_iface from './protocols/v0/server_to_client-ti.ts';
+import v0_shared_iface from './protocols/v0/shared-ti.ts';
+import v1_stc_iface from './protocols/v1/server_to_client-ti.ts';
+import v1_shared_iface from './protocols/v1/shared-ti.ts';
+
+const checker = createCheckers(v0_stc_iface, v1_stc_iface, v1_shared_iface, v0_shared_iface);
+type packet_all = v0_stc_packet | v1_stc_packet;
 
 export interface config {
     storage: string;
@@ -52,8 +62,8 @@ export interface contextMenus {
 
 export type rebuttalSocket = WebSocket & {
     protocol_version: string;
-    id: string | null;
-    currentRoom: string | null;
+    id: UserUUID | null;
+    currentRoom: RoomUUID | null;
     livestate: boolean;
     livelabel: string;
     name: string;
@@ -61,42 +71,6 @@ export type rebuttalSocket = WebSocket & {
     suppress: boolean;
 };
 
-// Alike to Account, but not quite. Specifically it's a collection some Account properties and some rebuttalSocket properties.
-export interface User {
-    id: string;
-    currentRoom: string | null;
-    livestate: boolean;
-    livelabel: string;
-    name: string;
-    talking: boolean;
-    suppress: boolean;
-    status: boolean;
-    avatar: string | undefined;
-    hidden: boolean;
-}
-
-// Message in the format expected by sockets
-export interface Message {
-    roomid: string;
-    idx: number;
-    text: string;
-    img?: string;
-    url?: string;
-    height?: number;
-    width?: number;
-    userid?: string;
-    tags: string[];
-    type?: string;
-    username: string;
-}
-
-// Room in the format expected by sockets
-export interface Room {
-    id: string;
-    type: string;
-    name: string;
-    userlist: User[];
-}
 
 export interface rebuttal {
     config: config;
@@ -111,25 +85,21 @@ export interface rebuttal {
     listen(post: number, hostname: string, fn: () => void): void;
     close(fn: () => void): void;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    sendTo(ws: rebuttalSocket, msg: any): void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    sendToID(id: string, msg: any): void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    sendToAll(wsList: rebuttalSocket[], msg: any, me?: rebuttalSocket): void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    sendToRoom(id: string, msg: any): void;
+    sendTo(ws: rebuttalSocket, msg: packet_all): void;
+    sendToID(id: UserUUID, msg: packet_all): void;
+    sendToAll(wsList: rebuttalSocket[], msg: packet_all, me?: rebuttalSocket): void;
+    sendToRoom(id: RoomUUID, msg: packet_all): void;
     sendUpdateUsers(): Promise<void>;
     sendUpdateRooms(): Promise<void>;
-    sendUpdatesMessages(id: string): Promise<void>;
-    disconnectId(id: string): void;
+    sendUpdatesMessages(id: RoomUUID): Promise<void>;
+    disconnectId(id: UserUUID): void;
 
-    isUserConnected(id: string): boolean;
-    isUserSuppressed(id: string): boolean;
-    setUserSuppressed(id: string, suppressed: boolean): void;
-    isUserTalking(id: string): boolean;
-    setUserTalking(id: string, talking: boolean): void;
-    setRoom(socket: rebuttalSocket, id: string | null): Promise<void>;
+    isUserConnected(id: UserUUID): boolean;
+    isUserSuppressed(id: UserUUID): boolean;
+    setUserSuppressed(id: UserUUID, suppressed: boolean): void;
+    isUserTalking(id: UserUUID): boolean;
+    setUserTalking(id: UserUUID, talking: boolean): void;
+    setRoom(socket: rebuttalSocket, id: RoomUUID | null): Promise<void>;
     getGroups(): Promise<PermissionsStorage>;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -142,10 +112,10 @@ export type rebuttalInternal = rebuttal & {
     populateNewConfig(): Promise<void>;
     init(): void;
 
-    updateUsers(): Promise<User[]>;
-    updateRooms(): Promise<RoomStorage[]>;
-    getUsersInRoom(id: string): User[];
-    getUser(acc: AccountStorage): User;
+    updateUsers(): Promise<v1_shared_user[]>;
+    updateRooms(): Promise<v1_shared_room[]>;
+    getUsersInRoom(id: RoomUUID): v1_shared_user[];
+    getUser(acc: AccountStorage): v1_shared_user;
 };
 
 export async function create_rebuttal(config: config) {
@@ -258,7 +228,7 @@ export async function create_rebuttal(config: config) {
             if (!users || users.length == 0) {
                 // Should be run when no users are in config
                 const userUuid = uuidv4();
-                let password = uuidv4();
+                let password: string = uuidv4();
                 console.log('Created Root account : root@localhost');
                 if (env.REBUTTAL_ADMIN_PASSWORD && env.REBUTTAL_ADMIN_PASSWORD.length > 6) {
                     password = env.REBUTTAL_ADMIN_PASSWORD;
@@ -270,10 +240,10 @@ export async function create_rebuttal(config: config) {
                 await this.storage.createAccount({
                     id: userUuid,
                     name: 'root',
-                    password,
+                    passwordHash: '',
                     email: 'root@localhost',
                     group: 'admin',
-                });
+                }, password);
                 for (const perm of [
                     'createRoom',
                     'createUser',
@@ -316,6 +286,15 @@ export async function create_rebuttal(config: config) {
 
         init: function () {
             this.wss.on('connection', (ws: rebuttalSocket) => {
+                // Set all initial values
+                ws.protocol_version = "";
+                ws.id = null;
+                ws.currentRoom = null;
+                ws.livestate = false;
+                ws.livelabel = "";
+                ws.name = "";
+                ws.talking = false;
+                ws.suppress = false;
                 rebuttal.startConnection(ws);
             });
 
@@ -341,7 +320,7 @@ export async function create_rebuttal(config: config) {
             this.sendTo(ws, { type: 'presentcustomwindow', window });
         },
 
-        disconnectId: function (id: string) {
+        disconnectId: function (id: UserUUID) {
             for (const client of Object.values<rebuttalSocket>(
                 this.connections,
             )) {
@@ -351,8 +330,8 @@ export async function create_rebuttal(config: config) {
             }
         },
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        sendToID: function (id: string, message: any) {
+        sendToID: function (id: UserUUID, message: packet_all) {
+
             for (const client of Object.values<rebuttalSocket>(
                 this.connections,
             )) {
@@ -361,15 +340,43 @@ export async function create_rebuttal(config: config) {
                 }
             }
         },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        sendTo: function (connection: rebuttalSocket, message: any) {
+        sendTo: function (connection: rebuttalSocket, message: packet_all) {
+            // TODO This checking is proabably too heavy and should be skipped in production
+            const valid = checker.v1_stc_packet.validate(message) == null ||
+                checker.v0_stc_packet.validate(message) == null;
+            if (!valid) {
+                function chase(issues: unknown[]) {
+                    for (const issue of issues) {
+                        if (issue instanceof Object) {
+                            if ('path' in issue && 'message' in issue) {
+                                console.log((issue.path as string) + " " + (issue.message as string));
+                            }
+                            if ('nested' in issue) {
+                                chase(issue.nested as unknown[]);
+                            }
+                        }
+                    }
+                }
+                console.log("v1 feedback");
+                console.log(JSON.stringify(message, null, "  "))
+                const issues = checker.v1_stc_packet.validate(message);
+                if (issues != null) {
+                    chase(issues);
+                }
+                console.log("v0 feedback");
+                const issues2 = checker.v0_stc_packet.validate(message);
+                if (issues2 != null) {
+                    chase(issues2)
+                }
+                throw new Error("Attempting to send invalid packet");
+
+            }
             connection.send(JSON.stringify(message));
         },
 
         sendToAll: function (
             clients: rebuttalSocket[],
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            message: any,
+            message: packet_all,
             ownsocket?: rebuttalSocket | null,
         ) {
             for (const client of clients) {
@@ -379,8 +386,7 @@ export async function create_rebuttal(config: config) {
             }
         },
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        sendToRoom: function (roomid: string, message: any) {
+        sendToRoom: function (roomid: RoomUUID, message: packet_all) {
             for (const client of Object.values<rebuttalSocket>(
                 this.connections,
             )) {
@@ -394,10 +400,10 @@ export async function create_rebuttal(config: config) {
             this.sendToAll(this.connections, {
                 type: 'updateUsers',
                 userList: await this.updateUsers(),
-            });
+            } as v1_stc_update_users);
         },
 
-        sendUpdatesMessages: async function (roomid: string) {
+        sendUpdatesMessages: async function (roomid: RoomUUID) {
             let segnum = await this.storage.getTextRoomNewestSegment(roomid);
             if (!segnum) {
                 segnum = 0;
@@ -417,8 +423,8 @@ export async function create_rebuttal(config: config) {
             });
         },
 
-        getUsersInRoom: function (roomid: string) {
-            const users: User[] = [];
+        getUsersInRoom: function (roomid: RoomUUID) {
+            const users: v1_shared_user[] = [];
             for (const connection of Object.values<rebuttalSocket>(
                 this.connections,
             )) {
@@ -426,7 +432,7 @@ export async function create_rebuttal(config: config) {
                     continue;
                 }
                 if (connection.currentRoom === roomid) {
-                    const user: User = {
+                    const user: v1_shared_user = {
                         id: connection.id,
                         name: connection.name,
                         livestate: connection.livestate,
@@ -437,6 +443,7 @@ export async function create_rebuttal(config: config) {
                         status: false,
                         avatar: undefined,
                         hidden: false,
+
                     };
                     users.push(user);
                 }
@@ -444,7 +451,7 @@ export async function create_rebuttal(config: config) {
             return users;
         },
 
-        isUserConnected: function (userid: string) {
+        isUserConnected: function (userid: UserUUID) {
             let conn = false;
             for (const connection of Object.values<rebuttalSocket>(
                 this.connections,
@@ -456,7 +463,7 @@ export async function create_rebuttal(config: config) {
             return conn;
         },
 
-        isUserSuppressed: function (userid: string) {
+        isUserSuppressed: function (userid: UserUUID) {
             let supp = false;
             for (const connection of Object.values<rebuttalSocket>(
                 this.connections,
@@ -468,7 +475,7 @@ export async function create_rebuttal(config: config) {
             return supp;
         },
 
-        setUserSuppressed: function (userid: string, suppress: boolean) {
+        setUserSuppressed: function (userid: UserUUID, suppress: boolean) {
             for (const connection of Object.values<rebuttalSocket>(
                 this.connections,
             )) {
@@ -478,7 +485,7 @@ export async function create_rebuttal(config: config) {
             }
         },
 
-        isUserTalking: function (userid: string) {
+        isUserTalking: function (userid: UserUUID) {
             let conn = false;
             for (const connection of Object.values<rebuttalSocket>(
                 this.connections,
@@ -490,7 +497,7 @@ export async function create_rebuttal(config: config) {
             return conn;
         },
 
-        setUserTalking: function (userid: string, talking: boolean) {
+        setUserTalking: function (userid: UserUUID, talking: boolean) {
             for (const connection of Object.values<rebuttalSocket>(
                 this.connections,
             )) {
@@ -542,7 +549,7 @@ export async function create_rebuttal(config: config) {
                     }
                 }
             }
-            const user: User = {
+            const user: v1_shared_user = {
                 id: account.id,
                 name: account.name,
                 status: connected,
@@ -560,7 +567,7 @@ export async function create_rebuttal(config: config) {
         updateUsers: async function () {
             // Create a client-usable copy of users
             // Add transient data, hide private
-            const users: User[] = [];
+            const users: v1_shared_user[] = [];
             const in_users = await this.storage.getAllAccounts();
             if (!in_users) {
                 throw new Error('No users in user list');
@@ -572,7 +579,7 @@ export async function create_rebuttal(config: config) {
             return users;
         },
 
-        setRoom: async function (socket: rebuttalSocket, roomid: string) {
+        setRoom: async function (socket: rebuttalSocket, roomid: RoomUUID) {
             // TODO sendToAll appears to not do what I'd want
             const room = await this.storage.getRoomByID(roomid);
             // Can only 'join' media rooms
@@ -581,6 +588,10 @@ export async function create_rebuttal(config: config) {
             }
             // Do action on same room
             if (roomid == socket.currentRoom) {
+                return;
+            }
+            if (socket.id == null) {
+                console.log("User UUID invalid in setRoom");
                 return;
             }
             if (socket.currentRoom) {
@@ -604,7 +615,7 @@ export async function create_rebuttal(config: config) {
         updateRooms: async function () {
             // Create a client-usable copy of rooms
             // Add transient data
-            const array: Room[] = [];
+            const array: v1_shared_room[] = [];
             const in_rooms = await this.storage.getAllRooms();
             if (!in_rooms) {
                 throw new Error('Void rooms in update');
@@ -664,10 +675,8 @@ export async function create_rebuttal(config: config) {
                 }
             });
             ws.on('message', (msg: string) => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                let data: any;
+                let data: unknown;
                 try {
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                     data = JSON.parse(msg);
                 } catch (e: unknown) {
                     if (typeof e === 'string') {

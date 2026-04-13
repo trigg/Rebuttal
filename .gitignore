@@ -20,3 +20,7 @@ test_mode.sqlite
 test.json
 
 coverage
+
+webapp
+webapp.tar.gz
+webapp-build

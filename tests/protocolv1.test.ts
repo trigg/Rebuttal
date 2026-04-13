@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { rebuttal, create_rebuttal, type User, type Room } from '../server.ts';
+import { rebuttal, create_rebuttal } from '../server.ts';
 import requestws from 'superwstest';
 import iconv_lite from 'iconv-lite';
 import fs from 'fs';
-import { v4 as uuidv4 } from 'uuid';
-import { MessageStorage } from '../storage/interface.ts';
 import assert from 'assert';
+import { type v1_shared_message_real, type v1_shared_room, type v1_shared_user } from '../protocols/v1/shared.ts';
+import { expect } from '@jest/globals';
+import { v4 as uuidv4 } from 'uuid';
 
 iconv_lite.encodingExists('foo');
 
@@ -33,7 +34,7 @@ describe('protocol v1', () => {
         id: uuidv4(),
         name: 'testadmin',
         email: 'test.admin@example.com',
-        password: admin_password,
+        passwordHash: "",
         group: 'admin',
     };
     beforeAll(async () => {
@@ -59,13 +60,13 @@ describe('protocol v1', () => {
             'admin',
             '11111111-1111-1111-1111-111111111111',
         );
-        await rebuttal?.storage.createAccount(user);
+        await rebuttal?.storage.createAccount(user, admin_password);
         await rebuttal?.storage.createRoom(room);
         await rebuttal?.storage.createRoom(room_voice);
         await rebuttal?.storage.createRoom(room_prefilled);
 
         for (let i = 0; i < 100; i++) {
-            const message: MessageStorage = {
+            const message: v1_shared_message_real = {
                 roomid: room_prefilled.id,
                 userid: user.id,
                 text: 'Message ' + i,
@@ -74,6 +75,9 @@ describe('protocol v1', () => {
                 url: null,
                 type: null,
                 img: null,
+                idx: null,
+                width: null,
+                height: null
             };
             await rebuttal?.storage.addNewMessage(room_prefilled.id, message);
         }
@@ -182,8 +186,10 @@ describe('protocol v1', () => {
             )
             .sendJson({
                 type: 'message',
+                filename: null,
+                rawfile: null,
                 roomid: room.id,
-                message: { text: 'test text' },
+                message: { text: 'test text', tags: [], url: null },
             })
             .waitForJson(
                 (reply) =>
@@ -219,7 +225,7 @@ describe('protocol v1', () => {
             .sendJson({
                 type: 'message',
                 roomid: room.id,
-                message: { text: 'test text' },
+                message: { text: 'test text', tags: [], url: null },
                 rawfile: fs.readFileSync('./tests/white.b64').toString(),
                 filename: 'white.png',
             })
@@ -262,7 +268,9 @@ describe('protocol v1', () => {
             .sendJson({
                 type: 'message',
                 roomid: room.id,
-                message: { text: 'test text', userid: 4000 },
+                filename: null,
+                rawfile: null,
+                message: { text: 'test text', userid: uuidv4(), tags: [], url: null },
             })
             .waitForJson(
                 (reply) =>
@@ -325,8 +333,6 @@ describe('protocol v1', () => {
             .waitForJson(
                 (reply) =>
                     reply.type === 'updateText' &&
-                    reply.roomid === room_prefilled.id &&
-                    reply.segment > 0 &&
                     reply.messages.length > 0,
                 { timeout: 500 },
             )
@@ -335,7 +341,7 @@ describe('protocol v1', () => {
     });
 
     it('request historical chat', async () => {
-        expect.assertions(0);
+        expect.hasAssertions();
         assert(rebuttal !== null);
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
@@ -357,12 +363,11 @@ describe('protocol v1', () => {
             })
             .waitForJson(
                 // TODO This test is brittle, it accidentally checks the order of indexes in objects, which is not intended.
-                (reply) =>
-                    reply.type === 'updateText' &&
-                    reply.roomid === room_prefilled.id &&
-                    reply.segment === 0 &&
-                    JSON.stringify(reply.messages[0]) ==
-                    JSON.stringify({
+                (reply) => {
+                    if (reply.type !== "updateText") {
+                        return false;
+                    }
+                    expect(reply.messages[0]).toEqual({
                         roomid: room_prefilled.id,
                         userid: user.id,
                         text: 'Message 0',
@@ -372,9 +377,10 @@ describe('protocol v1', () => {
                         type: null,
                         img: null,
                         idx: 0,
-                    }) &&
-                    JSON.stringify(reply.messages[4]) ==
-                    JSON.stringify({
+                        width: null,
+                        height: null,
+                    });
+                    expect(reply.messages[4]).toEqual({
                         roomid: room_prefilled.id,
                         userid: user.id,
                         text: 'Message 4',
@@ -384,7 +390,11 @@ describe('protocol v1', () => {
                         type: null,
                         img: null,
                         idx: 4,
-                    }),
+                        width: null,
+                        height: null,
+                    });
+                    return true;
+                },
                 { timeout: 1000 },
             )
             .close()
@@ -516,12 +526,12 @@ describe('protocol v1', () => {
             .sendJson({
                 type: 'letmesee',
                 touserid: user.id,
-                message: 'test webrtc message',
+                message: true,
             })
             .waitForJson(
                 (reply) =>
                     reply.type == 'letmesee' &&
-                    reply.message == 'test webrtc message',
+                    reply.message == true,
                 { timeout: 1000 },
             )
             .close()
@@ -624,7 +634,7 @@ describe('protocol v1', () => {
                 (reply) =>
                     reply.type === 'updateUsers' &&
                     reply.userList.filter(
-                        (user: User) => user.name === 'cucumber',
+                        (user: v1_shared_user) => user.name === 'cucumber',
                     ).length == 1,
                 { timeout: 1000 },
             )
@@ -638,11 +648,11 @@ describe('protocol v1', () => {
         const kicking_user = {
             id: uuidv4(),
             name: 'kickee',
-            password: 'kickee',
+            passwordHash: '',
             email: 'kickee@example.com',
             group: 'none',
         };
-        await rebuttal?.storage.createAccount(kicking_user);
+        await rebuttal?.storage.createAccount(kicking_user, "kickee");
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .exec(async () => {
@@ -657,7 +667,7 @@ describe('protocol v1', () => {
                     .sendJson({
                         type: 'login',
                         email: kicking_user.email,
-                        password: kicking_user.password,
+                        passwordHash: '',
                         protocol: 'v1',
                     })
                     .expectClosed();
@@ -675,19 +685,19 @@ describe('protocol v1', () => {
             .waitForJson(
                 (reply) =>
                     reply.type === 'updateUsers' &&
-                    reply.userList.filter((u: User) => u.name == 'kickee')
+                    reply.userList.filter((u: v1_shared_user) => u.name == 'kickee')
                         .length == 1,
                 {
 
                     timeout: 1000,
                 },
             )
-            .sendJson({ type: 'removeuser', touserid: kicking_user.id })
+            .sendJson({ type: 'removeuser', touserid: kicking_user.id, withvengence: false })
             .waitForJson(
                 (reply) =>
                     reply.type === 'updateUsers' &&
                     reply.userList.filter(
-                        (user: User) => user.name === 'kickee',
+                        (user: v1_shared_user) => user.name === 'kickee',
                     ).length == 0,
                 { timeout: 1000 },
             )
@@ -722,7 +732,7 @@ describe('protocol v1', () => {
                 (reply) =>
                     reply.type === 'updateRooms' &&
                     reply.roomList.filter(
-                        (room: Room) => room.name === 'new_room',
+                        (room: v1_shared_room) => room.name === 'new_room',
                     ).length == 0,
                 { timeout: 1000 },
             )
@@ -730,7 +740,7 @@ describe('protocol v1', () => {
             .expectClosed();
     });
 
-    it('can update message', async () => {
+    it('can update message text', async () => {
         expect.assertions(0);
         assert(rebuttal !== null);
         await requestws(rebuttal.server)
@@ -752,14 +762,15 @@ describe('protocol v1', () => {
             )
             .sendJson({
                 type: 'updatemessage',
-                roomid: room_prefilled.id,
-                messageid: 0,
-                message: { text: 'test text' },
+                message: {
+                    text: 'test text',
+                    idx: 0,
+                    roomid: room_prefilled.id,
+                },
             })
             .waitForJson(
                 (reply) =>
-                    reply.type === 'updateText' &&
-                    reply.roomid === room_prefilled.id,
+                    reply.type === 'updateText',
                 { timeout: 1000 },
             )
             .close()

@@ -1,9 +1,9 @@
-import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 
 import jsonstorage from '../storage/json.ts';
 //import mysqlstorage from '../storage/mysql';
 import sqlitestorage from '../storage/sqlite.ts';
+import { v4 as uuidv4 } from 'uuid';
 
 describe.each([
     ['json', jsonstorage],
@@ -16,28 +16,36 @@ describe.each([
         await storage.start();
         const userUuid = uuidv4();
         const userUuid2 = uuidv4();
-        const password = uuidv4();
+        const password: string = uuidv4();
 
         // Create user
         await storage.createAccount({
             id: userUuid,
             name: 'test',
-            password,
+            passwordHash: '',
             email: 'testuser@example.com',
             group: 'user',
-        });
+        }, password);
 
         await storage.createAccount({
             id: userUuid2,
             name: 'toast',
-            password,
+            passwordHash: "",
             email: 'toast@example.com',
             group: 'user',
-        });
+        }, password);
+
+        const u1 = await storage.getAccountByID(userUuid);
+        const u2 = await storage.getAccountByID(userUuid2);
+        expect(u1).not.toBeNull();
+        expect(u2).not.toBeNull();
+        if (u1 == null || u2 == null) {
+            throw new Error("Somehow null returned");
+        }
 
         // Users with the same password CANNOT match hashes
-        expect((await storage.getAccountByID(userUuid))?.password).not.toEqual(
-            (await storage.getAccountByID(userUuid2))?.password,
+        expect(u1.passwordHash).not.toEqual(
+            u2.passwordHash,
         );
 
         // Check user can login
@@ -62,7 +70,7 @@ describe.each([
                 id: userUuid2,
                 name: 'toast',
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                password: expect.anything(),
+                passwordHash: expect.anything(),
             },
         ]);
     });
@@ -115,6 +123,9 @@ describe.each([
                 url: null,
                 type: null,
                 img: null,
+                idx: null,
+                width: null,
+                height: null
             });
         }
 
@@ -133,6 +144,8 @@ describe.each([
         const oldmessage = messages[1];
         oldmessage.text = 'A whole new meaning';
         expect(oldmessage.idx).not.toBe(undefined);
+        expect(oldmessage.idx).not.toBeNull();
+
         await storage.updateMessage(
             roomUuid,
             oldmessage.idx as number,
@@ -154,7 +167,7 @@ describe.each([
 
         // Delete message
 
-        expect(messages[0].idx).not.toBe(undefined);
+        expect(messages[0].idx).not.toBeNull();
         await storage.removeMessage(roomUuid, messages[0].idx as number);
 
         messages = await storage.getTextForRoom(roomUuid, segment);
@@ -198,8 +211,8 @@ describe.each([
             name: 'adminname',
             email: 'adminperson@example.com',
             group: 'admin',
-            password: 'something',
-        });
+            passwordHash: '',
+        }, 'somethinglonger');
         expect(await storage.getAccountByID(userUuid)).toHaveProperty(
             'group',
             'admin',
@@ -262,11 +275,11 @@ describe.each([
             name: 'adminname',
             email: 'adminperson2@example.com',
             group: 'admin',
-            password: 'something',
+            passwordHash: '',
             avatar: './img/test.png',
             hidden: true,
         };
-        await storage.createAccount(user);
+        await storage.createAccount(user, 'somethinglonger');
         user.name = 'notanadmin';
         await storage.updateAccount(user.id, user);
         expect(await storage.getAccountByID(user.id)).toMatchObject({
@@ -361,8 +374,8 @@ describe.each([
     );
     it(
         'Storage ' +
-            sname +
-            ' returns segment zero when asked for newest segment of non-existant room',
+        sname +
+        ' returns segment zero when asked for newest segment of non-existant room',
         async () => {
             expect.assertions(1);
             const seg = await storage.getTextRoomNewestSegment(uuidv4());
@@ -371,8 +384,8 @@ describe.each([
     );
     it(
         'Storage ' +
-            sname +
-            ' returns false when asked for non-existant users permission',
+        sname +
+        ' returns false when asked for non-existant users permission',
         async () => {
             expect.assertions(1);
 
@@ -383,8 +396,8 @@ describe.each([
     );
     it(
         'Storage ' +
-            sname +
-            ' returns empty array when asked for permission list for non-existant group',
+        sname +
+        ' returns empty array when asked for permission list for non-existant group',
         async () => {
             expect.assertions(1);
 
@@ -395,8 +408,8 @@ describe.each([
     );
     it(
         'Storage ' +
-            sname +
-            ' returns false when asked if non-existant group has a permission',
+        sname +
+        ' returns false when asked if non-existant group has a permission',
         async () => {
             expect.assertions(1);
 
@@ -406,26 +419,23 @@ describe.each([
         },
     );
     it('Storage ' + sname + ' can change account password', async () => {
-        expect.assertions(4);
+        expect.assertions(5);
 
         const userid = uuidv4();
-        const userPassword1 = 'super1';
-        const userPassword2 = 'super2';
+        const userPassword1 = 'super1passplz';
+        const userPassword2 = 'super2passplz';
         const userEmail = 'testuser1@example.com';
 
         await storage.createAccount({
             id: userid,
             name: 'test1',
-            password: userPassword1,
+            passwordHash: '',
             email: userEmail,
             group: 'user',
-        });
-
-        expect(
-            await storage.getAccountByLogin(userEmail, userPassword1),
-        ).toMatchObject({
-            id: userid,
-        });
+        }, userPassword1);
+        const u1 = await storage.getAccountByLogin(userEmail, userPassword1);
+        expect(u1).not.toBeNull();
+        expect(u1).toMatchObject({ id: userid });
         expect(
             await storage.getAccountByLogin(userEmail, userPassword2),
         ).toBeNull();

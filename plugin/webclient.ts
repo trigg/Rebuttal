@@ -22,38 +22,46 @@ export const webclientplugin: pluginInterface = {
     // eslint-disable-next-line @typescript-eslint/require-await
     start: async (server: rebuttal) => {
         const themelist: Theme[] = [];
+        // Check if we have a webapp
 
-        // Enumerate all themes on the server side
-        fs.readdirSync(path.join('webapp', 'dist', 'img'), {
-            withFileTypes: true,
-        })
-            .filter((entry) => entry.isDirectory())
-            .forEach((entry) => {
-                const themefile = path.join(
-                    'webapp',
-                    'dist',
-                    'img',
-                    entry.name,
-                    'theme.json',
-                );
-                if (fs.existsSync(themefile)) {
-                    const string = fs.readFileSync(themefile).toString();
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                    const data: Theme = JSON.parse(string);
-                    data.id = entry.name;
-                    themelist.push(data);
-                }
-            });
-        console.log('Webclient started');
+        if (fs.existsSync("webapp")) {
+            // Enumerate all themes on the server side
+            fs.readdirSync(path.join('webapp', 'dist', 'img'), {
+                withFileTypes: true,
+            })
+                .filter((entry) => entry.isDirectory())
+                .forEach((entry) => {
+                    const themefile = path.join(
+                        'webapp',
+                        'dist',
+                        'img',
+                        entry.name,
+                        'theme.json',
+                    );
+                    if (fs.existsSync(themefile)) {
+                        const string = fs.readFileSync(themefile).toString();
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                        const data: Theme = JSON.parse(string);
+                        data.id = entry.name;
+                        themelist.push(data);
+                    }
+                });
+            console.log('Webclient started');
 
-        // Allow access to the client files
-        server.app.use('/', express.static('webapp/dist/'));
+            // Allow access to the client files
+            server.app.use('/', express.static('webapp/dist/'));
+
+        } else {
+            console.log("No Webapp content present");
+            return;
+        }
 
         // Inject themes into welcomeObj
         event.listen('connectionnew', Priority.NORMAL, (event: Event) => {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             event.welcomeObj.themelist = themelist;
         });
+        return;
     },
 };
 export default webclientplugin;

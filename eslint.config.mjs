@@ -6,9 +6,9 @@ import eslint from '@eslint/js';
 import jest from 'eslint-plugin-jest';
 
 export default defineConfig([
-    globalIgnores(['client/*', 'invite/*', 'coverage/*']),
+    globalIgnores(['webapp/*', 'invite/*', 'coverage/*']),
     {
-        files: ['**/*.test.js'],
+        files: ['tests/**/*.test.js'],
         ...jest.configs['flat/recommended'],
         rules: {
             ...jest.configs['flat/recommended'].rules,

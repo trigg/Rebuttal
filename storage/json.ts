@@ -5,9 +5,9 @@ import {
     type RoomStorage,
     type AccountStorage,
     type StorageInterface,
-    type MessageStorage,
     type PermissionsStorage,
 } from './interface.ts';
+import { type v1_shared_message_real } from '../protocols/v1/shared.ts';
 
 type JsonStorageInterface = StorageInterface & {
     storage: internalStorage;
@@ -25,7 +25,7 @@ interface internalStorage {
 }
 
 export interface RoomMessages {
-    [key: string]: MessageStorage[];
+    [key: string]: v1_shared_message_real[];
 }
 
 export interface signUps {
@@ -59,7 +59,7 @@ export const jsonstorage: JsonStorageInterface = {
     } as internalStorage,
     fileName: 'data/test.json',
 
-    getRoomByID: async function (roomid: string) {
+    getRoomByID: async function (roomid) {
         let retroom = null;
         for (const room of jsonstorage.storage.rooms) {
             if (room.id == roomid) {
@@ -69,23 +69,22 @@ export const jsonstorage: JsonStorageInterface = {
         return retroom;
     },
 
-    getAccountByLogin: async function (email: string, password: string) {
-        let retuser = null;
+    getAccountByLogin: async function (email, password) {
         for (const user of jsonstorage.storage.accounts) {
-            if (!user.password) {
+            if (!user.passwordHash || user.passwordHash.length < 2) {
                 continue;
             }
             if (
                 user.email == email &&
-                bcrypt.compareSync(password, user.password)
+                bcrypt.compareSync(password, user.passwordHash)
             ) {
-                retuser = user;
+                return user;
             }
         }
-        return retuser;
+        return null;
     },
 
-    getAccountByID: async function (userid: string) {
+    getAccountByID: async function (userid) {
         let retuser = null;
         for (const user of jsonstorage.storage.accounts) {
             if (user.id === userid) {
@@ -102,36 +101,36 @@ export const jsonstorage: JsonStorageInterface = {
         return jsonstorage.storage.accounts;
     },
 
-    createAccount: async function (details: AccountStorage) {
-        if (!details.password || details.password?.length < 1) {
+    createAccount: async function (details: AccountStorage, password: string) {
+        if (password.length < 1) {
             throw new Error('No password in create account');
         }
-        details.password = bcrypt.hashSync(details.password, 10);
+        details.passwordHash = bcrypt.hashSync(password, 10);
 
         jsonstorage.storage.accounts.push(details);
         await jsonstorage.save();
     },
 
-    createRoom: async function (details: RoomStorage) {
+    createRoom: async function (details) {
         jsonstorage.storage.rooms.push(details);
         await jsonstorage.save();
     },
 
-    updateAccount: async function (userid: string, details: AccountStorage) {
+    updateAccount: async function (userid, details) {
         await jsonstorage.removeAccount(userid);
         details['id'] = userid;
         jsonstorage.storage.accounts.push(details);
         await jsonstorage.save();
     },
 
-    updateRoom: async function (roomid: string, details: RoomStorage) {
+    updateRoom: async function (roomid, details) {
         await jsonstorage.removeRoom(roomid);
         details['id'] = roomid;
         jsonstorage.storage.rooms.push(details);
         await jsonstorage.save();
     },
 
-    removeAccount: async function (userid: string) {
+    removeAccount: async function (userid) {
         const user = await jsonstorage.getAccountByID(userid);
         if (user) {
             const idx = jsonstorage.storage.accounts.indexOf(user);
@@ -140,7 +139,7 @@ export const jsonstorage: JsonStorageInterface = {
         }
     },
 
-    removeRoom: async function (roomid: string) {
+    removeRoom: async function (roomid) {
         const room = await jsonstorage.getRoomByID(roomid);
         if (room) {
             const idx = jsonstorage.storage.rooms.indexOf(room);
@@ -178,6 +177,7 @@ export const jsonstorage: JsonStorageInterface = {
         message.roomid = roomid;
         jsonstorage.storage.messages[roomid].push(message);
         await jsonstorage.save();
+        return idx;
     },
 
     updateMessage: async function (roomid, messageid, contents) {
@@ -188,7 +188,7 @@ export const jsonstorage: JsonStorageInterface = {
     removeMessage: async function (roomid, messageid) {
         jsonstorage.storage.messages[roomid][messageid]['text'] =
             '*Message Removed*';
-        jsonstorage.storage.messages[roomid][messageid]['userid'] = null;
+        jsonstorage.storage.messages[roomid][messageid].userid = null;
 
         await jsonstorage.save();
     },
@@ -285,15 +285,17 @@ export const jsonstorage: JsonStorageInterface = {
         const hash = bcrypt.hashSync(password, 10);
         const user = await jsonstorage.getAccountByID(userid);
         if (user) {
-            user.password = hash;
+            user.passwordHash = hash;
+            await jsonstorage.removeAccount(user.id);
+            jsonstorage.storage.accounts.push(user);
             await jsonstorage.save();
         }
     },
 
     setPluginData: async function (
-        pluginName: string,
-        key: string,
-        value: string,
+        pluginName,
+        key,
+        value,
     ) {
         if (!(pluginName in jsonstorage.storage.plugin)) {
             jsonstorage.storage.plugin[pluginName] = {};
@@ -319,7 +321,7 @@ export const jsonstorage: JsonStorageInterface = {
         return jsonstorage.storage.plugin[pluginName];
     },
 
-    deletePluginData: async function (pluginName: string, key: string) {
+    deletePluginData: async function (pluginName, key) {
         if (!(pluginName in jsonstorage.storage.plugin)) {
             return;
         }

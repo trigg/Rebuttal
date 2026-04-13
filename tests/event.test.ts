@@ -9,7 +9,7 @@ describe('events', () => {
     it('fails to listen to unregistered event', () => {
         expect.assertions(1);
         expect(() => {
-            event.listen('doesnotexist', Priority.EARLY, () => {});
+            event.listen('doesnotexist', Priority.EARLY, () => { });
         }).toThrow('Listening to non-existant event : doesnotexist');
     });
 

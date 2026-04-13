@@ -7,12 +7,11 @@
 
 import bcrypt from 'bcryptjs';
 import {
-    type RoomStorage,
-    type MessageStorage,
     type StorageInterface,
     type AccountStorage,
 } from './interface.ts';
 import Sqlite, { type Database } from 'better-sqlite3';
+import { type v1_shared_message_real, type v1_shared_room } from '../protocols/v1/shared.ts';
 
 type SqliteStorageInterface = StorageInterface & {
     db: Database | null;
@@ -193,7 +192,7 @@ export const sqlitestorage: SqliteStorageInterface = {
     getRoomByID: async function (roomid: string) {
         const room = sqlitestorage.stmtGetRoomsByID?.get([
             roomid,
-        ]) as RoomStorage;
+        ]) as v1_shared_room;
         if (!room) {
             return null;
         }
@@ -213,12 +212,24 @@ export const sqlitestorage: SqliteStorageInterface = {
             return null;
         }
         raw_user.group = raw_user.groupid;
-        const user = raw_user as AccountStorage;
-        if (!user.password) {
+        if (!raw_user.avatar) {
+            raw_user.avatar = undefined;
+        }
+
+
+        if (!raw_user.passwordHash) {
             return null;
         }
         // SQL would not accept 'group' as field name
-        if (bcrypt.compareSync(password, user.password)) {
+        if (bcrypt.compareSync(password, raw_user.passwordHash)) {
+            const user: AccountStorage = {
+                avatar: raw_user.avatar ? raw_user.avatar : undefined,
+                id: raw_user.id,
+                name: raw_user.name,
+                passwordHash: raw_user.passwordHash,
+                email: raw_user.email,
+                group: raw_user.groupid
+            };
             return user;
         }
         return null;
@@ -244,7 +255,7 @@ export const sqlitestorage: SqliteStorageInterface = {
      * @returns rooms
      */
     getAllRooms: async function () {
-        return this.stmtGetAllRooms?.all([]) as RoomStorage[];
+        return this.stmtGetAllRooms?.all([]) as v1_shared_room[];
     },
     /**
      * Get all accounts. This should NOT return password. Really. It shouldn't
@@ -265,11 +276,11 @@ export const sqlitestorage: SqliteStorageInterface = {
      * Add new account to account list
      * @param {user} details
      */
-    createAccount: async function (details: AccountStorage) {
-        if (!details.password) {
-            throw new Error('user must have a password');
+    createAccount: async function (details: AccountStorage, password: string) {
+        if (password.length < 10) {
+            throw new Error('user password not valid');
         }
-        const hash = bcrypt.hashSync(details.password, 10);
+        const hash = bcrypt.hashSync(password, 10);
         if (!('hidden' in details)) {
             details.hidden = false;
         }
@@ -347,7 +358,7 @@ export const sqlitestorage: SqliteStorageInterface = {
             .filter((message: any) => {
                 message.tags = JSON.parse(message.tags);
                 return true;
-            }) as MessageStorage[];
+            }) as v1_shared_message_real[];
 
         return a;
     },
@@ -380,7 +391,7 @@ export const sqlitestorage: SqliteStorageInterface = {
         if (!ret) {
             throw new Error('Unknown last message');
         }
-        const idx = ret['count'];
+        const idx: number = ret['count'];
         this.stmtAddNewMessage?.run([
             idx + 1,
             roomid,
@@ -392,6 +403,7 @@ export const sqlitestorage: SqliteStorageInterface = {
             JSON.stringify(message.tags),
             message.img ? message.img : null,
         ]);
+        return idx + 1;
     },
 
     /**
@@ -421,13 +433,13 @@ export const sqlitestorage: SqliteStorageInterface = {
         await this.updateMessage(roomid, messageid, {
             text: '*Message Removed*',
             userid: null,
-        } as MessageStorage);
+        } as v1_shared_message_real);
     },
 
     getMessage: async function (roomid, messageid) {
         const a = this.stmtGetMessage?.get([roomid, messageid]);
         if (a) {
-            return a as MessageStorage;
+            return a as v1_shared_message_real;
         }
         return null;
     },
@@ -596,7 +608,7 @@ export const sqlitestorage: SqliteStorageInterface = {
     createDatabase: async function () {
         console.log('CREATING DATABASE');
         this.db?.exec(
-            'CREATE TABLE IF NOT EXISTS user (id TEXT NOT NULL UNIQUE, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL,avatar TEXT,groupid TEXT NOT NULL,hidden INTEGER NOT NULL)',
+            'CREATE TABLE IF NOT EXISTS user (id TEXT NOT NULL UNIQUE, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, passwordHash TEXT NOT NULL,avatar TEXT,groupid TEXT NOT NULL,hidden INTEGER NOT NULL)',
         );
         this.db?.exec(
             'CREATE TABLE IF NOT EXISTS room (id TEXT NOT NULL UNIQUE, name TEXT NOT NULL, type TEXT NOT NULL)',
@@ -629,7 +641,7 @@ export const sqlitestorage: SqliteStorageInterface = {
         this.stmtGetAllRooms = this.db?.prepare('SELECT * FROM room');
         this.stmtGetAllAccounts = this.db?.prepare('SELECT * FROM user');
         this.stmtCreateAccount = this.db?.prepare(
-            'INSERT INTO user (id,name,email,password,avatar,groupid,hidden) VALUES (?, ? ,?, ?, ?, ?, ?)',
+            'INSERT INTO user (id,name,email,passwordHash,avatar,groupid,hidden) VALUES (?, ? ,?, ?, ?, ?, ?)',
         );
         this.stmtCreateRoom = this.db?.prepare(
             'INSERT INTO room (id,name,type) VALUES (?, ?, ?)',
@@ -699,7 +711,7 @@ export const sqlitestorage: SqliteStorageInterface = {
             'DELETE FROM plugin WHERE pluginName = ? AND key = ?',
         );
         this.stmtSetAccountPassword = this.db?.prepare(
-            'UPDATE user SET password = ? WHERE id = ?',
+            'UPDATE user SET passwordHash = ? WHERE id = ?',
         );
         this.stmtGetMessage = this.db?.prepare(
             'SELECT * from messages WHERE roomid = ? and idx = ?',
