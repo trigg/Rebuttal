@@ -19,5 +19,6 @@ COPY index.ts server.ts events.ts package.json ./
 COPY plugin/ ./plugin
 COPY storage/ ./storage
 COPY protocols/ ./protocols
+COPY handler/ ./handler
 EXPOSE 9000
 CMD ["yarn", "run", "run"]
