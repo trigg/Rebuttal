@@ -34,11 +34,8 @@ jobs:
               with:
                   node-version: 25
 
-            - name: Yarn Build Webapp
-              uses: borales/actions-yarn@v4
-              with:
-                  cmd: build
-                  dir: 'webapp'
+            - name: Build webapp
+              run: yarn run build-webapp
 
             - name: Extract metadata (tags, labels) for Docker
               id: meta
