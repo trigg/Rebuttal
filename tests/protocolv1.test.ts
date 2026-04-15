@@ -652,7 +652,7 @@ describe('protocol v1', () => {
             email: 'kickee@example.com',
             group: 'none',
         };
-        await rebuttal?.storage.createAccount(kicking_user, "kickee");
+        await rebuttal?.storage.createAccount(kicking_user, "kick987650");
         await requestws(rebuttal.server)
             .ws('/ipc', { rejectUnauthorized: false })
             .exec(async () => {
@@ -667,7 +667,7 @@ describe('protocol v1', () => {
                     .sendJson({
                         type: 'login',
                         email: kicking_user.email,
-                        passwordHash: '',
+                        password: '',
                         protocol: 'v1',
                     })
                     .expectClosed();

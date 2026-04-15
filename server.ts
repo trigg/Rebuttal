@@ -10,15 +10,16 @@ import { event, Priority, type Event } from './events.ts';
 import { protocolv0 } from './handler/v0/p.ts';
 import { protocolv1 } from './handler/v1/p.ts';
 
+import { createStorageGuard } from './storage/guard.ts';
 import jsonstorage from './storage/json.ts';
 //import mysqlstorage from './storage/mysql.ts';
 import sqlitestorage from './storage/sqlite.ts';
 import { type pluginInterface } from './plugin/interface.ts';
 import {
     type PermissionsStorage,
-    type StorageInterface,
     type AccountStorage,
-} from './storage/interface.ts';
+} from './storage/types.ts';
+import { type StorageInterface } from './storage/interface.ts';
 import { env } from 'process';
 import { v4 as uuidv4 } from 'uuid';
 import { type v0_stc_packet } from './protocols/v0/server_to_client.ts';
@@ -126,13 +127,13 @@ export async function create_rebuttal(config: config) {
     let storage = null;
     switch (config['storage']) {
         /*case 'mysql':
-            storage = mysqlstorage;
+            storage = createStorageGuard(mysqlstorage);
             break;*/
         case 'sqlite':
-            storage = sqlitestorage;
+            storage = createStorageGuard(sqlitestorage);
             break;
         case 'json':
-            storage = jsonstorage;
+            storage = createStorageGuard(jsonstorage);
             break;
     }
     if (storage === null) {

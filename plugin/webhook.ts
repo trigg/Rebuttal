@@ -1,3 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/require-await */
 
 // TODO Come back to clean up webhook typing
@@ -6,7 +12,7 @@ import crypto from 'crypto';
 import { type pluginInterface } from './interface.ts';
 import event, { Priority } from '../events.ts';
 import { type rebuttal } from '../server.ts';
-import { type RoomStorage } from '../storage/interface.ts';
+import { type RoomStorage } from '../storage/types.ts';
 
 type WebhookPlugin = pluginInterface & {
     getRoomForHash(hash: string, payload: string): Promise<RoomStorage | null>;

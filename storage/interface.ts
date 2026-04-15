@@ -1,30 +1,25 @@
-import { type RoomUUID, type UserUUID, type v1_shared_message_real } from "../protocols/v1/shared.ts"
+import {
+    type RoomUUID,
+    type UserUUID,
+    type v1_shared_message_real
+} from "../protocols/v1/shared.ts"
+import {
+    type RoomStorage,
+    type AccountStorage,
+    type pluginData,
+} from "./types.ts";
 
-export interface AccountStorage {
-    id: UserUUID;
-    name: string;
-    passwordHash: string;
-    avatar?: string;
-    email: string;
-    group: string;
-    hidden?: boolean;
-}
 
-export interface RoomStorage {
-    id: RoomUUID;
-    name: string;
-    type: string;
-}
-
-export interface PermissionsStorage {
-    [key: string]: string[];
-}
-
-export interface pluginData {
-    [key: string]: string;
-}
 
 export interface StorageInterface {
+    createAccount(user: AccountStorage, password: string): Promise<void>;
+    createRoom(details: RoomStorage): Promise<void>;
+    addNewMessage(roomid: RoomUUID, message: v1_shared_message_real): Promise<number>;
+    addGroupPermission(groupname: string, permission: string): Promise<void>;
+    createGroup(groupname: string): Promise<void>;
+    generateSignUp(group: string, invite: string): Promise<void>;
+
+
     getRoomByID(roomid: RoomUUID): Promise<RoomStorage | null>;
     getAccountByLogin(
         email: string,
@@ -33,19 +28,8 @@ export interface StorageInterface {
     getAccountByID(userid: UserUUID): Promise<AccountStorage | null>;
     getAllRooms(): Promise<RoomStorage[]>;
     getAllAccounts(): Promise<AccountStorage[]>;
-    createAccount(user: AccountStorage, password: string): Promise<void>;
-    createRoom(details: RoomStorage): Promise<void>;
-    updateAccount(userid: UserUUID, details: AccountStorage): Promise<void>;
-    updateRoom(roomid: RoomUUID, details: RoomStorage): Promise<void>;
-    removeAccount(userid: UserUUID): Promise<void>;
-    removeRoom(roomid: RoomUUID): Promise<void>;
     getTextForRoom(uuid: RoomUUID, segment: number): Promise<v1_shared_message_real[]>;
     getTextRoomNewestSegment(uuid: RoomUUID): Promise<number>;
-    addNewMessage(roomid: RoomUUID, message: v1_shared_message_real): Promise<number>;
-    updateMessage(
-        contents: v1_shared_message_real,
-    ): Promise<void>;
-    removeMessage(roomid: RoomUUID, messageid: number): Promise<void>;
     getMessage(
         roomid: RoomUUID,
         messageid: number,
@@ -53,22 +37,32 @@ export interface StorageInterface {
     getAccountPermission(userid: UserUUID, permission: string): Promise<boolean>;
     getGroupPermission(groupname: string, permission: string): Promise<boolean>;
     getGroupPermissionList(groupname: string): Promise<string[]>;
-    addGroupPermission(groupname: string, permission: string): Promise<void>;
-    removeGroupPermission(groupname: string, permission: string): Promise<void>;
-    removeGroup(groupname: string): Promise<void>;
-    createGroup(groupname: string): Promise<void>;
-    setAccountGroup(userid: UserUUID, groupname: string): Promise<void>;
     getGroups(): Promise<string[]>;
-    generateSignUp(group: string, invite: string): Promise<void>;
-    expendSignUp(invite: string): Promise<string | null>;
+    getPluginData(pluginName: string, key: string): Promise<string | null>;
+    getAllPluginData(pluginName: string): Promise<pluginData | null>;
+
+
+    updateAccount(details: AccountStorage): Promise<void>;
+    updateRoom(details: RoomStorage): Promise<void>;
+    updateMessage(
+        contents: v1_shared_message_real,
+    ): Promise<void>;
+    setAccountGroup(userid: UserUUID, groupname: string): Promise<void>;
     setAccountPassword(userid: UserUUID, password: string): Promise<void>;
     setPluginData(
         pluginName: string,
         key: string,
         value: string,
     ): Promise<void>;
-    getPluginData(pluginName: string, key: string): Promise<string | null>;
-    getAllPluginData(pluginName: string): Promise<pluginData | null>;
+
+    removeAccount(userid: UserUUID): Promise<void>;
+    removeRoom(roomid: RoomUUID): Promise<void>;
+    removeMessage(roomid: RoomUUID, messageid: number): Promise<void>;
+    removeGroupPermission(groupname: string, permission: string): Promise<void>;
+    removeGroup(groupname: string): Promise<void>;
+    expendSignUp(invite: string): Promise<string | null>;
+
+
     deletePluginData(pluginName: string, key: string): Promise<void>;
     deleteAllPluginData(pluginName: string): Promise<void>;
 
@@ -77,5 +71,4 @@ export interface StorageInterface {
 
     test_mode(): Promise<void>;
 
-    test_passalong(f: () => void): Promise<void>;
 }

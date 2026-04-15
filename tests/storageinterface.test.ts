@@ -3,11 +3,12 @@ import fs from 'fs';
 import jsonstorage from '../storage/json.ts';
 //import mysqlstorage from '../storage/mysql';
 import sqlitestorage from '../storage/sqlite.ts';
+import { createStorageGuard } from '../storage/guard.ts';
 import { v4 as uuidv4 } from 'uuid';
 
 describe.each([
-    ['json', jsonstorage],
-    ['sqlite', sqlitestorage],
+    ['json', createStorageGuard(jsonstorage)],
+    ['sqlite', createStorageGuard(sqlitestorage)],
     //    ['mysql', mysqlstorage],
 ])('storage handles data', (sname, storage) => {
     it('Storage ' + sname + ' holds user data correctly', async () => {
@@ -279,7 +280,7 @@ describe.each([
         };
         await storage.createAccount(user, 'somethinglonger');
         user.name = 'notanadmin';
-        await storage.updateAccount(user.id, user);
+        await storage.updateAccount(user);
         expect(await storage.getAccountByID(user.id)).toMatchObject({
             name: 'notanadmin',
         });
@@ -300,7 +301,7 @@ describe.each([
             type: 'text',
         });
 
-        await storage.updateRoom(roomUuid, {
+        await storage.updateRoom({
             type: 'text',
             name: 'realroom',
             id: roomUuid,

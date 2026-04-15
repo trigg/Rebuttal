@@ -1,14 +1,13 @@
 /* eslint-disable @typescript-eslint/require-await */
 import fs from 'fs';
-import bcrypt from 'bcryptjs';
 import {
     type RoomStorage,
     type AccountStorage,
-    type StorageInterface,
     type PermissionsStorage,
     type pluginData,
-} from './interface.ts';
+} from './types.ts';
 import { type v1_shared_message_real } from '../protocols/v1/shared.ts';
+import { type StorageInterface } from './interface.ts';
 
 type JsonStorageInterface = StorageInterface & {
     storage: internalStorage;
@@ -67,15 +66,12 @@ export const jsonstorage: JsonStorageInterface = {
         return retroom;
     },
 
-    getAccountByLogin: async function (email, password) {
+    getAccountByLogin: async function (email, _password) {
         for (const user of jsonstorage.storage.accounts) {
             if (!user.passwordHash || user.passwordHash.length < 2) {
                 continue;
             }
-            if (
-                user.email == email &&
-                bcrypt.compareSync(password, user.passwordHash)
-            ) {
+            if (user.email == email) {
                 return user;
             }
         }
@@ -99,12 +95,7 @@ export const jsonstorage: JsonStorageInterface = {
         return jsonstorage.storage.accounts;
     },
 
-    createAccount: async function (details: AccountStorage, password: string) {
-        if (password.length < 1) {
-            throw new Error('No password in create account');
-        }
-        details.passwordHash = bcrypt.hashSync(password, 10);
-
+    createAccount: async function (details: AccountStorage, _password: string) {
         jsonstorage.storage.accounts.push(details);
         await jsonstorage.save();
     },
@@ -114,16 +105,14 @@ export const jsonstorage: JsonStorageInterface = {
         await jsonstorage.save();
     },
 
-    updateAccount: async function (userid, details) {
-        await jsonstorage.removeAccount(userid);
-        details['id'] = userid;
+    updateAccount: async function (details) {
+        await jsonstorage.removeAccount(details.id);
         jsonstorage.storage.accounts.push(details);
         await jsonstorage.save();
     },
 
-    updateRoom: async function (roomid, details) {
-        await jsonstorage.removeRoom(roomid);
-        details['id'] = roomid;
+    updateRoom: async function (details) {
+        await jsonstorage.removeRoom(details.id);
         jsonstorage.storage.rooms.push(details);
         await jsonstorage.save();
     },
@@ -224,6 +213,9 @@ export const jsonstorage: JsonStorageInterface = {
     },
 
     getGroupPermissionList: async function (groupname) {
+        if (!(groupname in jsonstorage.storage.permissions)) {
+            return [];
+        }
         return jsonstorage.storage.permissions[groupname];
     },
 
@@ -251,7 +243,7 @@ export const jsonstorage: JsonStorageInterface = {
         const account = await jsonstorage.getAccountByID(userid);
         if (account) {
             account.group = groupname;
-            await jsonstorage.updateAccount(userid, account);
+            await jsonstorage.updateAccount(account);
         }
     },
 
@@ -282,15 +274,8 @@ export const jsonstorage: JsonStorageInterface = {
         return null;
     },
 
-    setAccountPassword: async function (userid, password) {
-        const hash = bcrypt.hashSync(password, 10);
-        const user = await jsonstorage.getAccountByID(userid);
-        if (user) {
-            user.passwordHash = hash;
-            await jsonstorage.removeAccount(user.id);
-            jsonstorage.storage.accounts.push(user);
-            await jsonstorage.save();
-        }
+    setAccountPassword: async function (_userid, _password) {
+        throw new Error("Unimplemented");
     },
 
     setPluginData: async function (
@@ -362,9 +347,6 @@ export const jsonstorage: JsonStorageInterface = {
         jsonstorage.fileName = null;
     },
 
-    test_passalong: async function (f) {
-        f();
-    },
 };
 
 export default jsonstorage;

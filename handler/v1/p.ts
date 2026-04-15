@@ -10,7 +10,7 @@ import {
 } from '../../server.ts';
 import {
     type AccountStorage,
-} from '../../storage/interface.ts';
+} from '../../storage/types.ts';
 import { type v1_cts_packet } from '../../protocols/v1/client_to_server.ts';
 import v1_cts_iface from '../../protocols/v1/client_to_server-ti.ts';
 import v1_shared_iface from '../../protocols/v1/shared-ti.ts';
@@ -392,7 +392,6 @@ export const protocolv1 = {
                             if (room) {
                                 room.name = packet.roomName;
                                 await server.storage.updateRoom(
-                                    packet.roomid,
                                     room,
                                 );
                                 await server.sendUpdateRooms();
@@ -431,7 +430,6 @@ export const protocolv1 = {
                             if (user2) {
                                 user2.name = packet.userName;
                                 await server.storage.updateAccount(
-                                    packet.userid,
                                     user2,
                                 );
                                 await server.sendUpdateUsers();

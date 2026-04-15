@@ -3,12 +3,12 @@
 
 import bcrypt from 'bcryptjs';
 import {
-    type StorageInterface,
     type AccountStorage,
     type pluginData,
-} from './interface.ts';
+} from './types.ts';
 import Sqlite, { type Database } from 'better-sqlite3';
 import { type v1_shared_message_real } from '../protocols/v1/shared.ts';
+import { type StorageInterface } from './interface.ts';
 
 /* Minor differences exist */
 interface sqlite_message {
@@ -201,15 +201,12 @@ export const sqlitestorage: SqliteStorageInterface = {
      * @param {string} password
      * @returns
      */
-    getAccountByLogin: async function (email, password) {
+    getAccountByLogin: async function (email, _password) {
         const raw_user = this.stmtGetAccountByLogin?.get({ email });
         if (!raw_user) {
             return null;
         }
-        if (bcrypt.compareSync(password, raw_user.passwordHash)) {
-            return sqluser_to_user(raw_user);
-        }
-        return null;
+        return sqluser_to_user(raw_user);
     },
 
     /**
@@ -256,8 +253,7 @@ export const sqlitestorage: SqliteStorageInterface = {
      * Add new account to account list
      * @param {user} details
      */
-    createAccount: async function (details: AccountStorage, password: string) {
-        details.passwordHash = bcrypt.hashSync(password, 10);
+    createAccount: async function (details: AccountStorage, _password: string) {
         this.stmtCreateAccount?.run(user_to_sqluser(details));
     },
 
@@ -275,7 +271,7 @@ export const sqlitestorage: SqliteStorageInterface = {
      * @param {uuid} userid
      * @param {user} details
      */
-    updateAccount: async function (userid, details) {
+    updateAccount: async function (details) {
         this.stmtUpdateAccount?.run(user_to_sqluser(details));
     },
 
@@ -284,7 +280,7 @@ export const sqlitestorage: SqliteStorageInterface = {
      * @param {uuid} roomid
      * @param {room} details
      */
-    updateRoom: async function (roomid, details) {
+    updateRoom: async function (details) {
         this.stmtUpdateRoom?.run(details);
     },
 
@@ -442,7 +438,6 @@ export const sqlitestorage: SqliteStorageInterface = {
         this.stmtSetAccountGroup?.run({ groupid, id: userid });
     },
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     createGroup: async function (_groupname) {
         // NOOP
     },
@@ -598,7 +593,7 @@ export const sqlitestorage: SqliteStorageInterface = {
             'INSERT INTO room (id,name,type) VALUES (@id, @name, @type)',
         );
         this.stmtUpdateAccount = this.db?.prepare(
-            'UPDATE user SET name = @name, avatar = @avatar, groupid = @groupid, hidden = @hidden WHERE id = @id ',
+            'UPDATE user SET name = @name, avatar = @avatar, groupid = @groupid, hidden = @hidden, passwordHash = @passwordHash WHERE id = @id ',
         );
         this.stmtUpdateRoom = this.db?.prepare(
             'UPDATE room SET name = @name, type = @type WHERE id = @id',
@@ -680,8 +675,5 @@ export const sqlitestorage: SqliteStorageInterface = {
         this.fileName = '';
     },
 
-    test_passalong: async function (f) {
-        f();
-    },
 };
 export default sqlitestorage;
