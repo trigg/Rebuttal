@@ -101,6 +101,9 @@ export function createStorageGuard(inner: StorageInterface): GuardStorageInterfa
         getAccountByLogin: async function (email, password) {
             is_string(email); // To do, email shape validate
             is_string(password);
+            if (password.length < 10) {
+                throw new Error("User password MUST be longer then 9 letters");
+            }
             const value = await this.inner.getAccountByLogin(email, "");
             if (value == null) {
                 return null;
@@ -142,6 +145,9 @@ export function createStorageGuard(inner: StorageInterface): GuardStorageInterfa
             if (password.length < 10) {
                 throw new Error("User password MUST be longer then 9 letters");
             }
+            if (details.name.length < 3) {
+                throw new Error("User name MUST be longer than 2 characters");
+            }
             details.passwordHash = bcrypt.hashSync(password, 10);
             await this.inner.createAccount(details, "");
         },
@@ -153,6 +159,9 @@ export function createStorageGuard(inner: StorageInterface): GuardStorageInterfa
 
         updateAccount: async function (details) {
             is_user(details);
+            if (details.name.length < 3) {
+                throw new Error("User name MUST be longer than 2 characters");
+            }
             await this.inner.updateAccount(details);
         },
 

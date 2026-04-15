@@ -98,7 +98,7 @@ describe('protocol v0', () => {
             .sendJson({
                 type: 'login',
                 email: 'someone@example.com',
-                password: 'iforgor',
+                password: 'iforgor9999',
                 protocol: 'v1',
             })
             .expectJson(

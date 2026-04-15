@@ -353,7 +353,7 @@ describe.each([
     it('Storage ' + sname + ' return null for failed login', async () => {
         expect.assertions(1);
 
-        expect(await storage.getAccountByLogin('name', 'password')).toBeNull();
+        expect(await storage.getAccountByLogin('name', 'password999')).toBeNull();
     });
     it(
         'Storage ' + sname + ' returns empty array for empty message segment',

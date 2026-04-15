@@ -552,7 +552,6 @@ export const sqlitestorage: SqliteStorageInterface = {
     },
 
     createDatabase: async function () {
-        console.log('CREATING DATABASE');
         this.db?.exec(
             'CREATE TABLE IF NOT EXISTS user (id TEXT NOT NULL UNIQUE, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, passwordHash TEXT NOT NULL,avatar TEXT,groupid TEXT NOT NULL,hidden INTEGER NOT NULL)',
         );

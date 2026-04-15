@@ -47,72 +47,55 @@ export const protocolv0 = {
         switch (packet.type) {
             case 'signup':
                 {
-                    // Put effort into matching the same checks from client side
-                    if (
-                        packet.password &&
-                        packet.email &&
-                        packet.userName &&
-                        packet.signUp &&
-                        packet.email.indexOf('@') > -1 &&
-                        packet.email.indexOf('.') > -1 &&
-                        packet.userName.match(/^[a-zA-Z0-9-_ ]+$/) &&
-                        packet.userName.length >= 3 &&
-                        packet.password.length >= 7
-                    ) {
-                        console.log('Checking invite');
-                        let group = null;
-                        if (packet.signUp === 'signup') {
-                            if ('infinitesignup' in server.config) {
-                                group = server.config.infinitesignup;
-                            }
-                        } else {
-                            group = await server.storage.expendSignUp(
-                                packet.signUp,
-                            );
+
+                    console.log('Checking invite');
+                    let group = null;
+                    if (packet.signUp === 'signup') {
+                        if ('infinitesignup' in server.config) {
+                            group = server.config.infinitesignup;
                         }
-                        if (group) {
-                            const event_return = await event.trigger('usercreate', {
-                                userName: packet.userName,
-                                cancelled: false,
-                            });
+                    } else {
+                        group = await server.storage.expendSignUp(
+                            packet.signUp,
+                        );
+                    }
+                    if (group) {
+                        const event_return = await event.trigger('usercreate', {
+                            userName: packet.userName,
+                            cancelled: false,
+                        });
 
-                            // In this case we don't use FINAL event as it won't have email/password
-                            // If we put email/password in the event it'll be plaintext for every plugin
-                            // I simply don't feel that is right
-                            if (!event_return.cancelled) {
-                                console.log('Created user');
-                                const userUuid = uuidv4();
-                                await server.storage.createAccount({
-                                    id: userUuid,
-                                    name: packet.userName,
-                                    passwordHash: '',
-                                    email: packet.email,
-                                    group,
-                                }, packet.password);
+                        // In this case we don't use FINAL event as it won't have email/password
+                        // If we put email/password in the event it'll be plaintext for every plugin
+                        // I simply don't feel that is right
+                        if (!event_return.cancelled) {
+                            console.log('Created user');
+                            const userUuid = uuidv4();
+                            await server.storage.createAccount({
+                                id: userUuid,
+                                name: packet.userName,
+                                passwordHash: '',
+                                email: packet.email,
+                                group,
+                            }, packet.password);
 
-                                server.sendTo(socket, { type: 'refreshNow' });
-                            } else {
-                                console.log('Invite denied by plugin');
-                                server.sendTo(socket, {
-                                    type: 'error',
-                                    message:
-                                        'Signup permission denied by plugin',
-                                });
-                            }
+                            server.sendTo(socket, { type: 'refreshNow' });
                         } else {
-                            console.log('Invite invalid');
+                            console.log('Invite denied by plugin');
                             server.sendTo(socket, {
                                 type: 'error',
-                                message: 'Signup code expired or invalid',
+                                message:
+                                    'Signup permission denied by plugin',
                             });
                         }
                     } else {
-                        console.log('Not enough details to create account');
+                        console.log('Invite invalid');
                         server.sendTo(socket, {
                             type: 'error',
-                            message: 'Not enough info',
+                            message: 'Signup code expired or invalid',
                         });
                     }
+
                 }
                 return;
             case 'login':
