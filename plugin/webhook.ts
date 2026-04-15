@@ -1,8 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/require-await */
 
 // TODO Come back to clean up webhook typing
 import express from 'express';
@@ -21,7 +17,6 @@ export const webhookplugin: WebhookPlugin = {
     pluginName: 'webhook',
     server: null,
 
-    // eslint-disable-next-line @typescript-eslint/require-await
     start: async function (server: rebuttal) {
         this.server = server;
         // Listen for serverprep - before start

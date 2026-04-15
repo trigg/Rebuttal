@@ -27,9 +27,17 @@ export default defineConfig([
     {
         files: ['**/*.ts'],
         rules: {
-            'no-unused-vars': [
+            'no-unused-vars': 'off',
+            '@typescript-eslint/no-unused-vars': [
                 'error',
-                { argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+                {
+                    args: 'all',
+                    argsIgnorePattern: '^_',
+                    caughtErrors: 'all',
+                    caughtErrorsIgnorePattern: '^_',
+                    destructuredArrayIgnorePattern: '^_',
+                    varsIgnorePattern: '^_',
+                },
             ],
             '@typescript-eslint/no-misused-promises': 'error',
             '@typescript-eslint/no-floating-promises': 'error',
