@@ -7,9 +7,12 @@
     be used to alter an event or cancel. Intended for logging or debugging
 */
 
+import { type rebuttalSocket } from "./server.ts";
+
 export interface Event {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [key: string]: any;
+    [key: string]: unknown;
+    cancelled: boolean,
+    ref: rebuttalSocket,
 }
 
 export interface Listeners {
@@ -41,22 +44,25 @@ export const event = {
             throw new Error('Listening to non-existant event : ' + eventName);
         }
     },
-    trigger: async function (eventName: string, event: Event) {
-        event.cancelled = false;
-        event.eventtype = eventName;
+    trigger: async function (eventName: string, event: {
+        [key: string]: unknown;
+    }) {
+        const pass_event = event as Event; // Forcibly cast in readiness
+        pass_event.cancelled = false;
+        pass_event.eventtype = eventName;
         if (eventName in this.listeners) {
             for (const pri of Object.values(Priority)) {
                 for (const fn of this.listeners[eventName][pri]) {
-                    fn(event);
-                    if (event.cancelled) {
-                        return false;
+                    fn(pass_event);
+                    if (pass_event.cancelled) {
+                        return pass_event;
                     }
                 }
             }
         } else {
             throw new Error('Trigger non-existant event : ' + eventName);
         }
-        return true;
+        return pass_event;
     },
     register: function (eventName: string) {
         if (eventName in this.listeners) {

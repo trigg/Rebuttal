@@ -4,7 +4,6 @@
 
 import { create_rebuttal, type rebuttal } from '../server.ts';
 import request from 'supertest';
-import event, { Priority, type Event } from '../events.ts';
 import assert from 'node:assert';
 
 describe('webserver works', () => {
@@ -30,6 +29,14 @@ describe('webserver works', () => {
         request(rebuttal.app).get('/').expect(200, done);
     });
 
+    it('web client provides theme list', (done) => {
+        expect.assertions(0);
+        assert(rebuttal !== null);
+        request(rebuttal.app)
+            .get('/themelist.json')
+            .expect(200, done);
+    });
+
     it('web client provides default theme', (done) => {
         expect.assertions(0);
         assert(rebuttal !== null);
@@ -38,12 +45,4 @@ describe('webserver works', () => {
             .expect(200, done);
     });
 
-    it('injects themes into welcome object', async () => {
-        expect.assertions(1);
-        event.listen('connectionnew', Priority.MONITOR, (e: Event) => {
-            console.log(e);
-            expect(e.welcomeObj).toHaveProperty('themelist');
-        });
-        await event.trigger('connectionnew', { welcomeObj: {} });
-    });
 });

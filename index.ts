@@ -19,7 +19,7 @@ const default_config = {
     gravatarfallback: env['REBUTTAL_AVATARS'] ? env['REBUTTAL_AVATARS'] : 'monsterid',
     infinitesignup: env['REBUTTAL_INFINITE_SIGNUP'] ? env['REBUTTAL_INFINITE_SIGNUP'] : undefined,
     test_mode: false
-} as config;
+};
 const file_config = (fs.existsSync('./config.json') ? JSON.parse(
     fs.readFileSync('./config.json').toString(),
 ) : default_config) as config;

@@ -22,7 +22,7 @@ import {
 import { env } from 'process';
 import { v4 as uuidv4 } from 'uuid';
 import { type v0_stc_packet } from './protocols/v0/server_to_client.ts';
-import { type v1_stc_update_users, type v1_stc_packet } from './protocols/v1/server_to_client.ts';
+import { type v1_stc_packet } from './protocols/v1/server_to_client.ts';
 import { type v1_shared_room, type v1_shared_user, type UserUUID, type RoomUUID } from './protocols/v1/shared.ts';
 import { createCheckers } from 'ts-interface-checker';
 import v0_stc_iface from './protocols/v0/server_to_client-ti.ts';
@@ -102,8 +102,9 @@ export interface rebuttal {
     setRoom(socket: rebuttalSocket, id: RoomUUID | null): Promise<void>;
     getGroups(): Promise<PermissionsStorage>;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    presentCustomWindow(socket: rebuttalSocket, window: any): void; // TODO, Clean up, move to v1
+    chase(issues: unknown[]): void;
+
+    presentCustomWindow(socket: rebuttalSocket, window: unknown): void; // TODO, Clean up, move to v1
 }
 
 export type rebuttalInternal = rebuttal & {
@@ -304,8 +305,7 @@ export async function create_rebuttal(config: config) {
 
             // Get FINAL event callbacks
             event.listen('connectionnew', Priority.FINAL, (event: Event) => {
-                if (!event.cancelled && event.ref) {
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+                if (!event.cancelled) {
                     event.ref.send(JSON.stringify(event.welcomeObj));
                 } else {
                     // TODO Decide what cancelling a new connection does
@@ -313,10 +313,8 @@ export async function create_rebuttal(config: config) {
             });
         },
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        presentCustomWindow: function (ws: rebuttalSocket, window: any) {
+        presentCustomWindow: function (ws: rebuttalSocket, window: unknown) {
             // TODO Check sanity of window before sending?
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             this.sendTo(ws, { type: 'presentcustomwindow', window });
         },
 
@@ -345,28 +343,16 @@ export async function create_rebuttal(config: config) {
             const valid = checker.v1_stc_packet.validate(message) == null ||
                 checker.v0_stc_packet.validate(message) == null;
             if (!valid) {
-                function chase(issues: unknown[]) {
-                    for (const issue of issues) {
-                        if (issue instanceof Object) {
-                            if ('path' in issue && 'message' in issue) {
-                                console.log((issue.path as string) + " " + (issue.message as string));
-                            }
-                            if ('nested' in issue) {
-                                chase(issue.nested as unknown[]);
-                            }
-                        }
-                    }
-                }
                 console.log("v1 feedback");
                 console.log(JSON.stringify(message, null, "  "))
                 const issues = checker.v1_stc_packet.validate(message);
                 if (issues != null) {
-                    chase(issues);
+                    this.chase(issues);
                 }
                 console.log("v0 feedback");
                 const issues2 = checker.v0_stc_packet.validate(message);
                 if (issues2 != null) {
-                    chase(issues2)
+                    this.chase(issues2)
                 }
                 throw new Error("Attempting to send invalid packet");
 
@@ -400,7 +386,7 @@ export async function create_rebuttal(config: config) {
             this.sendToAll(this.connections, {
                 type: 'updateUsers',
                 userList: await this.updateUsers(),
-            } as v1_stc_update_users);
+            });
         },
 
         sendUpdatesMessages: async function (roomid: RoomUUID) {
@@ -554,7 +540,7 @@ export async function create_rebuttal(config: config) {
                 name: account.name,
                 status: connected,
                 avatar: account.avatar,
-                hidden: account.hidden as boolean,
+                hidden: account.hidden ? account.hidden : false,
                 suppress: suppressed,
                 talking,
                 livelabel,
@@ -718,7 +704,6 @@ export async function create_rebuttal(config: config) {
                         type: 'connect',
                         message: this.config.servername,
                         icon: this.config.serverimg,
-                        contextmenus: this.contextmenu,
                         protocols: this.protocols,
                     },
                 })
@@ -726,6 +711,18 @@ export async function create_rebuttal(config: config) {
                     console.log(e);
                 });
         },
+        chase: function (issues: unknown[]) {
+            for (const issue of issues) {
+                if (issue instanceof Object) {
+                    if ('path' in issue && 'message' in issue) {
+                        console.log((issue.path as string) + " " + (issue.message as string));
+                    }
+                    if ('nested' in issue) {
+                        this.chase(issue.nested as unknown[]);
+                    }
+                }
+            }
+        }
     };
     await rebuttal.populateNewConfig();
     // Prepare event system

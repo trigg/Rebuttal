@@ -6,6 +6,7 @@ import {
     type AccountStorage,
     type StorageInterface,
     type PermissionsStorage,
+    type pluginData,
 } from './interface.ts';
 import { type v1_shared_message_real } from '../protocols/v1/shared.ts';
 
@@ -40,9 +41,6 @@ export interface plugins {
     [key: string]: pluginData;
 }
 
-export interface pluginData {
-    [key: string]: string;
-}
 /**
  * Be aware that sanity checking data is NOT to be done in the storage modules.
  *
@@ -180,8 +178,11 @@ export const jsonstorage: JsonStorageInterface = {
         return idx;
     },
 
-    updateMessage: async function (roomid, messageid, contents) {
-        jsonstorage.storage.messages[roomid][messageid] = contents;
+    updateMessage: async function (contents) {
+        if (contents.idx === null) {
+            throw new Error("Invalid idx in messageUpdate");
+        }
+        jsonstorage.storage.messages[contents.roomid][contents.idx] = contents;
         await jsonstorage.save();
     },
 
@@ -364,6 +365,6 @@ export const jsonstorage: JsonStorageInterface = {
     test_passalong: async function (f) {
         f();
     },
-} as JsonStorageInterface;
+};
 
 export default jsonstorage;

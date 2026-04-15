@@ -9,7 +9,7 @@ describe('events', () => {
     it('fails to listen to unregistered event', () => {
         expect.assertions(1);
         expect(() => {
-            event.listen('doesnotexist', Priority.EARLY, () => { });
+            event.listen('doesnotexist', Priority.EARLY, (_event) => { });
         }).toThrow('Listening to non-existant event : doesnotexist');
     });
 
@@ -21,7 +21,7 @@ describe('events', () => {
 
     it('can add event listeners', () => {
         expect.assertions(0);
-        event.listen('testevent', Priority.MONITOR, function () {
+        event.listen('testevent', Priority.MONITOR, function (_event) {
             console.log('Sanity test-  should be last');
             if (eventstage >= Priority.MONITOR) {
                 throw new Error('Event priorities called out of order');
@@ -32,7 +32,7 @@ describe('events', () => {
             eventstage = Priority.MONITOR;
         });
 
-        event.listen('testevent', Priority.EARLY, function () {
+        event.listen('testevent', Priority.EARLY, function (_event) {
             console.log('Sanity test-  should be first');
             if (eventstage >= Priority.EARLY) {
                 throw new Error('Event priorities called out of order');
@@ -40,7 +40,7 @@ describe('events', () => {
 
             eventstage = Priority.EARLY;
         });
-        event.listen('testevent', Priority.LATE, function () {
+        event.listen('testevent', Priority.LATE, function (_event) {
             console.log('Sanity test-  should be middle');
             if (eventstage >= Priority.LATE) {
                 throw new Error('Event priorities called out of order');
@@ -80,8 +80,8 @@ describe('events', () => {
     it('can cancel a triggered event', async () => {
         expect.assertions(0);
         event.register('cancelevent');
-        event.listen('cancelevent', Priority.EARLY, (e) => {
-            e.cancelled = true;
+        event.listen('cancelevent', Priority.EARLY, (event) => {
+            event.cancelled = true;
         });
         event.listen('cancelevent', Priority.NORMAL, () => {
             throw new Error('Continued with cancelled event');

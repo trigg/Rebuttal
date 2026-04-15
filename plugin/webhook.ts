@@ -25,7 +25,7 @@ export const webhookplugin: WebhookPlugin = {
     start: async function (server: rebuttal) {
         this.server = server;
         // Listen for serverprep - before start
-        event.listen('serverprep', Priority.NORMAL, () => {
+        event.listen('serverprep', Priority.NORMAL, (_event) => {
             // Add a context menu option to text rooms
             server.contextmenu.textroom.push({
                 label: 'Manage Webhooks',
@@ -37,7 +37,7 @@ export const webhookplugin: WebhookPlugin = {
         event.listen(
             'usercontextmenucallback',
             Priority.NORMAL,
-            (event: any) => {
+            (event) => {
                 const { option, value, ref } = event;
                 if (option === 'managewebhooks') {
                     // Show Gui managing webhooks
@@ -334,5 +334,5 @@ export const webhookplugin: WebhookPlugin = {
         }
         return r;
     },
-} as WebhookPlugin;
+};
 export default webhookplugin;

@@ -10,18 +10,26 @@ const checker = createCheckers(v0_cts_iface);
 
 /* Heavy handed get an error message to user and close connection */
 function invalid_packet(server: rebuttal, socket: rebuttalSocket, data: unknown) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-    console.log('v0 got malformed packet : ' + (data as any).type);
-    console.log(data);
+    if (!(data instanceof Object && 'type' in data && typeof data.type == 'string')) {
+        console.log("v0 got malformed packet : ");
+        console.log(data);
+        return;
+    }
+    console.log('v0 got malformed packet : ' + data.type);
+    console.log(JSON.stringify(data));
+
+    const issues = checker.v0_cts_packet.validate(data);
+    if (issues != null) {
+        server.chase(issues);
+    }
+
     server.sendTo(socket, {
         type: 'error',
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-        message: 'Malformed packet of type : "' + (data as any).type + '"',
+        message: 'Malformed packet of type : "' + data.type + '"',
     });
     socket.close(
         3001,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-        'Malformed packet of type : "' + (data as any).type + '"',
+        'Malformed packet of type : "' + data.type + '"',
     );
 }
 
@@ -63,13 +71,15 @@ export const protocolv0 = {
                             );
                         }
                         if (group) {
-                            const allow = await event.trigger('usercreate', {
+                            const event_return = await event.trigger('usercreate', {
                                 userName: packet.userName,
+                                cancelled: false,
                             });
+
                             // In this case we don't use FINAL event as it won't have email/password
                             // If we put email/password in the event it'll be plaintext for every plugin
                             // I simply don't feel that is right
-                            if (allow) {
+                            if (!event_return.cancelled) {
                                 console.log('Created user');
                                 const userUuid = uuidv4();
                                 await server.storage.createAccount({
@@ -126,7 +136,7 @@ export const protocolv0 = {
                                 userName: user.name,
                             });
                             // As before, avoiding FINAL event as we can't allow plain-text passwords to be seen by plugin
-                            if (allow) {
+                            if (!allow.cancelled) {
                                 socket.name = user.name;
                                 socket.id = user.id;
 

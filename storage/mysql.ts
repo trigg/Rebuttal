@@ -178,11 +178,9 @@ export const mysqlstorage = {
 
     /**
      * Change contents of message
-     * @param {uuid} roomid
-     * @param {int} messageid
      * @param {object} contents
      */
-    updateMessage: async function (roomid, messageid, contents) { },
+    updateMessage: async function (contents) { },
 
     /**
      * Remove message

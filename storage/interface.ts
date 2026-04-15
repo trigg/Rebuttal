@@ -20,6 +20,10 @@ export interface PermissionsStorage {
     [key: string]: string[];
 }
 
+export interface pluginData {
+    [key: string]: string;
+}
+
 export interface StorageInterface {
     getRoomByID(roomid: RoomUUID): Promise<RoomStorage | null>;
     getAccountByLogin(
@@ -39,8 +43,6 @@ export interface StorageInterface {
     getTextRoomNewestSegment(uuid: RoomUUID): Promise<number>;
     addNewMessage(roomid: RoomUUID, message: v1_shared_message_real): Promise<number>;
     updateMessage(
-        roomid: RoomUUID,
-        messageid: number,
         contents: v1_shared_message_real,
     ): Promise<void>;
     removeMessage(roomid: RoomUUID, messageid: number): Promise<void>;
@@ -65,8 +67,8 @@ export interface StorageInterface {
         key: string,
         value: string,
     ): Promise<void>;
-    getPluginData(pluginName: string, key: string): Promise<string>;
-    getAllPluginData(pluginName: string): Promise<object | null>;
+    getPluginData(pluginName: string, key: string): Promise<string | null>;
+    getAllPluginData(pluginName: string): Promise<pluginData | null>;
     deletePluginData(pluginName: string, key: string): Promise<void>;
     deleteAllPluginData(pluginName: string): Promise<void>;
 

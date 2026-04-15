@@ -22,18 +22,26 @@ const checker = createCheckers(v1_cts_iface, v1_shared_iface);
 
 /* Heavy handed get an error message to user and close connection */
 function invalid_packet(server: rebuttal, socket: rebuttalSocket, data: unknown) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-    console.log('v1 got malformed packet : ' + (data as any).type);
-    console.log(data);
+    if (!(data instanceof Object && 'type' in data && typeof data.type == 'string')) {
+        console.log("v1 got malformed packet : ");
+        console.log(data);
+        return;
+    }
+    console.log('v1 got malformed packet : ' + data.type);
+    console.log(JSON.stringify(data));
+
+    const issues = checker.v1_cts_packet.validate(data);
+    if (issues != null) {
+        server.chase(issues);
+    }
+
     server.sendTo(socket, {
         type: 'error',
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-        message: 'Malformed packet of type : "' + (data as any).type + '"',
+        message: 'Malformed packet of type : "' + data.type + '"',
     });
     socket.close(
         3001,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-        'Malformed packet of type : "' + (data as any).type + '"',
+        'Malformed packet of type : "' + data.type + '"',
     );
 }
 
@@ -65,7 +73,10 @@ export const protocolv1 = {
             type: 'updateGroups',
             groups: await server.getGroups(),
         });
-
+        server.sendTo(socket, {
+            type: "welcome",
+            contextmenus: server.contextmenu,
+        });
         // Alert everyone else
         await server.sendUpdateRooms();
         await server.sendUpdateUsers();
@@ -139,7 +150,7 @@ export const protocolv1 = {
                         roomUuid: packet.roomid,
                         message: packet.message,
                     });
-                    if (allow1 && allow2) {
+                    if (!allow1.cancelled && !allow2.cancelled) {
                         let fileuri: string | null = null;
                         let fileheight: number | null = null;
                         let filewidth: number | null = null;
@@ -541,15 +552,13 @@ export const protocolv1 = {
                                 type: delta.type ? delta.type : previous_message.type,
                                 username: delta.username ? delta.username : previous_message.username
                             }
-                            const allow = await event.trigger('messagechange', {
+                            const return_event = await event.trigger('messagechange', {
                                 roomUuid: packet.message.roomid,
                                 newMessage: new_message,
                                 oldMessage: previous_message,
                             });
-                            if (allow) {
+                            if (!return_event.cancelled) {
                                 await server.storage.updateMessage(
-                                    packet.message.roomid,
-                                    packet.message.idx,
                                     new_message,
                                 );
                                 await server.sendUpdatesMessages(packet.message.roomid);
@@ -590,12 +599,12 @@ export const protocolv1 = {
                                 text: '*Message Removed*',
                                 userid: null,
                             };
-                            const allow = await event.trigger('messagechange', {
+                            const return_event = await event.trigger('messagechange', {
                                 roomUuid: packet.roomid,
                                 newMessage: message,
                                 oldMessage: previous_message,
                             });
-                            if (allow) {
+                            if (!return_event.cancelled) {
                                 await server.storage.removeMessage(
                                     packet.roomid,
                                     packet.messageid,

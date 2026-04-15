@@ -147,8 +147,6 @@ describe.each([
         expect(oldmessage.idx).not.toBeNull();
 
         await storage.updateMessage(
-            roomUuid,
-            oldmessage.idx as number,
             oldmessage,
         );
         messages = await storage.getTextForRoom(roomUuid, segment);
