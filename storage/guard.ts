@@ -10,7 +10,7 @@ import {
 import { type StorageInterface } from './interface.ts';
 import { createCheckers } from 'ts-interface-checker';
 import types_iface from './types-ti.ts';
-import { v1_shared_message_real } from '../protocols/v1/shared.ts';
+import { type v1_shared_message_real } from '../protocols/v1/shared.ts';
 import types_v1_shared from '../protocols/v1/shared-ti.ts';
 import bcrypt from 'bcryptjs';
 const checker = createCheckers(types_iface, types_v1_shared);
