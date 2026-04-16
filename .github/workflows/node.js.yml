@@ -7,12 +7,11 @@ permissions:
 jobs:
     test:
         runs-on: ubuntu-latest
-        # TODO, MySQL testing
-        #    env:
-        #      DB_DATABASE: rebuttal
-        #      DB_USER: root
-        #      DB_PASSWORD: root
-        #      DB_HOST: localhost
+        env:
+            DB_USER: test
+            DB_PASSWORD: test
+            DB_HOST: localhost
+            TEST_MYSQL: y
         steps:
             - uses: actions/checkout@v3
               with:
@@ -29,8 +28,9 @@ jobs:
               with:
                   node-version: 25
 
-            #      - name: Start MySQL
-            #        run: sudo /etc/init.d/mysql start
+            - name: Start MySQL
+              run: sudo /etc/init.d/mysql start
+
             - name: Create testing certificate
               run: openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 3650 -nodes -subj "/C=XX/ST=StateName/L=CityName/O=CompanyName/OU=CompanySectionName/CN=CommonNameOrHostname"
 

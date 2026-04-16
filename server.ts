@@ -11,9 +11,9 @@ import { protocolv0 } from './handler/v0/p.ts';
 import { protocolv1 } from './handler/v1/p.ts';
 
 import { createStorageGuard } from './storage/guard.ts';
-import jsonstorage from './storage/json.ts';
-//import mysqlstorage from './storage/mysql.ts';
-import sqlitestorage from './storage/sqlite.ts';
+import { jsonstorage } from './storage/json.ts';
+import { mysqlstorage } from './storage/mysql.ts';
+import { sqlitestorage } from './storage/sqlite.ts';
 import { type pluginInterface } from './plugin/interface.ts';
 import {
     type PermissionsStorage,
@@ -125,24 +125,30 @@ export async function create_rebuttal(config: config) {
     app.use('/invite', express.static('invite'));
     const plugins: pluginInterface[] = [];
     let storage = null;
-    switch (config['storage']) {
-        /*case 'mysql':
-            storage = createStorageGuard(mysqlstorage);
-            break;*/
-        case 'sqlite':
-            storage = createStorageGuard(sqlitestorage);
-            break;
-        case 'json':
-            storage = createStorageGuard(jsonstorage);
-            break;
+    if (config.test_mode) {
+        storage = createStorageGuard(await jsonstorage(null));
+    } else {
+        switch (config['storage']) {
+            case 'mysql':
+                {
+                    const username = process.env.REBUTTAL_MYSQL_USERNAME ? process.env.REBUTTAL_MYSQL_USERNAME : "rebuttal";
+                    const password = process.env.REBUTTAL_MYSQL_PASSWORD ? process.env.REBUTTAL_MYSQL_PASSWORD : "rebuttal";
+                    const database = process.env.REBUTTAL_MYSQL_DATABASE ? process.env.REBUTTAL_MYSQL_DATABASE : "rebuttal";
+                    const host = process.env.REBUTTAL_MYSQL_HOST ? process.env.REBUTTAL_MYSQL_HOST : "localhosts";
+                    storage = createStorageGuard(await mysqlstorage(username, password, database, host, false));
+                }
+                break;
+            case 'sqlite':
+                storage = createStorageGuard(await sqlitestorage("data/data.sqlite"));
+                break;
+            case 'json':
+                storage = createStorageGuard(await jsonstorage("data/data.json"));
+                break;
+        }
     }
     if (storage === null) {
         throw new Error('no storage');
     }
-    if (config.test_mode) {
-        await storage.test_mode();
-    }
-    await storage.start();
 
     if ('plugins' in config) {
         for (const plugin of config['plugins']) {
@@ -275,6 +281,7 @@ export async function create_rebuttal(config: config) {
                     id: roomUuid,
                     name: 'Main',
                     type: 'text',
+                    position: 10,
                 });
 
                 const voiceUuid = uuidv4();
@@ -282,6 +289,7 @@ export async function create_rebuttal(config: config) {
                     id: voiceUuid,
                     name: 'Chat',
                     type: 'voice',
+                    position: 5,
                 });
             }
         },
@@ -613,6 +621,7 @@ export async function create_rebuttal(config: config) {
                     name: room.name,
                     type: room.type,
                     userlist: this.getUsersInRoom(room.id),
+                    position: room.position
                 });
             }
 

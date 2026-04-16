@@ -15,10 +15,6 @@ import types_v1_shared from '../protocols/v1/shared-ti.ts';
 import bcrypt from 'bcryptjs';
 const checker = createCheckers(types_iface, types_v1_shared);
 
-type GuardStorageInterface = StorageInterface & {
-    inner: StorageInterface,
-};
-
 function is_message(input: unknown): input is v1_shared_message_real {
     checker.v1_shared_message_real.check(input);
     return true;
@@ -84,15 +80,14 @@ function is_string(input: unknown): input is str {
  * 
  * Saves writing (or typoing) the same checks for every storage medium
  */
-export function createStorageGuard(inner: StorageInterface): GuardStorageInterface {
+export function createStorageGuard(inner: StorageInterface): StorageInterface {
     return {
-        inner,
 
         getRoomByID: async function (roomid) {
             if (roomid != null) {
                 is_string(roomid);
             }
-            const value = await this.inner.getRoomByID(roomid);
+            const value = await inner.getRoomByID(roomid);
             if (value == null) { return null; }
             is_room(value);
             return value;
@@ -104,7 +99,7 @@ export function createStorageGuard(inner: StorageInterface): GuardStorageInterfa
             if (password.length < 10) {
                 throw new Error("User password MUST be longer then 9 letters");
             }
-            const value = await this.inner.getAccountByLogin(email, "");
+            const value = await inner.getAccountByLogin(email, "");
             if (value == null) {
                 return null;
             }
@@ -121,20 +116,23 @@ export function createStorageGuard(inner: StorageInterface): GuardStorageInterfa
 
         getAccountByID: async function (userid) {
             is_string(userid);
-            const value = await this.inner.getAccountByID(userid);
+            const value = await inner.getAccountByID(userid);
             if (value == null) { return null; }
             is_user(value);
             return value;
         },
 
         getAllRooms: async function () {
-            const value = await this.inner.getAllRooms();
+            const value = await inner.getAllRooms();
             is_room_list(value);
+            /* Sorting needs to be consistent */
+            value.sort((a, b) => a.position - b.position);
+
             return value;
         },
 
         getAllAccounts: async function () {
-            const value = await this.inner.getAllAccounts();
+            const value = await inner.getAllAccounts();
             is_user_list(value);
             return value;
         },
@@ -149,12 +147,12 @@ export function createStorageGuard(inner: StorageInterface): GuardStorageInterfa
                 throw new Error("User name MUST be longer than 2 characters");
             }
             details.passwordHash = bcrypt.hashSync(password, 10);
-            await this.inner.createAccount(details, "");
+            await inner.createAccount(details, "");
         },
 
         createRoom: async function (details) {
             is_room(details);
-            await this.inner.createRoom(details);
+            await inner.createRoom(details);
         },
 
         updateAccount: async function (details) {
@@ -162,62 +160,90 @@ export function createStorageGuard(inner: StorageInterface): GuardStorageInterfa
             if (details.name.length < 3) {
                 throw new Error("User name MUST be longer than 2 characters");
             }
-            await this.inner.updateAccount(details);
+            await inner.updateAccount(details);
         },
 
         updateRoom: async function (details) {
             is_room(details);
-            await this.inner.updateRoom(details);
+            await inner.updateRoom(details);
         },
 
         removeAccount: async function (userid) {
             is_string(userid);
-            await this.inner.removeAccount(userid);
+            await inner.removeAccount(userid);
         },
 
         removeRoom: async function (roomid) {
             is_string(roomid);
-            await this.inner.removeRoom(roomid);
+            await inner.removeRoom(roomid);
         },
 
         getTextForRoom: async function (uuid, segment) {
             is_string(uuid);
             is_idx(segment);
-            const ret = await this.inner.getTextForRoom(uuid, segment);
+            const ret = await inner.getTextForRoom(uuid, segment);
             is_message_list(ret);
             return ret;
         },
 
         getTextRoomNewestSegment: async function (uuid) {
             is_string(uuid);
-            const ret = await this.inner.getTextRoomNewestSegment(uuid);
-            is_idx(ret);
-            return ret;
+            const value = await this.getLastMessageIdx(uuid);
+            if (value === null || value <= 0) {
+                return 0;
+            }
+            return Math.floor((value - 1) / 5);
         },
 
-        addNewMessage: async function (roomid, message) {
-            is_string(roomid);
+        addNewMessage: async function (message) {
             is_message(message);
-            const ret = await this.inner.addNewMessage(roomid, message);
-            is_idx(ret);
-            return ret;
+            if (!message.roomid) {
+                throw new Error("Invalid new message without roomid");
+            }
+
+            const roomid = message.roomid;
+            const idx: number | null = await inner.getLastMessageIdx(roomid);
+            if (idx == null) {
+                message.idx = 0;
+            } else {
+                message.idx = idx + 1;
+            }
+            await inner.addNewMessage(message);
+        },
+
+        getLastMessageIdx: async function (id) {
+            is_string(id);
+            const val = await inner.getLastMessageIdx(id);
+            if (val == null) { return null; }
+            is_idx(val);
+            return val;
         },
 
         updateMessage: async function (contents) {
             is_message(contents);
-            await this.inner.updateMessage(contents);
+            await inner.updateMessage(contents);
         },
 
         removeMessage: async function (roomid, messageid) {
-            is_string(roomid);
-            is_idx(messageid);
-            await this.inner.removeMessage(roomid, messageid);
+            await this.updateMessage({
+                text: '*Message Removed*',
+                userid: null,
+                roomid: roomid,
+                idx: messageid,
+                img: null,
+                url: null,
+                height: null,
+                width: null,
+                tags: [],
+                type: null,
+                username: ''
+            });
         },
 
         getMessage: async function (roomid, messageid) {
             is_string(roomid);
             is_idx(messageid);
-            const ret = await this.inner.getMessage(roomid, messageid);
+            const ret = await inner.getMessage(roomid, messageid);
             if (ret == null) {
                 return null;
             }
@@ -228,7 +254,11 @@ export function createStorageGuard(inner: StorageInterface): GuardStorageInterfa
         getAccountPermission: async function (userid, permission) {
             is_string(userid);
             is_string(permission);
-            const ret = await this.inner.getAccountPermission(userid, permission);
+            const user = await this.getAccountByID(userid);
+            if (!user) {
+                return false;
+            }
+            const ret = await this.getGroupPermission(user.group, permission);
             is_bool(ret);
             return ret;
         },
@@ -236,14 +266,14 @@ export function createStorageGuard(inner: StorageInterface): GuardStorageInterfa
         getGroupPermission: async function (groupname, permission) {
             is_string(groupname);
             is_string(permission);
-            const ret = await this.inner.getGroupPermission(groupname, permission);
+            const ret = await inner.getGroupPermission(groupname, permission);
             is_bool(ret);
             return ret;
         },
 
         getGroupPermissionList: async function (groupname) {
             is_string(groupname);
-            const ret = await this.inner.getGroupPermissionList(groupname);
+            const ret = await inner.getGroupPermissionList(groupname);
             is_string_list(ret);
             return ret;
         },
@@ -251,33 +281,37 @@ export function createStorageGuard(inner: StorageInterface): GuardStorageInterfa
         addGroupPermission: async function (groupname, permission) {
             is_string(groupname)
             is_string(permission);
-            await this.inner.addGroupPermission(groupname, permission);
+            if ((await this.getGroupPermission(groupname, permission)) === false) {
+
+                await inner.addGroupPermission(groupname, permission);
+            }
         },
 
         removeGroupPermission: async function (groupname, permission) {
             is_string(groupname);
             is_string(permission);
-            await this.inner.removeGroupPermission(groupname, permission);
+            await inner.removeGroupPermission(groupname, permission);
         },
 
         setAccountGroup: async function (userid, groupname) {
             is_string(userid);
             is_string(groupname);
-            await this.inner.setAccountGroup(userid, groupname);
+            await inner.setAccountGroup(userid, groupname);
         },
 
         removeGroup: async function (groupname) {
             is_string(groupname);
-            await this.inner.removeGroup(groupname);
+            await inner.removeGroup(groupname);
         },
 
         createGroup: async function (groupname) {
             is_string(groupname);
-            await this.inner.createGroup(groupname);
+            await inner.createGroup(groupname);
         },
 
         getGroups: async function () {
-            const ret = await this.inner.getGroups();
+            const ret = await inner.getGroups();
+            console.log(ret);
             is_string_list(ret);
             return ret;
         },
@@ -285,12 +319,12 @@ export function createStorageGuard(inner: StorageInterface): GuardStorageInterfa
         generateSignUp: async function (group, uuid) {
             is_string(group);
             is_string(uuid);
-            await this.inner.generateSignUp(group, uuid);
+            await inner.generateSignUp(group, uuid);
         },
 
         expendSignUp: async function (uuid) {
             is_string(uuid);
-            const ret = await this.inner.expendSignUp(uuid);
+            const ret = await inner.expendSignUp(uuid);
             if (ret == null) { return null; }
             is_string(ret);
             return ret;
@@ -307,7 +341,7 @@ export function createStorageGuard(inner: StorageInterface): GuardStorageInterfa
                 return;
             }
             user.passwordHash = bcrypt.hashSync(password, 10);
-            await this.inner.updateAccount(user);
+            await inner.updateAccount(user);
         },
 
         setPluginData: async function (
@@ -318,13 +352,13 @@ export function createStorageGuard(inner: StorageInterface): GuardStorageInterfa
             is_string(pluginName);
             is_string(key);
             is_string(value);
-            await this.inner.setPluginData(pluginName, key, value);
+            await inner.setPluginData(pluginName, key, value);
         },
 
         getPluginData: async function (pluginName, key) {
             is_string(pluginName);
             is_string(key);
-            const ret = await this.inner.getPluginData(pluginName, key);
+            const ret = await inner.getPluginData(pluginName, key);
             if (ret == null) { return null; }
             is_string(ret);
             return ret;
@@ -332,7 +366,7 @@ export function createStorageGuard(inner: StorageInterface): GuardStorageInterfa
 
         getAllPluginData: async function (pluginName) {
             is_string(pluginName);
-            const ret = await this.inner.getAllPluginData(pluginName);
+            const ret = await inner.getAllPluginData(pluginName);
             is_plugin_data(ret);
             return ret;
         },
@@ -340,25 +374,16 @@ export function createStorageGuard(inner: StorageInterface): GuardStorageInterfa
         deletePluginData: async function (pluginName, key) {
             is_string(pluginName);
             is_string(key);
-            await this.inner.deletePluginData(pluginName, key);
+            await inner.deletePluginData(pluginName, key);
         },
 
         deleteAllPluginData: async function (pluginName) {
             is_string(pluginName);
-            await this.inner.deleteAllPluginData(pluginName);
+            await inner.deleteAllPluginData(pluginName);
         },
-
-        start: async function () {
-            await this.inner.start();
-        },
-
 
         exit: async function () {
-            await this.inner.exit();
-        },
-
-        test_mode: async function () {
-            await this.inner.test_mode();
-        },
+            await inner.exit();
+        }
     }
 };

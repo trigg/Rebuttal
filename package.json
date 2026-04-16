@@ -9,7 +9,7 @@
         "build-protocol-iface": "rm protocols/*/*-ti.ts; yarn ts-interface-builder protocols/*/*.ts",
         "build-storage-iface": "rm storage/*-ti.ts; yarn ts-interface-builder storage/types.ts",
         "run": "node index.ts",
-        "test": "jest"
+        "test": "jest --forceExit --detectOpenHandles"
     },
     "author": "trigg <triggerhapp@gmail.com>",
     "license": "GPL-3.0-or-later",
@@ -46,6 +46,7 @@
         "eslint-plugin-jest": "^29.15.2",
         "globals": "^16.0.0",
         "jest": "^30.3.0",
+        "jest-silent-reporter": "^0.6.0",
         "node-gyp": "^11.1.0",
         "nodejs": "^0.0.0",
         "prettier": "^3.8.1",
@@ -58,8 +59,10 @@
         "typescript-eslint": "^8.58.1"
     },
     "jest": {
+        "bail": 1,
         "testPathIgnorePatterns": [
-            "webapp"
+            "webapp",
+            "webapp-build"
         ]
     }
 }

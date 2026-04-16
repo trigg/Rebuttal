@@ -207,7 +207,6 @@ export const protocolv1 = {
                             height: fileheight
                         };
                         await server.storage.addNewMessage(
-                            packet.roomid,
                             full_message,
                         );
                         await server.sendUpdatesMessages(packet.roomid);
@@ -305,12 +304,13 @@ export const protocolv1 = {
                             'createRoom',
                         )
                     ) {
-                        if (packet.roomType && packet.roomName) {
+                        if (packet.roomType && packet.roomName && packet.position) {
                             const roomUuid = uuidv4();
                             await server.storage.createRoom({
                                 type: packet.roomType,
                                 name: packet.roomName,
                                 id: roomUuid,
+                                position: packet.position,
                             });
                             await event.trigger('roomcreate', {
                                 roomUuid: roomUuid,

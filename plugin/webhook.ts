@@ -122,13 +122,13 @@ export const webhookplugin: WebhookPlugin = {
                         if (payload.issue.body && payload.issue.body !== '') {
                             m += '  \n' + payload.issue.body;
                         }
-                        await server.storage.addNewMessage(room.id, {
+                        await server.storage.addNewMessage({
                             type: 'webhook',
                             img: payload.sender.avatar_url,
                             username: payload.sender.login,
                             text: m,
                             url: payload.issue.html_url,
-                            roomid: '',
+                            roomid: room.id,
                             idx: null,
                             height: null,
                             width: null,
@@ -143,7 +143,7 @@ export const webhookplugin: WebhookPlugin = {
                             payload.issue.title +
                             "' in " +
                             payload.repository.full_name;
-                        await server.storage.addNewMessage(room.id, {
+                        await server.storage.addNewMessage({
                             type: 'webhook',
                             img: payload.sender.avatar_url,
                             username: payload.sender.login,
@@ -170,7 +170,7 @@ export const webhookplugin: WebhookPlugin = {
                                 '  \n',
                             );
                         }
-                        await server.storage.addNewMessage(room.id, {
+                        await server.storage.addNewMessage({
                             type: 'webhook',
                             img: payload.sender.avatar_url,
                             username: payload.sender.login,
@@ -191,7 +191,7 @@ export const webhookplugin: WebhookPlugin = {
                             payload.issue.title +
                             "' in " +
                             payload.repository.full_name;
-                        await server.storage.addNewMessage(room.id, {
+                        await server.storage.addNewMessage({
                             type: 'webhook',
                             img: payload.sender.avatar_url,
                             username: payload.sender.login,
@@ -212,7 +212,7 @@ export const webhookplugin: WebhookPlugin = {
                             payload.issue.title +
                             "' in " +
                             payload.repository.full_name;
-                        await server.storage.addNewMessage(room.id, {
+                        await server.storage.addNewMessage({
                             type: 'webhook',
                             img: payload.sender.avatar_url,
                             username: payload.sender.login,
@@ -229,7 +229,7 @@ export const webhookplugin: WebhookPlugin = {
                         break;
                     case 'started':
                         m = 'Starred ' + payload.repository.full_name;
-                        await server.storage.addNewMessage(room.id, {
+                        await server.storage.addNewMessage({
                             type: 'webhook',
                             img: payload.sender.avatar_url,
                             username: payload.sender.login,
@@ -250,7 +250,7 @@ export const webhookplugin: WebhookPlugin = {
                             payload.issue.title +
                             "' on " +
                             payload.repository.full_name;
-                        await server.storage.addNewMessage(room.id, {
+                        await server.storage.addNewMessage({
                             type: 'webhook',
                             img: payload.sender.avatar_url,
                             username: payload.sender.login,
@@ -274,7 +274,7 @@ export const webhookplugin: WebhookPlugin = {
                 for (const commit of payload.commits) {
                     m += '\n```\n' + commit.message + '\n```';
                 }
-                await server.storage.addNewMessage(room.id, {
+                await server.storage.addNewMessage({
                     type: 'webhook',
                     img: payload.sender.avatar_url,
                     username: payload.sender.login,
@@ -294,7 +294,7 @@ export const webhookplugin: WebhookPlugin = {
                     payload.forkee.full_name +
                     ' forked from ' +
                     payload.repository.full_name;
-                await server.storage.addNewMessage(room.id, {
+                await server.storage.addNewMessage({
                     type: 'webhook',
                     img: payload.sender.avatar_url,
                     username: payload.sender.full_name,

@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/require-await */
-import mysql, { RowDataPacket } from 'mysql2/promise';
-import process from 'node:process';
+import mysql, { type RowDataPacket } from 'mysql2/promise';
+import { type pluginData, type AccountStorage, type RoomStorage } from './types.ts';
+import { type v1_shared_message_real } from '../protocols/v1/shared.ts';
 import { type StorageInterface } from './interface.ts';
-import { AccountStorage, RoomStorage } from './types.ts';
 
-interface sql_message {
+type sql_message = {
     idx: number,
     roomid: string,
     text: string | null,
@@ -16,13 +15,14 @@ interface sql_message {
     img: string | null,
 }
 
-interface sqlite_room {
+type sql_room = {
     name: string,
     type: string,
     id: string,
+    position: number,
 }
 
-interface sqlite_user {
+type sql_user = {
     id: string,
     name: string,
     email: string,
@@ -32,383 +32,340 @@ interface sqlite_user {
     hidden: number,
 }
 
+function sqluser_to_user(in_user: sql_user) {
+    const account: AccountStorage = {
+        id: in_user.id,
+        name: in_user.name,
+        passwordHash: in_user.passwordHash,
+        email: in_user.email,
+        group: in_user.groupid,
+        avatar: (in_user.avatar && in_user.avatar.length > 0) ? in_user.avatar : undefined,
+        hidden: in_user.hidden == 1 ? true : false,
+    };
+    return account;
+}
 
-type MySQLStorageInterface = StorageInterface & {
-    creds: mysql.ConnectionOptions,
-    conn: mysql.Connection | null,
-    sqlGetRoomByID: string,
-};
+function user_to_sqluser(in_user: AccountStorage) {
+    const account: sql_user = {
+        id: in_user.id,
+        name: in_user.name,
+        passwordHash: in_user.passwordHash,
+        email: in_user.email,
+        groupid: in_user.group,
+        avatar: (in_user.avatar && in_user.avatar.length > 0) ? in_user.avatar : null,
+        hidden: in_user.hidden ? 1 : 0,
+    }
+    return account;
+}
 
-export const mysqlstorage: MySQLStorageInterface = {
-    mysql_username: null,
-    mysql_password: null,
-    mysql_host: null,
-    conn: null,
+function sqlmessage_to_message(in_msg: sql_message) {
 
-    sqlGetRoomByID: 'SELECT * FROM room WHERE id = ?',
-    sqlGetAccountByLogin: 'SELECT * FROM user WHERE email = ?',
-    sqlGetAccountById: 'SELECT * FROM user WHERE id = ?',
-    sqlGetAllRooms: 'SELECT * FROM room',
-    sqlGetAllAccounts: 'SELECT * FROM user',
-    sqlCreateAccount:
-        'INSERT INTO user (id,name,email,password,avatar,groupid,hidden) VALUES (?, ? ,?, ?, ?, ?, ?)',
-    sqlCreateRoom: 'INSERT INTO room (id,name,type) VALUES (?, ?, ?)',
-    sqlUpdateAccount:
-        'UPDATE user SET name = ?, avatar = ?, groupid = ? WHERE id = ? ',
-    sqlUpdateRoom: 'UPDATE room SET name = ?, type = ? WHERE id = ?',
-    sqlRemoveAccount: 'DELETE FROM user WHERE id = ?',
-    sqlRemoveRoom: 'DELETE FROM room where id = ?',
-    sqlGetTextForRoom:
-        'SELECT * FROM messages WHERE roomid = ? AND idx BETWEEN ? AND ? ORDER BY idx ASC LIMIT 5',
-    sqlGetTextRoomNextSegment:
-        'SELECT COUNT(idx) AS `count`  FROM messages WHERE roomid = ?',
-    sqlAddNewMessage:
-        'INSERT INTO messages (idx, roomid, text, url, userid, username, type, tags, img) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    sqlUpdateMessage:
-        'UPDATE messages SET text=?, url=?, type=?, img=? WHERE roomid = ? and idx = ?',
-    sqlGetGroupPermission:
-        'SELECT * FROM permission WHERE groupid = ? AND perm = ?',
-    sqlGetGroupPermissionList: 'SELECT perm FROM permission WHERE groupid = ?',
-    sqlAddGroupPermission:
-        'INSERT INTO permission (perm, groupid) VALUES (?, ?)',
-    sqlRemoveGroupPermission:
-        'DELETE FROM permission WHERE groupid = ? AND perm = ?',
-    sqlSetAccountGroup: 'UPDATE user SET groupid = ? WHERE id = ?',
-    sqlGetGroups: 'SELECT DISTINCT groupid FROM permission',
-    sqlGenerateSignUp: 'INSERT INTO signup (groupid, id) VALUES (?, ?)',
-    sqlGetSignUp: 'SELECT groupid,id FROM signup WHERE id = ?',
-    sqlRemoveSignUp: 'DELETE FROM signup WHERE id = ?',
-    sqlGetPluginDataKey:
-        'SELECT value FROM plugin WHERE pluginName = ? AND key = ?',
-    sqlSetPluginDataKey:
-        'INSERT INTO plugin (pluginName, key, value) VALUES (?, ?, ?) ON CONFLICT(pluginName,key) DO UPDATE SET value = ?',
-    sqlGetPluginData: 'SELECT key, value FROM plugin WHERE pluginName = ?',
-    sqlDeletePluginDataKey:
-        'DELETE FROM plugin WHERE pluginName = ? AND key = ?',
-    sqlDeletePluginData: 'DELETE FROM plugin where pluginName = ?',
+    const tags = JSON.parse(in_msg.tags ? in_msg.tags : "[]") as string[];
 
-    /**
-     * Get room by UUID
-     * @param {uuid} roomid
-     * @returns room
-     */
-    getRoomByID: async function (roomid) {
-        if (!this.conn) { throw new Error("No database object") }
-        try {
-            const [rows] = await this.conn.execute<RowDataPacket[]>(
-                this.sqlGetRoomByID,
-                [roomid]
+    const message: v1_shared_message_real = {
+        roomid: in_msg.roomid,
+        idx: in_msg.idx,
+        text: in_msg.text ? in_msg.text : "",
+        img: in_msg.img,
+        url: in_msg.url,
+        height: null,
+        width: null,
+        userid: in_msg.userid,
+        tags,
+        type: in_msg.type,
+        username: in_msg.username ? in_msg.username : ""
+    }
+    return message;
+}
+
+function room_to_sqlroom(in_room: RoomStorage) {
+    const out_room: sql_room = {
+        name: in_room.name,
+        type: in_room.type,
+        id: in_room.id,
+        position: in_room.position,
+    }
+    return out_room;
+}
+
+function sqlroom_to_room(in_room: sql_room) {
+    const out_room: RoomStorage = {
+        id: in_room.id,
+        name: in_room.name,
+        type: in_room.type,
+        position: in_room.position,
+    }
+    return out_room;
+}
+
+function message_to_sqlmessage(in_msg: v1_shared_message_real) {
+    const tags = JSON.stringify(in_msg.tags);
+    if (in_msg.idx == null) {
+        throw new Error("SQL Messages may not have a null index");
+    }
+    const message: sql_message = {
+        idx: in_msg.idx,
+        roomid: in_msg.roomid,
+        text: in_msg.text,
+        url: in_msg.url,
+        userid: in_msg.userid,
+        username: in_msg.username,
+        type: in_msg.type,
+        tags,
+        img: in_msg.img,
+    };
+    return message;
+}
+
+export async function mysqlstorage(user: string, password: string, database: string, host: string, wipe: boolean) {
+    const cred = {
+        host,
+        user,
+        password,
+    };
+    const conn = await mysql.createConnection(cred);
+    conn.config.namedPlaceholders = true;
+
+    async function createTables() {
+        /* Create tables */
+        if (wipe) {
+            await conn.execute("DROP DATABASE " + database);
+        }
+
+        console.log("Creating Database : " + database);
+        const stmts = [
+            "CREATE DATABASE IF NOT EXISTS  " + database,
+            "USE " + database,
+            "CREATE TABLE IF NOT EXISTS user (id UUID NOT NULL UNIQUE, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, passwordHash TEXT NOT NULL,avatar TEXT,groupid TEXT NOT NULL,hidden BOOL NOT NULL)",
+            'CREATE TABLE IF NOT EXISTS messages (idx INTEGER NOT NULL , roomid UUID NOT NULL, text TEXT, url TEXT, userid UUID, username TEXT, type TEXT, tags TEXT, img TEXT)',
+            'CREATE TABLE IF NOT EXISTS room (id UUID NOT NULL UNIQUE, name TEXT NOT NULL, type TEXT NOT NULL, position INT NOT NULL)',
+            'CREATE TABLE IF NOT EXISTS permission (perm TEXT NOT NULL, groupid TEXT NOT NULL)',
+            'CREATE TABLE IF NOT EXISTS signup (groupid TEXT NOT NULL, id TEXT NOT NULL UNIQUE)',
+            'CREATE TABLE IF NOT EXISTS plugin (pluginName VARCHAR(255) NOT NULL, keyName VARCHAR(255) NOT NULL, value MEDIUMTEXT NOT NULL, PRIMARY KEY (pluginName, keyName))'
+
+        ];
+        for (const stmt of stmts) {
+            await conn.execute(stmt);
+        }
+    }
+    await createTables();
+    /* TODO Later Migration steps */
+
+    const storage: StorageInterface = {
+        getRoomByID: async function (id: string) {
+            const [rows] = await conn.execute<RowDataPacket[]>(
+                'SELECT * FROM room WHERE id = :id',
+                { id }
             );
             if (rows.length == 1) {
-                return rows[0] as RoomStorage;
+                return sqlroom_to_room(rows[0] as sql_room);
             }
+            return null;
+        },
 
-        } catch (err) {
-            console.log(err);
-        }
-        return null;
-    },
-
-    /**
-     * Get Account by login credentials
-     * @param {string} email
-     * @param {string} password
-     * @returns
-     */
-    getAccountByLogin: async function (email, _password) {
-        if (!this.conn) { throw new Error("No database object") }
-        try {
-            const [rows] = await this.conn.execute<RowDataPacket[]>(this.sqlGetAccountByLogin, [email])
+        getAccountByLogin: async function (email: string, _password: string) {
+            const [rows] = await conn.execute<RowDataPacket[]>('SELECT * FROM user WHERE email = :email', { email })
             if (rows.length == 1) {
-                return rows[0] as AccountStorage;
+                return sqluser_to_user(rows[0] as sql_user);
             }
-        } catch (err) {
-            console.log(err);
-        }
-        return null;
-    },
+            return null;
+        },
 
-    /**
-     * Get Account by UUID
-     * @param {uuid} userid
-     * @returns user
-     */
-    getAccountByID: async function (userid) {
-        if (!this.conn) { throw new Error("No database object") }
-        try {
-            const [rows] = await this.conn.execute<RowDataPacket[]>(this.sqlGetAccountById, [userid]);
+        getAccountByID: async function (id: string) {
+            const [rows] = await conn.execute<RowDataPacket[]>('SELECT * FROM user WHERE id = :id', { id });
             if (rows.length == 1) {
-                return rows[0] as AccountStorage;
+                return sqluser_to_user(rows[0] as sql_user);
             }
-        } catch (err) {
-            console.log(err);
-        }
-        return null;
-    },
-    /**
-     * Get list of all rooms
-     * @returns rooms
-     */
-    getAllRooms: async function () {
-        if (!this.conn) { throw new Error("No database object") }
+            return null;
+        },
 
-    },
-    /**
-     * Get all accounts. This should NOT return password. Really. It shouldn't
-     *
-     * @returns accounts
-     */
-    getAllAccounts: async function () {
-        if (!this.conn) { throw new Error("No database object") }
+        getAllRooms: async function () {
+            const [rows] = await conn.execute<RowDataPacket[]>('SELECT * FROM room');
+            console.log(rows);
+            return rows.map((room) => {
+                return sqlroom_to_room(room as sql_room)
+            });
+        },
 
-    },
+        getAllAccounts: async function () {
+            const [rows] = await conn.execute<RowDataPacket[]>('SELECT * FROM user');
+            return rows.map((user) => {
+                return sqluser_to_user(user as sql_user)
+            });
+        },
 
-    /**
-     * Add new account to account list
-     * @param {user} details
-     */
-    createAccount: async function (details) {
-        if (!this.conn) { throw new Error("No database object") }
+        createAccount: async function (details: AccountStorage, _password: string) {
+            await conn.execute('INSERT INTO user' +
+                '( id,  name,  email,  passwordHash,  avatar,  groupid,  hidden) VALUES' +
+                '(:id, :name ,:email, :passwordHash, :avatar, :groupid, :hidden)',
+                user_to_sqluser(details)
+            );
+        },
 
-    },
+        createRoom: async function (details: RoomStorage) {
+            await conn.execute('INSERT INTO room (id,name,type,position) VALUES (:id, :name, :type, :position)', room_to_sqlroom(details));
+        },
 
-    /**
-     * Add new room to room list
-     * @param {room} details
-     */
-    createRoom: async function (details) {
-        if (!this.conn) { throw new Error("No database object") }
+        updateAccount: async function (details: AccountStorage) {
+            await conn.execute('UPDATE user SET name = :name, avatar = :avatar, groupid = :groupid, passwordHash = :passwordHash, hidden = :hidden WHERE id = :id ', user_to_sqluser(details));
+        },
 
-    },
+        updateRoom: async function (details: RoomStorage) {
+            await conn.execute('UPDATE room SET name = :name, type = :type, position = :position WHERE id = :id', room_to_sqlroom(details));
+        },
 
-    /**
-     * Replace account details with new details. Ensure UUID Matches as sanity checking IS NOT DONE HERE
-     * @param {uuid} userid
-     * @param {user} details
-     */
-    updateAccount: async function (userid, details) {
-        if (!this.conn) { throw new Error("No database object") }
+        removeAccount: async function (id: string) {
+            await conn.execute('DELETE FROM user WHERE id = :id', { id });
+        },
 
-    },
+        removeRoom: async function (id: string) {
+            await conn.execute('DELETE FROM room where id = :id', { id });
+        },
 
-    /**
-     * Replace room details with new details. Ensure UUIDs match!
-     * @param {uuid} roomid
-     * @param {room} details
-     */
-    updateRoom: async function (roomid, details) {
-        if (!this.conn) { throw new Error("No database object") }
+        getTextForRoom: async function (id: string, segment: number) {
+            const start = segment * 5;
+            const end = (segment + 1) * 5;
+            const [rows] = await conn.execute<RowDataPacket[]>('SELECT * FROM messages WHERE roomid = :id AND idx BETWEEN :start AND :end ORDER BY idx ASC LIMIT 5', { id, start, end })
+            return rows.map((message) => {
+                return sqlmessage_to_message(message as sql_message);
+            })
+        },
 
-    },
+        getTextRoomNewestSegment: async function (id: string) {
+            throw new Error("unimplemented");
+        },
 
-    /**
-     * Remove User Account
-     * @param {uuid} userid
-     */
-    removeAccount: async function (userid) {
-        if (!this.conn) { throw new Error("No database object") }
+        addNewMessage: async function (message: v1_shared_message_real) {
+            await conn.execute('INSERT INTO messages (idx, roomid, text, url, userid, username, type, tags, img) VALUES (:idx, :roomid, :text, :url, :userid, :username, :type, :tags, :img)', message_to_sqlmessage(message));
+        },
 
-    },
+        getLastMessageIdx: async function (id) {
+            const [rows] = await conn.execute<RowDataPacket[]>('SELECT MAX(idx) AS `count`  FROM messages WHERE roomid = :id', { id })
+            if (rows.length == 1) {
+                return rows[0]['count'] as number;
+            }
+            throw new Error("Invalid Data");
+        },
 
-    /**
-     * Remove room
-     * @param {uuid} roomid
-     */
-    removeRoom: async function (roomid) {
-        if (!this.conn) { throw new Error("No database object") }
+        updateMessage: async function (contents: v1_shared_message_real) {
+            await conn.execute('UPDATE messages SET text=:text, url=:url, type=:type, img=:img, userid=:userid, tags=:tags WHERE roomid = :roomid and idx = :idx', message_to_sqlmessage(contents));
+        },
 
-    },
+        // eslint-disable-next-line @typescript-eslint/require-await
+        removeMessage: async function (_roomid: string, _messageid: number) {
+            throw new Error("unimplemented");
+        },
 
-    /**
-     * Get a segment of conversation for room.
-     * @param {uuid} roomid
-     * @param {int} segment
-     */
-    getTextForRoom: async function (uuid, segment) {
-        if (!this.conn) { throw new Error("No database object") }
+        getMessage: async function (id: string, idx: number) {
+            const [rows] = await conn.execute<RowDataPacket[]>('SELECT * FROM messages WHERE roomid = :id AND idx = :idx', { id, idx });
+            if (rows.length == 1) {
+                return sqlmessage_to_message(rows[0] as sql_message);
+            }
+            return null;
+        },
 
-    },
+        // eslint-disable-next-line @typescript-eslint/require-await
+        getAccountPermission: async function (_id: string, _perm: string) {
+            throw new Error("unimplemented");
+        },
 
-    /**
-     * Get newest, possibly incomplete, segment
-     * @param {uuid} uuid
-     */
-    getTextRoomNewestSegment: async function (uuid) {
-        if (!this.conn) { throw new Error("No database object") }
+        getGroupPermission: async function (group: string, perm: string) {
+            const [rows] = await conn.execute<RowDataPacket[]>('SELECT perm FROM permission WHERE groupid = :group AND perm = :perm', { group, perm });
+            if (rows.length == 1) {
+                return true;
+            }
+            return false;
+        },
 
-    },
+        getGroupPermissionList: async function (group: string) {
+            const [rows] = await conn.execute<RowDataPacket[]>('SELECT perm FROM permission WHERE groupid = :group', { group });
+            console.log(rows);
+            return rows.map((row) => { return row.perm });
+        },
 
-    /**
-     * Add a message to room
-     *
-     *
-     * @param {uuid} roomid
-     * @param {object} message
-     */
-    addNewMessage: async function (roomid, message) {
-        if (!this.conn) { throw new Error("No database object") }
+        addGroupPermission: async function (group: string, perm: string) {
+            await conn.execute('INSERT INTO permission (perm, groupid) VALUES (:perm, :group)', { group, perm });
+        },
 
-    },
+        removeGroupPermission: async function (group: string, perm: string) {
+            await conn.execute('DELETE FROM permission WHERE groupid = :group AND perm = :perm', { group, perm });
+        },
 
-    /**
-     * Change contents of message
-     * @param {object} contents
-     */
-    updateMessage: async function (contents) {
-        if (!this.conn) { throw new Error("No database object") }
+        removeGroup: async function (group: string) {
+            const list = await this.getGroupPermissionList(group);
+            for (const perm of list) {
+                await this.removeGroupPermission(group, perm);
+            }
+        },
 
-    },
+        createGroup: async function (_group: string) {
+            // Noop
 
-    /**
-     * Remove message
-     * @param {uuid} roomid
-     * @param {int} messageid
-     */
-    removeMessage: async function (roomid, messageid) {
-        if (!this.conn) { throw new Error("No database object") }
+        },
 
-    },
+        setAccountGroup: async function (id: string, group: string) {
+            await conn.execute('UPDATE user SET groupid = :group WHERE id = :id', { id, group });
+        },
 
-    getMessage: async function (roomid, messageid) {
-        if (!this.conn) { throw new Error("No database object") }
+        getGroups: async function () {
+            const [rows] = await conn.execute<RowDataPacket[]>('SELECT DISTINCT groupid FROM permission');
+            return rows.map((row) => { return row.groupid });
+        },
 
-    },
+        generateSignUp: async function (group: string, id: string) {
+            await conn.execute('INSERT INTO signup (groupid, id) VALUES (:group, :id)', { group, id });
+        },
 
-    getAccountPermission: async function (userid, permission) {
-        if (!this.conn) { throw new Error("No database object") }
+        expendSignUp: async function (id: string) {
+            const [rows] = await conn.execute<RowDataPacket[]>('SELECT groupid,id FROM signup WHERE id = :id', { id });
+            if (rows.length == 1) {
+                await conn.execute('DELETE FROM signup WHERE id = :id', { id });
+                return rows[0]['groupid'] as string;
+            }
+            return null;
+        },
 
-    },
+        // eslint-disable-next-line @typescript-eslint/require-await
+        setAccountPassword: async function (_id: string, _password: string) {
+            throw new Error("Not implemented");
+        },
 
-    getGroupPermission: async function (groupname, permission) {
-        if (!this.conn) { throw new Error("No database object") }
+        setPluginData: async function (pluginName: string, key: string, value: string) {
+            await conn.execute('REPLACE INTO plugin (pluginName, keyName, value) VALUES (:pluginName, :key, :value)', { pluginName, key, value });
+        },
 
-    },
+        getPluginData: async function (pluginName: string, key: string) {
+            const [rows] = await conn.execute<RowDataPacket[]>('SELECT value FROM plugin WHERE pluginName = :pluginName AND keyName = :key', { pluginName, key });
+            if (rows.length == 1) {
+                return rows[0]['value'] as string;
+            }
+            return null;
+        },
 
-    getGroupPermissionList: async function (groupname) {
-        if (!this.conn) { throw new Error("No database object") }
+        getAllPluginData: async function (pluginName: string) {
+            const [rows] = await conn.execute<RowDataPacket[]>('SELECT keyName, value FROM plugin WHERE pluginName = :pluginName', { pluginName });
+            const ret: pluginData = {}
+            for (const row of rows) {
+                const key = row.keyName as string;
+                ret[key] = row.value as string;
+            }
+            return ret;
+        },
 
-    },
+        deletePluginData: async function (pluginName: string, key: string) {
+            await conn.execute('DELETE FROM plugin WHERE pluginName = :pluginName AND keyName = :key', { pluginName, key });
+        },
 
-    addGroupPermission: async function (groupname, permission) {
-        if (!this.conn) { throw new Error("No database object") }
 
-    },
+        deleteAllPluginData: async function (pluginName: string) {
+            await conn.execute('DELETE FROM plugin where pluginName = :pluginName', { pluginName });
+        },
 
-    removeGroupPermission: async function (groupname, permission) {
-        if (!this.conn) { throw new Error("No database object") }
+        exit: async function () { conn.destroy() },
 
-    },
 
-    removeGroup: async function (groupname) {
-        if (!this.conn) { throw new Error("No database object") }
-
-    },
-
-    createGroup: async function (groupname) {
-        if (!this.conn) { throw new Error("No database object") }
-
-    },
-
-    setAccountGroup: async function (userid, groupname) {
-        if (!this.conn) { throw new Error("No database object") }
-
-    },
-
-    /**
-     *
-     * @returns List of group names
-     */
-    getGroups: async function () {
-        if (!this.conn) { throw new Error("No database object") }
-
-    },
-
-    generateSignUp: async function (group, uuid) {
-        if (!this.conn) { throw new Error("No database object") }
-
-    },
-
-    expendSignUp: async function (uuid) {
-        if (!this.conn) { throw new Error("No database object") }
-
-    },
-
-    setAccountPassword: async function (userid, password) {
-        throw new Error("Not implemented");
-    },
-
-    /**
-     * Create or update a key-value pair of data.
-     * @param {string} pluginName
-     * @param {string} key
-     * @param {string} value
-     */
-    setPluginData: async function (pluginName, key, value) {
-        if (!this.conn) { throw new Error("No database object") }
-
-    },
-
-    /**
-     * Get the value of plugin data for a specific key
-     * @param {string} pluginName
-     * @param {string} key
-     * @returns a string value
-     */
-    getPluginData: async function (pluginName, key) {
-        if (!this.conn) { throw new Error("No database object") }
-
-    },
-
-    /**
-     * Get all key/value pairs for a plugin
-     * @param {string} pluginName
-     * @returns associative array of key & values
-     */
-    getAllPluginData: async function (pluginName) {
-        if (!this.conn) { throw new Error("No database object") }
-
-    },
-
-    /**
-     * Delete one key/value pair from plugin data
-     * @param {string} pluginName
-     * @param {string} key
-     */
-    deletePluginData: async function (pluginName, key) {
-        if (!this.conn) { throw new Error("No database object") }
-
-    },
-
-    /**
-     * Delete all plugin data for a plugin
-     * @param {string} pluginName
-     */
-    deleteAllPluginData: async function (pluginName) {
-        if (!this.conn) { throw new Error("No database object") }
-
-    },
-
-    /**
-     * Called at start of server
-     */
-    start: async function () {
-        this.conn = await mysql.createConnection(this.creds);
-    },
-
-    /**
-     * Called before server stops. Probably. Most likely. Don't bet on it though
-     */
-    exit: async function () { },
-
-    test_mode: async function () {
-        this.creds = {
-            database: process.env.DB_DATABASE,
-            host: process.env.DB_HOST,
-            user: process.env.DB_PASSWORD,
-            password: process.env.DB_USER,
-        }
-    },
-
-};
+    }
+    return storage;
+}
 
 export default mysqlstorage;

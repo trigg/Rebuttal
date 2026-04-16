@@ -14,6 +14,7 @@ export interface RoomStorage {
     id: RoomUUID;
     name: string;
     type: string;
+    position: number;
 }
 
 export interface PermissionsStorage {

@@ -19,16 +19,19 @@ describe('protocol v1', () => {
         id: uuidv4(),
         name: 'voiceroom',
         type: 'voice',
+        position: 3,
     };
     const room = {
         id: uuidv4(),
         name: 'testroom',
         type: 'text',
+        position: 2,
     };
     const room_prefilled = {
         id: uuidv4(),
         name: 'fullroom',
         type: 'text',
+        position: 1,
     };
     const user = {
         id: uuidv4(),
@@ -79,7 +82,7 @@ describe('protocol v1', () => {
                 width: null,
                 height: null
             };
-            await rebuttal?.storage.addNewMessage(room_prefilled.id, message);
+            await rebuttal?.storage.addNewMessage(message);
         }
     });
 
@@ -561,6 +564,7 @@ describe('protocol v1', () => {
                 type: 'createroom',
                 roomName: 'new_room',
                 roomType: 'text',
+                position: 42,
             })
             .waitForJson(
                 (reply) =>

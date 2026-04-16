@@ -14,7 +14,7 @@ import {
 export interface StorageInterface {
     createAccount(user: AccountStorage, password: string): Promise<void>;
     createRoom(details: RoomStorage): Promise<void>;
-    addNewMessage(roomid: RoomUUID, message: v1_shared_message_real): Promise<number>;
+    addNewMessage(message: v1_shared_message_real): Promise<void>;
     addGroupPermission(groupname: string, permission: string): Promise<void>;
     createGroup(groupname: string): Promise<void>;
     generateSignUp(group: string, invite: string): Promise<void>;
@@ -40,7 +40,7 @@ export interface StorageInterface {
     getGroups(): Promise<string[]>;
     getPluginData(pluginName: string, key: string): Promise<string | null>;
     getAllPluginData(pluginName: string): Promise<pluginData | null>;
-
+    getLastMessageIdx(roomid: RoomUUID): Promise<number | null>;
 
     updateAccount(details: AccountStorage): Promise<void>;
     updateRoom(details: RoomStorage): Promise<void>;
@@ -65,10 +65,5 @@ export interface StorageInterface {
 
     deletePluginData(pluginName: string, key: string): Promise<void>;
     deleteAllPluginData(pluginName: string): Promise<void>;
-
-    start(): Promise<void>;
     exit(): Promise<void>;
-
-    test_mode(): Promise<void>;
-
 }

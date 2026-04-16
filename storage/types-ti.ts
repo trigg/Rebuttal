@@ -18,6 +18,7 @@ export const RoomStorage = t.iface([], {
   "id": "RoomUUID",
   "name": "string",
   "type": "string",
+  "position": "number",
 });
 
 export const PermissionsStorage = t.iface([], {
