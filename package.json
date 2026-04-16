@@ -49,7 +49,7 @@
         "jest-silent-reporter": "^0.6.0",
         "node-gyp": "^11.1.0",
         "nodejs": "^0.0.0",
-        "prettier": "^3.8.1",
+        "prettier": "^3.8.3",
         "supertest": "^7.1.0",
         "superwstest": "^2.0.4",
         "ts-interface-builder": "^0.3.3",
