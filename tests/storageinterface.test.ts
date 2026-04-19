@@ -15,7 +15,7 @@ const backends_to_test: [string, () => Promise<StorageInterface>][] = [
 
 if (process.env.TEST_MYSQL) {
     backends_to_test.push(
-        ['mysql', () => { databasecouter++; return mysqlstorage('test', 'test', 'test' + databasecouter, 'localhost', true) }]
+        ['mysql', () => { databasecouter++; return mysqlstorage('test', 'test', 'test' + databasecouter, '127.0.0.1', true) }]
     );
 }
 
