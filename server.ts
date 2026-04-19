@@ -4,7 +4,6 @@ import https from 'https';
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
-import gravatar from 'gravatar';
 
 import { event, Priority, type Event } from './events.ts';
 import { protocolv0 } from './handler/v0/p.ts';
@@ -126,7 +125,7 @@ export async function create_rebuttal(config: config) {
     const plugins: pluginInterface[] = [];
     let storage = null;
     if (config.test_mode) {
-        storage = createStorageGuard(await jsonstorage(null));
+        storage = createStorageGuard(await jsonstorage(null), config);
     } else {
         switch (config['storage']) {
             case 'mysql':
@@ -135,14 +134,14 @@ export async function create_rebuttal(config: config) {
                     const password = process.env.REBUTTAL_MYSQL_PASSWORD ? process.env.REBUTTAL_MYSQL_PASSWORD : "rebuttal";
                     const database = process.env.REBUTTAL_MYSQL_DATABASE ? process.env.REBUTTAL_MYSQL_DATABASE : "rebuttal";
                     const host = process.env.REBUTTAL_MYSQL_HOST ? process.env.REBUTTAL_MYSQL_HOST : "localhosts";
-                    storage = createStorageGuard(await mysqlstorage(username, password, database, host, false));
+                    storage = createStorageGuard(await mysqlstorage(username, password, database, host, false), config);
                 }
                 break;
             case 'sqlite':
-                storage = createStorageGuard(await sqlitestorage("data/data.sqlite"));
+                storage = createStorageGuard(await sqlitestorage("data/data.sqlite"), config);
                 break;
             case 'json':
-                storage = createStorageGuard(await jsonstorage("data/data.json"));
+                storage = createStorageGuard(await jsonstorage("data/data.json"), config);
                 break;
         }
     }
@@ -506,17 +505,6 @@ export async function create_rebuttal(config: config) {
             if (!('hidden' in account)) {
                 account.hidden = false;
             }
-            if (!('avatar' in account)) {
-                account.avatar = gravatar.url(
-                    account.email,
-                    {
-                        protocol: 'https',
-                        d: this.config.gravatarfallback,
-                    },
-                    true,
-                );
-            }
-
             let livestate = false;
             let livelabel = '';
             let connected = false;

@@ -23,7 +23,10 @@ if (process.env.TEST_MYSQL) {
 describe.each(backends_to_test)('storage handles data', (sname, storage_promise) => {
     it('Storage ' + sname + ' holds user data correctly', async () => {
         expect.assertions(8);
-        const storage = createStorageGuard(await storage_promise());
+        const storage = createStorageGuard(await storage_promise(), {
+            storage: 'json',
+            plugins: []
+        });
 
 
         const userUuid = uuidv4();
@@ -89,7 +92,10 @@ describe.each(backends_to_test)('storage handles data', (sname, storage_promise)
     });
     it('Storage ' + sname + ' holds plugin data correctly', async () => {
         expect.assertions(7);
-        const storage = createStorageGuard(await storage_promise());
+        const storage = createStorageGuard(await storage_promise(), {
+            storage: 'json',
+            plugins: []
+        });
 
 
         // Twiddle plugin to see if it keeps sane
@@ -127,7 +133,10 @@ describe.each(backends_to_test)('storage handles data', (sname, storage_promise)
         await storage.exit();
     });
     it('Storage ' + sname + ' holds message data correctly', async () => {
-        const storage = createStorageGuard(await storage_promise());
+        const storage = createStorageGuard(await storage_promise(), {
+            storage: 'json',
+            plugins: []
+        });
         expect.assertions(36)
         const roomUuid = uuidv4();
         const userUuid = uuidv4();
@@ -211,7 +220,10 @@ describe.each(backends_to_test)('storage handles data', (sname, storage_promise)
         await storage.exit();
     });
     it('Storage ' + sname + ' correctly handles invites', async () => {
-        const storage = createStorageGuard(await storage_promise());
+        const storage = createStorageGuard(await storage_promise(), {
+            storage: 'json',
+            plugins: []
+        });
         expect.assertions(2);
         // Prove invites don't crash
         // This gets covered by invite.test.js
@@ -222,7 +234,10 @@ describe.each(backends_to_test)('storage handles data', (sname, storage_promise)
         await storage.exit();
     });
     it('Storage ' + sname + ' holds group data correctly', async () => {
-        const storage = createStorageGuard(await storage_promise());
+        const storage = createStorageGuard(await storage_promise(), {
+            storage: 'json',
+            plugins: []
+        });
         expect.assertions(12);
         const userUuid = uuidv4();
         await storage.addGroupPermission('admin', 'createRoom');
@@ -288,7 +303,10 @@ describe.each(backends_to_test)('storage handles data', (sname, storage_promise)
     });
 
     it('Storage ' + sname + ' updates account details', async () => {
-        const storage = createStorageGuard(await storage_promise());
+        const storage = createStorageGuard(await storage_promise(), {
+            storage: 'json',
+            plugins: []
+        });
         expect.assertions(1);
         const userUuid = uuidv4();
         await storage.addGroupPermission('admin', 'createRoom');
@@ -310,7 +328,10 @@ describe.each(backends_to_test)('storage handles data', (sname, storage_promise)
         await storage.exit();
     });
     it('Storage ' + sname + ' holds room data correctly', async () => {
-        const storage = createStorageGuard(await storage_promise());
+        const storage = createStorageGuard(await storage_promise(), {
+            storage: 'json',
+            plugins: []
+        });
         expect.assertions(5);
         const roomUuid = uuidv4();
         const roomUuid2 = uuidv4();
@@ -373,19 +394,28 @@ describe.each(backends_to_test)('storage handles data', (sname, storage_promise)
         await storage.exit();
     });
     it('Storage ' + sname + ' returns null for non-existant user id', async () => {
-        const storage = createStorageGuard(await storage_promise());
+        const storage = createStorageGuard(await storage_promise(), {
+            storage: 'json',
+            plugins: []
+        });
         expect.assertions(1);
         expect(await storage.getAccountByID(uuidv4())).toBeNull();
         await storage.exit();
     });
     it('Storage ' + sname + ' return null for failed login', async () => {
-        const storage = createStorageGuard(await storage_promise());
+        const storage = createStorageGuard(await storage_promise(), {
+            storage: 'json',
+            plugins: []
+        });
         expect.assertions(1);
         expect(await storage.getAccountByLogin('name', 'password999')).toBeNull();
         await storage.exit();
     });
     it('Storage ' + sname + ' returns empty array for empty message segment', async () => {
-        const storage = createStorageGuard(await storage_promise());
+        const storage = createStorageGuard(await storage_promise(), {
+            storage: 'json',
+            plugins: []
+        });
         expect.assertions(1);
         const roomUuid = uuidv4();
         await storage.createRoom({
@@ -400,14 +430,20 @@ describe.each(backends_to_test)('storage handles data', (sname, storage_promise)
         await storage.exit();
     });
     it('Storage ' + sname + ' returns segment zero when asked for newest segment of non-existant room', async () => {
-        const storage = createStorageGuard(await storage_promise());
+        const storage = createStorageGuard(await storage_promise(), {
+            storage: 'json',
+            plugins: []
+        });
         expect.assertions(1);
         const seg = await storage.getTextRoomNewestSegment(uuidv4());
         expect(seg).toBe(0);
         await storage.exit();
     });
     it('Storage ' + sname + ' returns false when asked for non-existant users permission', async () => {
-        const storage = createStorageGuard(await storage_promise());
+        const storage = createStorageGuard(await storage_promise(), {
+            storage: 'json',
+            plugins: []
+        });
         expect.assertions(1);
         expect(await storage.getAccountPermission(uuidv4(), 'canfly')).toBe(
             false,
@@ -416,7 +452,10 @@ describe.each(backends_to_test)('storage handles data', (sname, storage_promise)
     },
     );
     it('Storage ' + sname + ' returns empty array when asked for permission list for non-existant group', async () => {
-        const storage = createStorageGuard(await storage_promise());
+        const storage = createStorageGuard(await storage_promise(), {
+            storage: 'json',
+            plugins: []
+        });
         expect.assertions(1);
         expect(await storage.getGroupPermissionList('akira')).toEqual(
             expect.arrayContaining([]),
@@ -425,7 +464,10 @@ describe.each(backends_to_test)('storage handles data', (sname, storage_promise)
     },
     );
     it('Storage ' + sname + ' returns false when asked if non-existant group has a permission', async () => {
-        const storage = createStorageGuard(await storage_promise());
+        const storage = createStorageGuard(await storage_promise(), {
+            storage: 'json',
+            plugins: []
+        });
         expect.assertions(1);
         expect(await storage.getGroupPermission('akira', 'canfly')).toEqual(
             false,
@@ -434,7 +476,10 @@ describe.each(backends_to_test)('storage handles data', (sname, storage_promise)
     });
     it('Storage ' + sname + ' can change account password', async () => {
         expect.assertions(5);
-        const storage = createStorageGuard(await storage_promise());
+        const storage = createStorageGuard(await storage_promise(), {
+            storage: 'json',
+            plugins: []
+        });
         const userid = uuidv4();
         const userPassword1 = 'super1passplz';
         const userPassword2 = 'super2passplz';
@@ -467,7 +512,10 @@ describe.each(backends_to_test)('storage handles data', (sname, storage_promise)
 
     });
     it('Storage ' + sname + ' returns null for unknown plugin data', async () => {
-        const storage = createStorageGuard(await storage_promise());
+        const storage = createStorageGuard(await storage_promise(), {
+            storage: 'json',
+            plugins: []
+        });
         expect.assertions(2);
         await storage.setPluginData('webclient', 'realdata', '1');
         expect(

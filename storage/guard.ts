@@ -13,6 +13,8 @@ import types_iface from './types-ti.ts';
 import { type v1_shared_message_real } from '../protocols/v1/shared.ts';
 import types_v1_shared from '../protocols/v1/shared-ti.ts';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { type config } from '../server.ts';
 const checker = createCheckers(types_iface, types_v1_shared);
 
 function is_message(input: unknown): input is v1_shared_message_real {
@@ -80,7 +82,18 @@ function is_string(input: unknown): input is str {
  * 
  * Saves writing (or typoing) the same checks for every storage medium
  */
-export function createStorageGuard(inner: StorageInterface): StorageInterface {
+export function createStorageGuard(inner: StorageInterface, server_config: config): StorageInterface {
+
+    function defaultAvatar(details: AccountStorage) {
+        const fallback = server_config.gravatarfallback ? server_config.gravatarfallback : "monsterid"
+        if (!details.avatar) {
+            const gravatarHash = crypto.createHash("sha256")
+                .update(details.email.trim().toLowerCase())
+                .digest('hex');
+            const gravatarurl = "https://0.gravatar.com/avatar/" + gravatarHash + "?s=128&d=" + fallback;
+            details.avatar = gravatarurl;
+        }
+    }
     return {
 
         getRoomByID: async function (roomid) {
@@ -147,6 +160,7 @@ export function createStorageGuard(inner: StorageInterface): StorageInterface {
                 throw new Error("User name MUST be longer than 2 characters");
             }
             details.passwordHash = bcrypt.hashSync(password, 10);
+            defaultAvatar(details);
             await inner.createAccount(details, "");
         },
 
@@ -160,6 +174,7 @@ export function createStorageGuard(inner: StorageInterface): StorageInterface {
             if (details.name.length < 3) {
                 throw new Error("User name MUST be longer than 2 characters");
             }
+            defaultAvatar(details);
             await inner.updateAccount(details);
         },
 
