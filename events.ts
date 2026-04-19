@@ -23,36 +23,36 @@ export interface Priorities {
     [key: number]: { (event: Event): void }[];
 }
 
-export const Priority = {
+export const priority = {
     EARLY: 1,
     NORMAL: 2,
     LATE: 3,
     FINAL: 4,
     MONITOR: 5,
 };
-type PriorityKeys = (typeof Priority)[keyof typeof Priority];
+type PriorityKeys = (typeof priority)[keyof typeof priority];
 export const event = {
     listeners: {} as Listeners,
     listen: function (
-        eventName: string,
+        event_name: string,
         priority: PriorityKeys,
         fn: (event: Event) => void,
     ) {
-        if (eventName in this.listeners) {
-            this.listeners[eventName][priority].push(fn);
+        if (event_name in this.listeners) {
+            this.listeners[event_name][priority].push(fn);
         } else {
-            throw new Error('Listening to non-existant event : ' + eventName);
+            throw new Error('Listening to non-existant event : ' + event_name);
         }
     },
-    trigger: async function (eventName: string, event: {
+    trigger: async function (event_name: string, event: {
         [key: string]: unknown;
     }) {
         const pass_event = event as Event; // Forcibly cast in readiness
         pass_event.cancelled = false;
-        pass_event.eventtype = eventName;
-        if (eventName in this.listeners) {
-            for (const pri of Object.values(Priority)) {
-                for (const fn of this.listeners[eventName][pri]) {
+        pass_event.eventtype = event_name;
+        if (event_name in this.listeners) {
+            for (const pri of Object.values(priority)) {
+                for (const fn of this.listeners[event_name][pri]) {
                     fn(pass_event);
                     if (pass_event.cancelled) {
                         return pass_event;
@@ -60,21 +60,21 @@ export const event = {
                 }
             }
         } else {
-            throw new Error('Trigger non-existant event : ' + eventName);
+            throw new Error('Trigger non-existant event : ' + event_name);
         }
         return pass_event;
     },
-    register: function (eventName: string) {
-        if (eventName in this.listeners) {
-            console.log('Attemping to re-register event named : ' + eventName);
+    register: function (event_name: string) {
+        if (event_name in this.listeners) {
+            console.log('Attemping to re-register event named : ' + event_name);
             return;
         }
-        this.listeners[eventName] = {};
-        this.listeners[eventName][Priority.EARLY] = [];
-        this.listeners[eventName][Priority.NORMAL] = [];
-        this.listeners[eventName][Priority.LATE] = [];
-        this.listeners[eventName][Priority.FINAL] = [];
-        this.listeners[eventName][Priority.MONITOR] = [];
+        this.listeners[event_name] = {};
+        this.listeners[event_name][priority.EARLY] = [];
+        this.listeners[event_name][priority.NORMAL] = [];
+        this.listeners[event_name][priority.LATE] = [];
+        this.listeners[event_name][priority.FINAL] = [];
+        this.listeners[event_name][priority.MONITOR] = [];
     },
     init: function () {
         this.register('serverprep');

@@ -38,8 +38,8 @@ export interface StorageInterface {
     getGroupPermission(groupname: string, permission: string): Promise<boolean>;
     getGroupPermissionList(groupname: string): Promise<string[]>;
     getGroups(): Promise<string[]>;
-    getPluginData(pluginName: string, key: string): Promise<string | null>;
-    getAllPluginData(pluginName: string): Promise<pluginData | null>;
+    getPluginData(plugin_name: string, key: string): Promise<string | null>;
+    getAllPluginData(plugin_name: string): Promise<pluginData | null>;
     getLastMessageIdx(roomid: RoomUUID): Promise<number | null>;
 
     updateAccount(details: AccountStorage): Promise<void>;
@@ -50,7 +50,7 @@ export interface StorageInterface {
     setAccountGroup(userid: UserUUID, groupname: string): Promise<void>;
     setAccountPassword(userid: UserUUID, password: string): Promise<void>;
     setPluginData(
-        pluginName: string,
+        plugin_name: string,
         key: string,
         value: string,
     ): Promise<void>;
@@ -63,7 +63,7 @@ export interface StorageInterface {
     expendSignUp(invite: string): Promise<string | null>;
 
 
-    deletePluginData(pluginName: string, key: string): Promise<void>;
-    deleteAllPluginData(pluginName: string): Promise<void>;
+    deletePluginData(plugin_name: string, key: string): Promise<void>;
+    deleteAllPluginData(plugin_name: string): Promise<void>;
     exit(): Promise<void>;
 }

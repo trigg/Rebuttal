@@ -5,7 +5,7 @@ import { rebuttal, create_rebuttal } from '../server.ts';
 import requestws from 'superwstest';
 import iconv_lite from 'iconv-lite';
 iconv_lite.encodingExists('foo');
-import event, { Priority } from '../events.ts';
+import { event, priority } from '../events.ts';
 import assert from 'assert';
 import { type UserUUID } from '../protocols/v1/shared.ts';
 
@@ -298,7 +298,7 @@ describe('protocol v0', () => {
 
     it('plugin may deny a valid signup', async () => {
         expect.assertions(0);
-        event.listen('usercreate', Priority.EARLY, (e) => {
+        event.listen('usercreate', priority.EARLY, (e) => {
             e.cancelled = true;
         });
         assert(rebuttal !== null);
@@ -323,7 +323,7 @@ describe('protocol v0', () => {
 
     it('plugin may deny valid login', async () => {
         expect.assertions(0);
-        event.listen('userauth', Priority.EARLY, (e) => {
+        event.listen('userauth', priority.EARLY, (e) => {
             e.cancelled = true;
         });
         assert(rebuttal !== null);

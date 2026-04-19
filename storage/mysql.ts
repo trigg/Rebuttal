@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import mysql, { type RowDataPacket } from 'mysql2/promise';
 import { type pluginData, type AccountStorage, type RoomStorage } from './types.ts';
 import { type v1_shared_message_real } from '../protocols/v1/shared.ts';
@@ -126,7 +127,7 @@ export async function mysqlstorage(user: string, password: string, database: str
     const conn = await mysql.createConnection(cred);
     conn.config.namedPlaceholders = true;
 
-    async function createTables() {
+    async function create_tables() {
         /* Create tables */
         if (wipe) {
             await conn.execute("DROP DATABASE " + database);
@@ -141,14 +142,14 @@ export async function mysqlstorage(user: string, password: string, database: str
             'CREATE TABLE IF NOT EXISTS room (id UUID NOT NULL UNIQUE, name TEXT NOT NULL, type TEXT NOT NULL, position INT NOT NULL)',
             'CREATE TABLE IF NOT EXISTS permission (perm TEXT NOT NULL, groupid TEXT NOT NULL)',
             'CREATE TABLE IF NOT EXISTS signup (groupid TEXT NOT NULL, id TEXT NOT NULL UNIQUE)',
-            'CREATE TABLE IF NOT EXISTS plugin (pluginName VARCHAR(255) NOT NULL, keyName VARCHAR(255) NOT NULL, value MEDIUMTEXT NOT NULL, PRIMARY KEY (pluginName, keyName))'
+            'CREATE TABLE IF NOT EXISTS plugin (plugin_name VARCHAR(255) NOT NULL, keyName VARCHAR(255) NOT NULL, value MEDIUMTEXT NOT NULL, PRIMARY KEY (plugin_name, keyName))'
 
         ];
         for (const stmt of stmts) {
             await conn.execute(stmt);
         }
     }
-    await createTables();
+    await create_tables();
     /* TODO Later Migration steps */
 
     const storage: StorageInterface = {
@@ -231,7 +232,7 @@ export async function mysqlstorage(user: string, password: string, database: str
             })
         },
 
-        getTextRoomNewestSegment: async function (id: string) {
+        getTextRoomNewestSegment: async function (_id: string) {
             throw new Error("unimplemented");
         },
 
@@ -251,7 +252,6 @@ export async function mysqlstorage(user: string, password: string, database: str
             await conn.execute('UPDATE messages SET text=:text, url=:url, type=:type, img=:img, userid=:userid, tags=:tags WHERE roomid = :roomid and idx = :idx', message_to_sqlmessage(contents));
         },
 
-        // eslint-disable-next-line @typescript-eslint/require-await
         removeMessage: async function (_roomid: string, _messageid: number) {
             throw new Error("unimplemented");
         },
@@ -264,7 +264,6 @@ export async function mysqlstorage(user: string, password: string, database: str
             return null;
         },
 
-        // eslint-disable-next-line @typescript-eslint/require-await
         getAccountPermission: async function (_id: string, _perm: string) {
             throw new Error("unimplemented");
         },
@@ -280,7 +279,7 @@ export async function mysqlstorage(user: string, password: string, database: str
         getGroupPermissionList: async function (group: string) {
             const [rows] = await conn.execute<RowDataPacket[]>('SELECT perm FROM permission WHERE groupid = :group', { group });
             console.log(rows);
-            return rows.map((row) => { return row.perm });
+            return rows.map((row) => { return row.perm as string });
         },
 
         addGroupPermission: async function (group: string, perm: string) {
@@ -309,7 +308,7 @@ export async function mysqlstorage(user: string, password: string, database: str
 
         getGroups: async function () {
             const [rows] = await conn.execute<RowDataPacket[]>('SELECT DISTINCT groupid FROM permission');
-            return rows.map((row) => { return row.groupid });
+            return rows.map((row) => { return row.groupid as string });
         },
 
         generateSignUp: async function (group: string, id: string) {
@@ -325,25 +324,24 @@ export async function mysqlstorage(user: string, password: string, database: str
             return null;
         },
 
-        // eslint-disable-next-line @typescript-eslint/require-await
         setAccountPassword: async function (_id: string, _password: string) {
             throw new Error("Not implemented");
         },
 
-        setPluginData: async function (pluginName: string, key: string, value: string) {
-            await conn.execute('REPLACE INTO plugin (pluginName, keyName, value) VALUES (:pluginName, :key, :value)', { pluginName, key, value });
+        setPluginData: async function (plugin_name: string, key: string, value: string) {
+            await conn.execute('REPLACE INTO plugin (plugin_name, keyName, value) VALUES (:plugin_name, :key, :value)', { plugin_name, key, value });
         },
 
-        getPluginData: async function (pluginName: string, key: string) {
-            const [rows] = await conn.execute<RowDataPacket[]>('SELECT value FROM plugin WHERE pluginName = :pluginName AND keyName = :key', { pluginName, key });
+        getPluginData: async function (plugin_name: string, key: string) {
+            const [rows] = await conn.execute<RowDataPacket[]>('SELECT value FROM plugin WHERE plugin_name = :plugin_name AND keyName = :key', { plugin_name, key });
             if (rows.length == 1) {
                 return rows[0]['value'] as string;
             }
             return null;
         },
 
-        getAllPluginData: async function (pluginName: string) {
-            const [rows] = await conn.execute<RowDataPacket[]>('SELECT keyName, value FROM plugin WHERE pluginName = :pluginName', { pluginName });
+        getAllPluginData: async function (plugin_name: string) {
+            const [rows] = await conn.execute<RowDataPacket[]>('SELECT keyName, value FROM plugin WHERE plugin_name = :plugin_name', { plugin_name });
             const ret: pluginData = {}
             for (const row of rows) {
                 const key = row.keyName as string;
@@ -352,13 +350,13 @@ export async function mysqlstorage(user: string, password: string, database: str
             return ret;
         },
 
-        deletePluginData: async function (pluginName: string, key: string) {
-            await conn.execute('DELETE FROM plugin WHERE pluginName = :pluginName AND keyName = :key', { pluginName, key });
+        deletePluginData: async function (plugin_name: string, key: string) {
+            await conn.execute('DELETE FROM plugin WHERE plugin_name = :plugin_name AND keyName = :key', { plugin_name, key });
         },
 
 
-        deleteAllPluginData: async function (pluginName: string) {
-            await conn.execute('DELETE FROM plugin where pluginName = :pluginName', { pluginName });
+        deleteAllPluginData: async function (plugin_name: string) {
+            await conn.execute('DELETE FROM plugin where plugin_name = :plugin_name', { plugin_name });
         },
 
         exit: async function () { conn.destroy() },

@@ -10,7 +10,7 @@
 import express from 'express';
 import crypto from 'crypto';
 import { type pluginInterface } from './interface.ts';
-import event, { Priority } from '../events.ts';
+import { event, priority } from '../events.ts';
 import { type rebuttal } from '../server.ts';
 import { type RoomStorage } from '../storage/types.ts';
 
@@ -20,13 +20,13 @@ type WebhookPlugin = pluginInterface & {
 };
 
 export const webhookplugin: WebhookPlugin = {
-    pluginName: 'webhook',
+    plugin_name: 'webhook',
     server: null,
 
     start: async function (server: rebuttal) {
         this.server = server;
         // Listen for serverprep - before start
-        event.listen('serverprep', Priority.NORMAL, (_event) => {
+        event.listen('serverprep', priority.NORMAL, (_event) => {
             // Add a context menu option to text rooms
             server.contextmenu.textroom.push({
                 label: 'Manage Webhooks',
@@ -37,7 +37,7 @@ export const webhookplugin: WebhookPlugin = {
         // Listen for users clicking a context menu item
         event.listen(
             'usercontextmenucallback',
-            Priority.NORMAL,
+            priority.NORMAL,
             (event) => {
                 const { option, value, ref } = event;
                 if (option === 'managewebhooks') {
@@ -93,8 +93,8 @@ export const webhookplugin: WebhookPlugin = {
             if (!xhub_sig) {
                 return;
             }
-            const rawBody = req.body;
-            const room = await webhookplugin.getRoomForHash(xhub_sig, rawBody);
+            const raw_body = req.body;
+            const room = await webhookplugin.getRoomForHash(xhub_sig, raw_body);
             if (!room || room === null) {
                 console.log('Webhook payload rejected');
                 res.status(404).end();
@@ -110,167 +110,180 @@ export const webhookplugin: WebhookPlugin = {
                 console.log(req.body);
                 return;
             }
-            let m = '';
             if ('action' in payload) {
                 switch (payload.action) {
                     case 'opened':
-                        m =
-                            "Opened Issue : '" +
-                            payload.issue.title +
-                            "' in " +
-                            payload.repository.full_name;
-                        if (payload.issue.body && payload.issue.body !== '') {
-                            m += '  \n' + payload.issue.body;
+                        {
+                            let m =
+                                "Opened Issue : '" +
+                                payload.issue.title +
+                                "' in " +
+                                payload.repository.full_name;
+                            if (payload.issue.body && payload.issue.body !== '') {
+                                m += '  \n' + payload.issue.body;
+                            }
+                            await server.storage.addNewMessage({
+                                type: 'webhook',
+                                img: payload.sender.avatar_url,
+                                username: payload.sender.login,
+                                text: m,
+                                url: payload.issue.html_url,
+                                roomid: room.id,
+                                idx: null,
+                                height: null,
+                                width: null,
+                                userid: null,
+                                tags: []
+                            });
+                            await server.sendUpdatesMessages(room.id);
                         }
-                        await server.storage.addNewMessage({
-                            type: 'webhook',
-                            img: payload.sender.avatar_url,
-                            username: payload.sender.login,
-                            text: m,
-                            url: payload.issue.html_url,
-                            roomid: room.id,
-                            idx: null,
-                            height: null,
-                            width: null,
-                            userid: null,
-                            tags: []
-                        });
-                        await server.sendUpdatesMessages(room.id);
                         break;
                     case 'labeled':
-                        m =
-                            "Changed labels on issue : '" +
-                            payload.issue.title +
-                            "' in " +
-                            payload.repository.full_name;
-                        await server.storage.addNewMessage({
-                            type: 'webhook',
-                            img: payload.sender.avatar_url,
-                            username: payload.sender.login,
-                            text: m,
-                            url: payload.issue.html_url,
-                            roomid: '',
-                            idx: null,
-                            height: null,
-                            width: null,
-                            userid: null,
-                            tags: []
-                        });
-                        await server.sendUpdatesMessages(room.id);
+                        {
+                            const m =
+                                "Changed labels on issue : '" +
+                                payload.issue.title +
+                                "' in " +
+                                payload.repository.full_name;
+                            await server.storage.addNewMessage({
+                                type: 'webhook',
+                                img: payload.sender.avatar_url,
+                                username: payload.sender.login,
+                                text: m,
+                                url: payload.issue.html_url,
+                                roomid: '',
+                                idx: null,
+                                height: null,
+                                width: null,
+                                userid: null,
+                                tags: []
+                            });
+                            await server.sendUpdatesMessages(room.id);
+                        }
                         break;
                     case 'created': // Commented
-                        m =
-                            "Commented on issue : '" +
-                            payload.issue.title +
-                            "' in " +
-                            payload.repository.full_name;
-                        if (payload.comment.body) {
-                            m += payload.comment.body.replaceAll(
-                                '\r\n',
-                                '  \n',
-                            );
+                        {
+                            let m =
+                                "Commented on issue : '" +
+                                payload.issue.title +
+                                "' in " +
+                                payload.repository.full_name;
+                            if (payload.comment.body) {
+                                m += payload.comment.body.replaceAll(
+                                    '\r\n',
+                                    '  \n',
+                                );
+                            }
+                            await server.storage.addNewMessage({
+                                type: 'webhook',
+                                img: payload.sender.avatar_url,
+                                username: payload.sender.login,
+                                text: m,
+                                url: payload.issue.html_url,
+                                roomid: '',
+                                idx: null,
+                                height: null,
+                                width: null,
+                                userid: null,
+                                tags: []
+                            });
+                            await server.sendUpdatesMessages(room.id);
                         }
-                        await server.storage.addNewMessage({
-                            type: 'webhook',
-                            img: payload.sender.avatar_url,
-                            username: payload.sender.login,
-                            text: m,
-                            url: payload.issue.html_url,
-                            roomid: '',
-                            idx: null,
-                            height: null,
-                            width: null,
-                            userid: null,
-                            tags: []
-                        });
-                        await server.sendUpdatesMessages(room.id);
                         break;
                     case 'edited':
-                        m =
-                            "Edited comment on issue : '" +
-                            payload.issue.title +
-                            "' in " +
-                            payload.repository.full_name;
-                        await server.storage.addNewMessage({
-                            type: 'webhook',
-                            img: payload.sender.avatar_url,
-                            username: payload.sender.login,
-                            text: m,
-                            url: payload.issue.html_url,
-                            roomid: '',
-                            idx: null,
-                            height: null,
-                            width: null,
-                            userid: null,
-                            tags: []
-                        });
-                        await server.sendUpdatesMessages(room.id);
+                        {
+                            const m =
+                                "Edited comment on issue : '" +
+                                payload.issue.title +
+                                "' in " +
+                                payload.repository.full_name;
+                            await server.storage.addNewMessage({
+                                type: 'webhook',
+                                img: payload.sender.avatar_url,
+                                username: payload.sender.login,
+                                text: m,
+                                url: payload.issue.html_url,
+                                roomid: '',
+                                idx: null,
+                                height: null,
+                                width: null,
+                                userid: null,
+                                tags: []
+                            });
+                            await server.sendUpdatesMessages(room.id);
+                        }
                         break;
                     case 'deleted':
-                        m =
-                            "Deleted comment on issue : '" +
-                            payload.issue.title +
-                            "' in " +
-                            payload.repository.full_name;
-                        await server.storage.addNewMessage({
-                            type: 'webhook',
-                            img: payload.sender.avatar_url,
-                            username: payload.sender.login,
-                            text: m,
-                            url: payload.issue.html_url,
-                            roomid: '',
-                            idx: null,
-                            height: null,
-                            width: null,
-                            userid: null,
-                            tags: []
-                        });
-                        await server.sendUpdatesMessages(room.id);
+                        {
+                            const m =
+                                "Deleted comment on issue : '" +
+                                payload.issue.title +
+                                "' in " +
+                                payload.repository.full_name;
+                            await server.storage.addNewMessage({
+                                type: 'webhook',
+                                img: payload.sender.avatar_url,
+                                username: payload.sender.login,
+                                text: m,
+                                url: payload.issue.html_url,
+                                roomid: '',
+                                idx: null,
+                                height: null,
+                                width: null,
+                                userid: null,
+                                tags: []
+                            });
+                            await server.sendUpdatesMessages(room.id);
+                        }
                         break;
                     case 'started':
-                        m = 'Starred ' + payload.repository.full_name;
-                        await server.storage.addNewMessage({
-                            type: 'webhook',
-                            img: payload.sender.avatar_url,
-                            username: payload.sender.login,
-                            text: m,
-                            url: payload.repository.html_url,
-                            roomid: '',
-                            idx: null,
-                            height: null,
-                            width: null,
-                            userid: null,
-                            tags: []
-                        });
-                        await server.sendUpdatesMessages(room.id);
+                        {
+                            const m = 'Starred ' + payload.repository.full_name;
+                            await server.storage.addNewMessage({
+                                type: 'webhook',
+                                img: payload.sender.avatar_url,
+                                username: payload.sender.login,
+                                text: m,
+                                url: payload.repository.html_url,
+                                roomid: '',
+                                idx: null,
+                                height: null,
+                                width: null,
+                                userid: null,
+                                tags: []
+                            });
+                            await server.sendUpdatesMessages(room.id);
+                        }
                         break;
                     case 'closed':
-                        m =
-                            "Closed '" +
-                            payload.issue.title +
-                            "' on " +
-                            payload.repository.full_name;
-                        await server.storage.addNewMessage({
-                            type: 'webhook',
-                            img: payload.sender.avatar_url,
-                            username: payload.sender.login,
-                            text: m,
-                            url: payload.issue.html_url,
-                            roomid: '',
-                            idx: null,
-                            height: null,
-                            width: null,
-                            userid: null,
-                            tags: []
-                        });
-                        await server.sendUpdatesMessages(room.id);
+                        {
+                            const m =
+                                "Closed '" +
+                                payload.issue.title +
+                                "' on " +
+                                payload.repository.full_name;
+                            await server.storage.addNewMessage({
+                                type: 'webhook',
+                                img: payload.sender.avatar_url,
+                                username: payload.sender.login,
+                                text: m,
+                                url: payload.issue.html_url,
+                                roomid: '',
+                                idx: null,
+                                height: null,
+                                width: null,
+                                userid: null,
+                                tags: []
+                            });
+                            await server.sendUpdatesMessages(room.id);
+                        }
                         break;
                     default:
                         console.log(payload);
                         break;
                 }
             } else if (payload.commits) {
-                m = 'Pushed commits to ' + payload.repository.full_name;
+                let m = 'Pushed commits to ' + payload.repository.full_name;
                 for (const commit of payload.commits) {
                     m += '\n```\n' + commit.message + '\n```';
                 }
@@ -289,7 +302,7 @@ export const webhookplugin: WebhookPlugin = {
                 });
                 await server.sendUpdatesMessages(room.id);
             } else if (payload.forkee) {
-                m =
+                const m =
                     'Project ' +
                     payload.forkee.full_name +
                     ' forked from ' +
@@ -327,8 +340,8 @@ export const webhookplugin: WebhookPlugin = {
         for (const room of rooms) {
             if (room.type == 'text') {
                 const hmac = crypto.createHmac('sha256', room.id);
-                const roomHash = 'sha256=' + hmac.update(payload).digest('hex');
-                if (roomHash === hash) {
+                const room_hash = 'sha256=' + hmac.update(payload).digest('hex');
+                if (room_hash === hash) {
                     r = room;
                 }
             }

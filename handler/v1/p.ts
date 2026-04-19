@@ -305,15 +305,15 @@ export const protocolv1 = {
                         )
                     ) {
                         if (packet.roomType && packet.roomName && packet.position) {
-                            const roomUuid = uuidv4();
+                            const room_uuid = uuidv4();
                             await server.storage.createRoom({
                                 type: packet.roomType,
                                 name: packet.roomName,
-                                id: roomUuid,
+                                id: room_uuid,
                                 position: packet.position,
                             });
                             await event.trigger('roomcreate', {
-                                roomUuid: roomUuid,
+                                roomUuid: room_uuid,
                             });
                             await server.sendUpdateRooms();
                         } else {
@@ -344,9 +344,9 @@ export const protocolv1 = {
                             packet.email
                         ) {
                             const password2: string = uuidv4();
-                            const userUuid = uuidv4();
+                            const user_uuid = uuidv4();
                             await server.storage.createAccount({
-                                id: userUuid,
+                                id: user_uuid,
                                 name: packet.userName,
                                 group: packet.groupName,
                                 email: packet.email,
@@ -354,7 +354,7 @@ export const protocolv1 = {
                             }, password2);
                             await event.trigger('usercreate', {
                                 userName: packet.userName,
-                                userUuid,
+                                userUuid: user_uuid,
                             });
                             // TODO Send created user credentials
                             /*server.sendTo(socket, {

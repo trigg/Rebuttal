@@ -70,9 +70,9 @@ export const protocolv0 = {
                         // I simply don't feel that is right
                         if (!event_return.cancelled) {
                             console.log('Created user');
-                            const userUuid = uuidv4();
+                            const user_uuid = uuidv4();
                             await server.storage.createAccount({
-                                id: userUuid,
+                                id: user_uuid,
                                 name: packet.userName,
                                 passwordHash: '',
                                 email: packet.email,

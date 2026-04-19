@@ -5,11 +5,11 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 
-import { event, Priority, type Event } from './events.ts';
+import { event, priority, type Event } from './events.ts';
 import { protocolv0 } from './handler/v0/p.ts';
 import { protocolv1 } from './handler/v1/p.ts';
 
-import { createStorageGuard } from './storage/guard.ts';
+import { create_storage_guard } from './storage/guard.ts';
 import { jsonstorage } from './storage/json.ts';
 import { mysqlstorage } from './storage/mysql.ts';
 import { sqlitestorage } from './storage/sqlite.ts';
@@ -125,7 +125,7 @@ export async function create_rebuttal(config: config) {
     const plugins: pluginInterface[] = [];
     let storage = null;
     if (config.test_mode) {
-        storage = createStorageGuard(await jsonstorage(null), config);
+        storage = create_storage_guard(await jsonstorage(null), config);
     } else {
         switch (config['storage']) {
             case 'mysql':
@@ -134,14 +134,14 @@ export async function create_rebuttal(config: config) {
                     const password = process.env.REBUTTAL_MYSQL_PASSWORD ? process.env.REBUTTAL_MYSQL_PASSWORD : "rebuttal";
                     const database = process.env.REBUTTAL_MYSQL_DATABASE ? process.env.REBUTTAL_MYSQL_DATABASE : "rebuttal";
                     const host = process.env.REBUTTAL_MYSQL_HOST ? process.env.REBUTTAL_MYSQL_HOST : "localhosts";
-                    storage = createStorageGuard(await mysqlstorage(username, password, database, host, false), config);
+                    storage = create_storage_guard(await mysqlstorage(username, password, database, host, false), config);
                 }
                 break;
             case 'sqlite':
-                storage = createStorageGuard(await sqlitestorage("data/data.sqlite"), config);
+                storage = create_storage_guard(await sqlitestorage("data/data.sqlite"), config);
                 break;
             case 'json':
-                storage = createStorageGuard(await jsonstorage("data/data.json"), config);
+                storage = create_storage_guard(await jsonstorage("data/data.json"), config);
                 break;
         }
     }
@@ -151,14 +151,14 @@ export async function create_rebuttal(config: config) {
 
     if ('plugins' in config) {
         for (const plugin of config['plugins']) {
-            const pluginFileName = path.join('plugin', plugin + '.ts');
-            if (fs.existsSync(pluginFileName)) {
+            const plugin_file_name = path.join('plugin', plugin + '.ts');
+            if (fs.existsSync(plugin_file_name)) {
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                const plugin_actual = await import('./' + pluginFileName);
+                const plugin_actual = await import('./' + plugin_file_name);
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                 plugins.push(plugin_actual.default);
             } else {
-                console.log("Could not load '" + pluginFileName + "'");
+                console.log("Could not load '" + plugin_file_name + "'");
                 throw new Error('unknown plugin');
             }
         }
@@ -234,7 +234,7 @@ export async function create_rebuttal(config: config) {
             const users = await this.storage.getAllAccounts();
             if (!users || users.length == 0) {
                 // Should be run when no users are in config
-                const userUuid = uuidv4();
+                const user_uuid = uuidv4();
                 let password: string = uuidv4();
                 console.log('Created Root account : root@localhost');
                 if (env.REBUTTAL_ADMIN_PASSWORD && env.REBUTTAL_ADMIN_PASSWORD.length > 6) {
@@ -245,7 +245,7 @@ export async function create_rebuttal(config: config) {
                 }
 
                 await this.storage.createAccount({
-                    id: userUuid,
+                    id: user_uuid,
                     name: 'root',
                     passwordHash: '',
                     email: 'root@localhost',
@@ -275,17 +275,17 @@ export async function create_rebuttal(config: config) {
                     await this.storage.addGroupPermission('user', perm);
                 }
 
-                const roomUuid = uuidv4();
+                const room_uuid = uuidv4();
                 await this.storage.createRoom({
-                    id: roomUuid,
+                    id: room_uuid,
                     name: 'Main',
                     type: 'text',
                     position: 10,
                 });
 
-                const voiceUuid = uuidv4();
+                const voice_uuid = uuidv4();
                 await this.storage.createRoom({
-                    id: voiceUuid,
+                    id: voice_uuid,
                     name: 'Chat',
                     type: 'voice',
                     position: 5,
@@ -312,7 +312,7 @@ export async function create_rebuttal(config: config) {
             // TODO FINAL events for most events.
 
             // Get FINAL event callbacks
-            event.listen('connectionnew', Priority.FINAL, (event: Event) => {
+            event.listen('connectionnew', priority.FINAL, (event: Event) => {
                 if (!event.cancelled) {
                     event.ref.send(JSON.stringify(event.welcomeObj));
                 } else {
@@ -510,7 +510,7 @@ export async function create_rebuttal(config: config) {
             let connected = false;
             let suppressed = false;
             let talking = false;
-            let currentRoom = null;
+            let current_room = null;
             for (const connection of this.connections) {
                 if (connection.id && connection.id === account.id) {
                     connected = true;
@@ -528,7 +528,7 @@ export async function create_rebuttal(config: config) {
                         talking = true;
                     }
                     if (connection.currentRoom) {
-                        currentRoom = connection.currentRoom;
+                        current_room = connection.currentRoom;
                     }
                 }
             }
@@ -542,7 +542,7 @@ export async function create_rebuttal(config: config) {
                 talking,
                 livelabel,
                 livestate,
-                currentRoom,
+                currentRoom: current_room,
             };
             return user;
         },
@@ -729,7 +729,7 @@ export async function create_rebuttal(config: config) {
     for (const plugin of plugins) {
         event
             .trigger('pluginprep', {
-                pluginName: plugin.pluginName,
+                plugin_name: plugin.plugin_name,
                 ref: plugin,
             })
             .catch((e) => {
@@ -741,7 +741,7 @@ export async function create_rebuttal(config: config) {
         });
         event
             .trigger('pluginstart', {
-                pluginName: plugin.pluginName,
+                plugin_name: plugin.plugin_name,
                 ref: plugin,
             })
             .catch((e) => {

@@ -1,4 +1,4 @@
-import event, { Priority } from '../events.ts';
+import { event, priority } from '../events.ts';
 
 describe('events', () => {
     let eventstage = -1;
@@ -9,7 +9,7 @@ describe('events', () => {
     it('fails to listen to unregistered event', () => {
         expect.assertions(1);
         expect(() => {
-            event.listen('doesnotexist', Priority.EARLY, (_event) => { });
+            event.listen('doesnotexist', priority.EARLY, (_event) => { });
         }).toThrow('Listening to non-existant event : doesnotexist');
     });
 
@@ -21,31 +21,31 @@ describe('events', () => {
 
     it('can add event listeners', () => {
         expect.assertions(0);
-        event.listen('testevent', Priority.MONITOR, function (_event) {
+        event.listen('testevent', priority.MONITOR, function (_event) {
             console.log('Sanity test-  should be last');
-            if (eventstage >= Priority.MONITOR) {
+            if (eventstage >= priority.MONITOR) {
                 throw new Error('Event priorities called out of order');
             }
             if (eventstage === 0) {
                 throw new Error('Event priority MONITOR called first');
             }
-            eventstage = Priority.MONITOR;
+            eventstage = priority.MONITOR;
         });
 
-        event.listen('testevent', Priority.EARLY, function (_event) {
+        event.listen('testevent', priority.EARLY, function (_event) {
             console.log('Sanity test-  should be first');
-            if (eventstage >= Priority.EARLY) {
+            if (eventstage >= priority.EARLY) {
                 throw new Error('Event priorities called out of order');
             }
 
-            eventstage = Priority.EARLY;
+            eventstage = priority.EARLY;
         });
-        event.listen('testevent', Priority.LATE, function (_event) {
+        event.listen('testevent', priority.LATE, function (_event) {
             console.log('Sanity test-  should be middle');
-            if (eventstage >= Priority.LATE) {
+            if (eventstage >= priority.LATE) {
                 throw new Error('Event priorities called out of order');
             }
-            eventstage = Priority.LATE;
+            eventstage = priority.LATE;
         });
     });
 
@@ -58,17 +58,17 @@ describe('events', () => {
         expect.assertions(5);
         event.register('mutateevent');
 
-        event.listen('mutateevent', Priority.EARLY, (e) => {
+        event.listen('mutateevent', priority.EARLY, (e) => {
             e.a = 2;
         });
 
-        event.listen('mutateevent', Priority.NORMAL, (e) => {
+        event.listen('mutateevent', priority.NORMAL, (e) => {
             expect(e.a).toBe(2);
             expect(e.b).toBe(2);
             e.a = 1;
         });
 
-        event.listen('mutateevent', Priority.FINAL, (e) => {
+        event.listen('mutateevent', priority.FINAL, (e) => {
             expect(e.a).toBe(1);
             expect(e.b).toBe(2);
             expect(e.c).toBe(3);
@@ -80,13 +80,13 @@ describe('events', () => {
     it('can cancel a triggered event', async () => {
         expect.assertions(0);
         event.register('cancelevent');
-        event.listen('cancelevent', Priority.EARLY, (event) => {
+        event.listen('cancelevent', priority.EARLY, (event) => {
             event.cancelled = true;
         });
-        event.listen('cancelevent', Priority.NORMAL, () => {
+        event.listen('cancelevent', priority.NORMAL, () => {
             throw new Error('Continued with cancelled event');
         });
-        event.listen('cancelevent', Priority.MONITOR, () => {
+        event.listen('cancelevent', priority.MONITOR, () => {
             throw new Error('Monitored cancelled event');
         });
         await event.trigger('cancelevent', {});

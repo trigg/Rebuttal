@@ -34,7 +34,7 @@ export interface plugins {
     [key: string]: pluginData;
 }
 
-export async function jsonstorage(fileName: string | null) {
+export async function jsonstorage(file_name: string | null) {
     let storage = {
         rooms: new Array<RoomStorage>(),
         accounts: new Array<AccountStorage>(),
@@ -43,19 +43,19 @@ export async function jsonstorage(fileName: string | null) {
         permissions: {},
         plugin: {},
     } as internalStorage
-    if (fileName) {
-        if (fs.existsSync(fileName)) {
+    if (file_name) {
+        if (fs.existsSync(file_name)) {
             storage = JSON.parse(
-                fs.readFileSync(fileName).toString(),
+                fs.readFileSync(file_name).toString(),
             ) as internalStorage;
         } else {
             console.log("No file");
         }
     }
     const save = async function () {
-        if (fileName !== null) {
+        if (file_name !== null) {
             fs.writeFileSync(
-                fileName,
+                file_name,
                 JSON.stringify(storage),
             );
         }
@@ -150,7 +150,7 @@ export async function jsonstorage(fileName: string | null) {
             return storage.messages[uuid].slice(start, end);
         },
 
-        getTextRoomNewestSegment: async function (uuid) {
+        getTextRoomNewestSegment: async function (_uuid) {
             throw new Error("unimplemented");
         },
 
@@ -200,11 +200,11 @@ export async function jsonstorage(fileName: string | null) {
         },
 
         getGroupPermission: async function (groupname, permission) {
-            let permList = storage.permissions[groupname];
-            if (permList == undefined) {
-                permList = storage.permissions[groupname] = [];
+            let perm_list = storage.permissions[groupname];
+            if (perm_list == undefined) {
+                perm_list = storage.permissions[groupname] = [];
             }
-            if (permList.indexOf(permission) > -1) {
+            if (perm_list.indexOf(permission) > -1) {
                 return true;
             }
             return false;
@@ -221,17 +221,17 @@ export async function jsonstorage(fileName: string | null) {
             if (!(groupname in storage.permissions)) {
                 storage.permissions[groupname] = [];
             }
-            const permList = storage.permissions[groupname];
-            if (permList.indexOf(permission) == -1) {
-                permList.push(permission);
-                storage.permissions[groupname] = permList;
+            const perm_list = storage.permissions[groupname];
+            if (perm_list.indexOf(permission) == -1) {
+                perm_list.push(permission);
+                storage.permissions[groupname] = perm_list;
                 await save();
             }
         },
 
         removeGroupPermission: async function (groupname, permission) {
-            const permList = storage.permissions[groupname];
-            storage.permissions[groupname] = permList.filter(
+            const perm_list = storage.permissions[groupname];
+            storage.permissions[groupname] = perm_list.filter(
                 (p) => p !== permission,
             );
             await save();
@@ -277,44 +277,44 @@ export async function jsonstorage(fileName: string | null) {
         },
 
         setPluginData: async function (
-            pluginName,
+            plugin_name,
             key,
             value,
         ) {
-            if (!(pluginName in storage.plugin)) {
-                storage.plugin[pluginName] = {};
+            if (!(plugin_name in storage.plugin)) {
+                storage.plugin[plugin_name] = {};
             }
-            storage.plugin[pluginName][key] = value;
+            storage.plugin[plugin_name][key] = value;
             await save();
         },
 
-        getPluginData: async function (pluginName, key) {
-            if (!(pluginName in storage.plugin)) {
+        getPluginData: async function (plugin_name, key) {
+            if (!(plugin_name in storage.plugin)) {
                 return null;
             }
-            if (!(key in storage.plugin[pluginName])) {
+            if (!(key in storage.plugin[plugin_name])) {
                 return null;
             }
-            return storage.plugin[pluginName][key];
+            return storage.plugin[plugin_name][key];
         },
 
-        getAllPluginData: async function (pluginName) {
-            if (!(pluginName in storage.plugin)) {
+        getAllPluginData: async function (plugin_name) {
+            if (!(plugin_name in storage.plugin)) {
                 return {};
             }
-            return storage.plugin[pluginName];
+            return storage.plugin[plugin_name];
         },
 
-        deletePluginData: async function (pluginName, key) {
-            if (!(pluginName in storage.plugin)) {
+        deletePluginData: async function (plugin_name, key) {
+            if (!(plugin_name in storage.plugin)) {
                 return;
             }
-            delete storage.plugin[pluginName][key];
+            delete storage.plugin[plugin_name][key];
             await save();
         },
 
-        deleteAllPluginData: async function (pluginName) {
-            storage.plugin[pluginName] = {};
+        deleteAllPluginData: async function (plugin_name) {
+            storage.plugin[plugin_name] = {};
             await save();
         },
 

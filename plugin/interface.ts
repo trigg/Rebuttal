@@ -1,6 +1,6 @@
 import { type rebuttal } from '../server.ts';
 
 export interface pluginInterface {
-    pluginName: string;
+    plugin_name: string;
     start(server: rebuttal): Promise<void>;
 }

@@ -82,15 +82,15 @@ function is_string(input: unknown): input is str {
  * 
  * Saves writing (or typoing) the same checks for every storage medium
  */
-export function createStorageGuard(inner: StorageInterface, server_config: config): StorageInterface {
+export function create_storage_guard(inner: StorageInterface, server_config: config): StorageInterface {
 
-    function defaultAvatar(details: AccountStorage) {
+    function default_avatar(details: AccountStorage) {
         const fallback = server_config.gravatarfallback ? server_config.gravatarfallback : "monsterid"
         if (!details.avatar) {
-            const gravatarHash = crypto.createHash("sha256")
+            const gravatar_hash = crypto.createHash("sha256")
                 .update(details.email.trim().toLowerCase())
                 .digest('hex');
-            const gravatarurl = "https://0.gravatar.com/avatar/" + gravatarHash + "?s=128&d=" + fallback;
+            const gravatarurl = "https://0.gravatar.com/avatar/" + gravatar_hash + "?s=128&d=" + fallback;
             details.avatar = gravatarurl;
         }
     }
@@ -160,7 +160,7 @@ export function createStorageGuard(inner: StorageInterface, server_config: confi
                 throw new Error("User name MUST be longer than 2 characters");
             }
             details.passwordHash = bcrypt.hashSync(password, 10);
-            defaultAvatar(details);
+            default_avatar(details);
             await inner.createAccount(details, "");
         },
 
@@ -174,7 +174,7 @@ export function createStorageGuard(inner: StorageInterface, server_config: confi
             if (details.name.length < 3) {
                 throw new Error("User name MUST be longer than 2 characters");
             }
-            defaultAvatar(details);
+            default_avatar(details);
             await inner.updateAccount(details);
         },
 
@@ -360,41 +360,41 @@ export function createStorageGuard(inner: StorageInterface, server_config: confi
         },
 
         setPluginData: async function (
-            pluginName,
+            plugin_name,
             key,
             value,
         ) {
-            is_string(pluginName);
+            is_string(plugin_name);
             is_string(key);
             is_string(value);
-            await inner.setPluginData(pluginName, key, value);
+            await inner.setPluginData(plugin_name, key, value);
         },
 
-        getPluginData: async function (pluginName, key) {
-            is_string(pluginName);
+        getPluginData: async function (plugin_name, key) {
+            is_string(plugin_name);
             is_string(key);
-            const ret = await inner.getPluginData(pluginName, key);
+            const ret = await inner.getPluginData(plugin_name, key);
             if (ret == null) { return null; }
             is_string(ret);
             return ret;
         },
 
-        getAllPluginData: async function (pluginName) {
-            is_string(pluginName);
-            const ret = await inner.getAllPluginData(pluginName);
+        getAllPluginData: async function (plugin_name) {
+            is_string(plugin_name);
+            const ret = await inner.getAllPluginData(plugin_name);
             is_plugin_data(ret);
             return ret;
         },
 
-        deletePluginData: async function (pluginName, key) {
-            is_string(pluginName);
+        deletePluginData: async function (plugin_name, key) {
+            is_string(plugin_name);
             is_string(key);
-            await inner.deletePluginData(pluginName, key);
+            await inner.deletePluginData(plugin_name, key);
         },
 
-        deleteAllPluginData: async function (pluginName) {
-            is_string(pluginName);
-            await inner.deleteAllPluginData(pluginName);
+        deleteAllPluginData: async function (plugin_name) {
+            is_string(plugin_name);
+            await inner.deleteAllPluginData(plugin_name);
         },
 
         exit: async function () {

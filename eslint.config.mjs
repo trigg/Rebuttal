@@ -6,9 +6,16 @@ import eslint from '@eslint/js';
 import jest from 'eslint-plugin-jest';
 
 export default defineConfig([
+    {
+        ignores: [
+            '*.mjs' /* Non-project extras like eslint, babel etc */,
+            '*.js',
+            '**/*-ti.ts' /* Skip compiled files */,
+        ],
+    },
     globalIgnores(['webapp/*', 'invite/*', 'coverage/*']),
     {
-        files: ['tests/**/*.test.js'],
+        files: ['tests/**/*.test.js'] /* Specific rules for tests */,
         ...jest.configs['flat/recommended'],
         rules: {
             ...jest.configs['flat/recommended'].rules,
@@ -21,7 +28,6 @@ export default defineConfig([
             'jest/prefer-lowercase-title': 'warn',
             'jest/prefer-to-have-length': 'warn',
             'jest/require-to-throw-message': 'warn',
-            'jest/no-done-callback': 'off',
         },
     },
     {
@@ -41,6 +47,14 @@ export default defineConfig([
             ],
             '@typescript-eslint/no-misused-promises': 'error',
             '@typescript-eslint/no-floating-promises': 'error',
+            '@typescript-eslint/naming-convention': [
+                'error',
+                {
+                    selector: 'variableLike',
+                    format: ['snake_case'],
+                    leadingUnderscore: 'allow',
+                },
+            ],
         },
     },
     eslint.configs.recommended,

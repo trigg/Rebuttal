@@ -10,7 +10,7 @@ import { type pluginInterface } from './interface.ts';
 import { type rebuttal } from '../server.ts';
 
 export const webclientplugin: pluginInterface = {
-    pluginName: 'webclient',
+    plugin_name: 'webclient',
     // eslint-disable-next-line @typescript-eslint/require-await
     start: async (server: rebuttal) => {
         // Check if we have a webapp
