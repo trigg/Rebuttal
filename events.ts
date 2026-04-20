@@ -32,6 +32,7 @@ export const priority = {
 };
 type PriorityKeys = (typeof priority)[keyof typeof priority];
 export const event = {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     listeners: {} as Listeners,
     listen: function (
         event_name: string,
@@ -47,6 +48,7 @@ export const event = {
     trigger: async function (event_name: string, event: {
         [key: string]: unknown;
     }) {
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         const pass_event = event as Event; // Forcibly cast in readiness
         pass_event.cancelled = false;
         pass_event.eventtype = event_name;

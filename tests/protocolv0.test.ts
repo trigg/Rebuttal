@@ -7,7 +7,6 @@ import iconv_lite from 'iconv-lite';
 iconv_lite.encodingExists('foo');
 import { event, priority } from '../events.ts';
 import assert from 'assert';
-import { type UserUUID } from '../protocols/v1/shared.ts';
 
 describe('protocol v0', () => {
     const admin_password = 'IHaveThisAmazingAdminPasswordForTesting';
@@ -36,10 +35,10 @@ describe('protocol v0', () => {
             '11111111-1111-1111-1111-111111111111',
         );
         await rebuttal?.storage.createAccount({
-            id: '00000000-0000-1111-0000-000000000000' as UserUUID,
+            id: '00000000-0000-1111-0000-000000000000',
             name: 'testadmin',
             email: 'test.admin@example.com',
-            passwordHash: "",
+            password_hash: "",
             group: 'admin',
         }, admin_password);
     });

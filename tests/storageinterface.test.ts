@@ -37,7 +37,7 @@ describe.each(backends_to_test)('storage handles data', (sname, storage_promise)
         await storage.createAccount({
             id: user_uuid,
             name: 'test',
-            passwordHash: '',
+            password_hash: '',
             email: 'testuser@example.com',
             group: 'user',
         }, password);
@@ -45,7 +45,7 @@ describe.each(backends_to_test)('storage handles data', (sname, storage_promise)
         await storage.createAccount({
             id: user_uuid2,
             name: 'toast',
-            passwordHash: "",
+            password_hash: "",
             email: 'toast@example.com',
             group: 'user',
         }, password);
@@ -59,8 +59,8 @@ describe.each(backends_to_test)('storage handles data', (sname, storage_promise)
         }
 
         // Users with the same password CANNOT match hashes
-        expect(u1.passwordHash).not.toEqual(
-            u2.passwordHash,
+        expect(u1.password_hash).not.toEqual(
+            u2.password_hash,
         );
 
         // Check user can login
@@ -85,7 +85,7 @@ describe.each(backends_to_test)('storage handles data', (sname, storage_promise)
                 id: user_uuid2,
                 name: 'toast',
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                passwordHash: expect.anything(),
+                password_hash: expect.anything(),
             },
         ]);
         await storage.exit();
@@ -191,8 +191,8 @@ describe.each(backends_to_test)('storage handles data', (sname, storage_promise)
         });
 
         // Delete message
-
         expect(messages[0].idx).not.toBeNull();
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         await storage.removeMessage(room_uuid, messages[0].idx as number);
 
         messages = await storage.getTextForRoom(room_uuid, segment);
@@ -246,7 +246,7 @@ describe.each(backends_to_test)('storage handles data', (sname, storage_promise)
             name: 'adminname',
             email: 'adminperson@example.com',
             group: 'admin',
-            passwordHash: '',
+            password_hash: '',
         }, 'somethinglonger');
         expect(await storage.getAccountByID(user_uuid)).toHaveProperty(
             'group',
@@ -315,7 +315,7 @@ describe.each(backends_to_test)('storage handles data', (sname, storage_promise)
             name: 'adminname',
             email: 'adminperson2@example.com',
             group: 'admin',
-            passwordHash: '',
+            password_hash: '',
             avatar: './img/test.png',
             hidden: true,
         };
@@ -487,7 +487,7 @@ describe.each(backends_to_test)('storage handles data', (sname, storage_promise)
         await storage.createAccount({
             id: userid,
             name: 'test1',
-            passwordHash: '',
+            password_hash: '',
             email: user_email,
             group: 'user',
         }, user_password1);

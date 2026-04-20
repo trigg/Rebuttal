@@ -1,7 +1,9 @@
+/* Allow type assertions as Guard must catch runtime discrepancies */
+/* eslint-disable @typescript-eslint/consistent-type-assertions */
 /* eslint-disable @typescript-eslint/require-await */
 import mysql, { type RowDataPacket } from 'mysql2/promise';
 import { type pluginData, type AccountStorage, type RoomStorage } from './types.ts';
-import { type v1_shared_message_real } from '../protocols/v1/shared.ts';
+import { type v1_shared_message_real } from '../protocols/iface/v1/shared.iface.ts';
 import { type StorageInterface } from './interface.ts';
 
 type sql_message = {
@@ -27,7 +29,7 @@ type sql_user = {
     id: string,
     name: string,
     email: string,
-    passwordHash: string,
+    passwordhash: string,
     avatar: string | null,
     groupid: string,
     hidden: number,
@@ -37,7 +39,7 @@ function sqluser_to_user(in_user: sql_user) {
     const account: AccountStorage = {
         id: in_user.id,
         name: in_user.name,
-        passwordHash: in_user.passwordHash,
+        password_hash: in_user.passwordhash,
         email: in_user.email,
         group: in_user.groupid,
         avatar: (in_user.avatar && in_user.avatar.length > 0) ? in_user.avatar : undefined,
@@ -50,7 +52,7 @@ function user_to_sqluser(in_user: AccountStorage) {
     const account: sql_user = {
         id: in_user.id,
         name: in_user.name,
-        passwordHash: in_user.passwordHash,
+        passwordhash: in_user.password_hash,
         email: in_user.email,
         groupid: in_user.group,
         avatar: (in_user.avatar && in_user.avatar.length > 0) ? in_user.avatar : null,
@@ -60,9 +62,7 @@ function user_to_sqluser(in_user: AccountStorage) {
 }
 
 function sqlmessage_to_message(in_msg: sql_message) {
-
-    const tags = JSON.parse(in_msg.tags ? in_msg.tags : "[]") as string[];
-
+    const tags: unknown = JSON.parse(in_msg.tags ? in_msg.tags : "[]");
     const message: v1_shared_message_real = {
         roomid: in_msg.roomid,
         idx: in_msg.idx,
@@ -72,7 +72,7 @@ function sqlmessage_to_message(in_msg: sql_message) {
         height: null,
         width: null,
         userid: in_msg.userid,
-        tags,
+        tags: tags as string[],
         type: in_msg.type,
         username: in_msg.username ? in_msg.username : ""
     }

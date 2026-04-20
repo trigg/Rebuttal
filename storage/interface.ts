@@ -2,7 +2,7 @@ import {
     type RoomUUID,
     type UserUUID,
     type v1_shared_message_real
-} from "../protocols/v1/shared.ts"
+} from "../protocols/iface/v1/shared.iface.ts"
 import {
     type RoomStorage,
     type AccountStorage,

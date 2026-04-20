@@ -10,8 +10,8 @@ import {
 import { type StorageInterface } from './interface.ts';
 import { createCheckers } from 'ts-interface-checker';
 import types_iface from './types-ti.ts';
-import { type v1_shared_message_real } from '../protocols/v1/shared.ts';
-import types_v1_shared from '../protocols/v1/shared-ti.ts';
+import { type v1_shared_message_real } from '../protocols/iface/v1/shared.iface.ts';
+import types_v1_shared from '../protocols/iface/v1/shared.iface-ti.ts';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { type config } from '../server.ts';
@@ -120,7 +120,7 @@ export function create_storage_guard(inner: StorageInterface, server_config: con
             /* Actual check that the login is valid. Saves doing it wrong in each storage */
             if (
                 value.email == email &&
-                bcrypt.compareSync(password, value.passwordHash)
+                bcrypt.compareSync(password, value.password_hash)
             ) {
                 return value;
             }
@@ -159,7 +159,7 @@ export function create_storage_guard(inner: StorageInterface, server_config: con
             if (details.name.length < 3) {
                 throw new Error("User name MUST be longer than 2 characters");
             }
-            details.passwordHash = bcrypt.hashSync(password, 10);
+            details.password_hash = bcrypt.hashSync(password, 10);
             default_avatar(details);
             await inner.createAccount(details, "");
         },
@@ -355,7 +355,7 @@ export function create_storage_guard(inner: StorageInterface, server_config: con
             if (user == null) {
                 return;
             }
-            user.passwordHash = bcrypt.hashSync(password, 10);
+            user.password_hash = bcrypt.hashSync(password, 10);
             await inner.updateAccount(user);
         },
 

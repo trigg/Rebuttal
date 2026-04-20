@@ -11,39 +11,10 @@ import {
 import {
     type AccountStorage,
 } from '../../storage/types.ts';
-import { type v1_cts_packet } from '../../protocols/v1/client_to_server.ts';
-import v1_cts_iface from '../../protocols/v1/client_to_server-ti.ts';
-import v1_shared_iface from '../../protocols/v1/shared-ti.ts';
-import { createCheckers } from 'ts-interface-checker';
+import { type v1_cts_packet } from '../../protocols/iface/v1/client_to_server.iface.ts';
 import { v4 as uuidv4 } from 'uuid';
-import { type v1_shared_message_real } from '../../protocols/v1/shared.ts';
-
-const checker = createCheckers(v1_cts_iface, v1_shared_iface);
-
-/* Heavy handed get an error message to user and close connection */
-function invalid_packet(server: rebuttal, socket: rebuttalSocket, data: unknown) {
-    if (!(data instanceof Object && 'type' in data && typeof data.type == 'string')) {
-        console.log("v1 got malformed packet : ");
-        console.log(data);
-        return;
-    }
-    console.log('v1 got malformed packet : ' + data.type);
-    console.log(JSON.stringify(data));
-
-    const issues = checker.v1_cts_packet.validate(data);
-    if (issues != null) {
-        server.chase(issues);
-    }
-
-    server.sendTo(socket, {
-        type: 'error',
-        message: 'Malformed packet of type : "' + data.type + '"',
-    });
-    socket.close(
-        3001,
-        'Malformed packet of type : "' + data.type + '"',
-    );
-}
+import { type v1_shared_message_real } from '../../protocols/iface/v1/shared.iface.ts';
+import { checker } from '../../protocols/checker.ts';
 
 export const protocolv1 = {
     uploadDir: './uploads',
@@ -89,16 +60,13 @@ export const protocolv1 = {
         if (socket.id === null) {
             throw new Error('logged in user without an id');
         }
-        let uuid;
-        if (!checker.v1_cts_packet.test(data)) {
-            invalid_packet(server, socket, data);
-            return;
-        }
+        checker.v1_cts_packet.check(data);
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         const packet = data as v1_cts_packet;
         switch (packet.type) {
             case 'invite':
                 {
-                    uuid = uuidv4();
+                    const uuid = uuidv4();
                     // TODO Invites from anyone outside of admin
                     if (
                         await server.storage.getAccountPermission(
@@ -162,7 +130,7 @@ export const protocolv1 = {
                             const reg = /[^a-z0-9-_]/gi;
                             let outputfilename = packet.filename;
                             outputfilename = outputfilename.replace(reg, '');
-                            uuid = uuidv4();
+                            const uuid = uuidv4();
                             const outputuri = path.join(
                                 this.uploadUri,
                                 socket.id,
@@ -350,7 +318,7 @@ export const protocolv1 = {
                                 name: packet.userName,
                                 group: packet.groupName,
                                 email: packet.email,
-                                passwordHash: '',
+                                password_hash: '',
                             }, password2);
                             await event.trigger('usercreate', {
                                 userName: packet.userName,
@@ -832,10 +800,7 @@ export const protocolv1 = {
                     }
                 }
                 return;
-
         }
-        invalid_packet(server, socket, packet);
-
     },
 };
 export default protocolv1;

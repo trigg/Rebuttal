@@ -6,9 +6,10 @@ import requestws from 'superwstest';
 import iconv_lite from 'iconv-lite';
 import fs from 'fs';
 import assert from 'assert';
-import { type v1_shared_message_real, type v1_shared_room, type v1_shared_user } from '../protocols/v1/shared.ts';
+import { type v1_shared_message_real, type v1_shared_room, type v1_shared_user } from '../protocols/iface/v1/shared.iface.ts';
 import { expect } from '@jest/globals';
 import { v4 as uuidv4 } from 'uuid';
+import { AccountStorage } from '../storage/types.ts';
 
 iconv_lite.encodingExists('foo');
 
@@ -37,7 +38,7 @@ describe('protocol v1', () => {
         id: uuidv4(),
         name: 'testadmin',
         email: 'test.admin@example.com',
-        passwordHash: "",
+        password_hash: "",
         group: 'admin',
     };
     beforeAll(async () => {
@@ -649,10 +650,10 @@ describe('protocol v1', () => {
     it('can remove user', async () => {
         expect.assertions(0);
         assert(rebuttal !== null);
-        const kicking_user = {
+        const kicking_user: AccountStorage = {
             id: uuidv4(),
             name: 'kickee',
-            passwordHash: '',
+            password_hash: '',
             email: 'kickee@example.com',
             group: 'none',
         };

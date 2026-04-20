@@ -20,6 +20,7 @@ const default_config = {
     infinitesignup: env['REBUTTAL_INFINITE_SIGNUP'] ? env['REBUTTAL_INFINITE_SIGNUP'] : undefined,
     test_mode: false
 };
+// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
 const file_config = (fs.existsSync('./config.json') ? JSON.parse(
     fs.readFileSync('./config.json').toString(),
 ) : default_config) as config;

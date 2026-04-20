@@ -6,7 +6,7 @@ import {
     type pluginData,
 } from './types.ts';
 import Sqlite, { type Database } from 'better-sqlite3';
-import { type v1_shared_message_real } from '../protocols/v1/shared.ts';
+import { type v1_shared_message_real } from '../protocols/iface/v1/shared.iface.ts';
 import { type StorageInterface } from './interface.ts';
 
 /* Minor differences exist */
@@ -33,7 +33,7 @@ interface sqlite_user {
     id: string,
     name: string,
     email: string,
-    passwordHash: string,
+    passwordhash: string,
     avatar: string | null,
     groupid: string,
     hidden: number,
@@ -43,7 +43,7 @@ function sqluser_to_user(in_user: sqlite_user) {
     const account: AccountStorage = {
         id: in_user.id,
         name: in_user.name,
-        passwordHash: in_user.passwordHash,
+        password_hash: in_user.passwordhash,
         email: in_user.email,
         group: in_user.groupid,
         avatar: (in_user.avatar && in_user.avatar.length > 0) ? in_user.avatar : undefined,
@@ -56,7 +56,7 @@ function user_to_sqluser(in_user: AccountStorage) {
     const account: sqlite_user = {
         id: in_user.id,
         name: in_user.name,
-        passwordHash: in_user.passwordHash,
+        passwordhash: in_user.password_hash,
         email: in_user.email,
         groupid: in_user.group,
         avatar: (in_user.avatar && in_user.avatar.length > 0) ? in_user.avatar : null,
@@ -67,8 +67,7 @@ function user_to_sqluser(in_user: AccountStorage) {
 
 function sqlmessage_to_message(in_msg: sqlite_message) {
 
-    const tags = JSON.parse(in_msg.tags ? in_msg.tags : "[]") as string[];
-
+    const tags: unknown = JSON.parse(in_msg.tags ? in_msg.tags : "[]");
     const message: v1_shared_message_real = {
         roomid: in_msg.roomid,
         idx: in_msg.idx,
@@ -78,7 +77,8 @@ function sqlmessage_to_message(in_msg: sqlite_message) {
         height: null,
         width: null,
         userid: in_msg.userid,
-        tags,
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+        tags: tags as string[],
         type: in_msg.type,
         username: in_msg.username ? in_msg.username : ""
     }
@@ -112,7 +112,7 @@ type SqliteStorageInterface = StorageInterface & {
 export async function sqlitestorage(file_name: string) {
     const db = Sqlite(file_name);
     db.exec(
-        'CREATE TABLE IF NOT EXISTS user (id TEXT NOT NULL UNIQUE, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, passwordHash TEXT NOT NULL,avatar TEXT,groupid TEXT NOT NULL,hidden INTEGER NOT NULL)',
+        'CREATE TABLE IF NOT EXISTS user (id TEXT NOT NULL UNIQUE, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, passwordhash TEXT NOT NULL,avatar TEXT,groupid TEXT NOT NULL,hidden INTEGER NOT NULL)',
     );
     db.exec(
         'CREATE TABLE IF NOT EXISTS room (id TEXT NOT NULL UNIQUE, name TEXT NOT NULL, type TEXT NOT NULL, position INTEGER NOT NULL)',
@@ -133,21 +133,21 @@ export async function sqlitestorage(file_name: string) {
         'SELECT name, type, id, position FROM room WHERE id = @id',
     );
     const stmt_get_account_by_login: Sqlite.Statement<{ email: string }, sqlite_user> = db.prepare(
-        'SELECT id, name, email, passwordHash, avatar, groupid, hidden FROM user WHERE email = @email',
+        'SELECT id, name, email, passwordhash, avatar, groupid, hidden FROM user WHERE email = @email',
     );
     const stmt_get_account_by_id: Sqlite.Statement<{ id: string }, sqlite_user> = db.prepare(
-        'SELECT id, name, email, passwordHash, avatar, groupid, hidden FROM user WHERE id = @id',
+        'SELECT id, name, email, passwordhash, avatar, groupid, hidden FROM user WHERE id = @id',
     );
     const stmt_get_all_rooms: Sqlite.Statement<object, sqlite_room> = db.prepare('SELECT id, name, type, position FROM room');
-    const stmt_get_all_accounts: Sqlite.Statement<object, sqlite_user> = db.prepare('SELECT id, name, email, passwordHash, avatar, groupid, hidden FROM user');
+    const stmt_get_all_accounts: Sqlite.Statement<object, sqlite_user> = db.prepare('SELECT id, name, email, passwordhash, avatar, groupid, hidden FROM user');
     const stmt_create_account: Sqlite.Statement<sqlite_user, void> = db.prepare(
-        'INSERT INTO user (id,name,email,passwordHash,avatar,groupid,hidden) VALUES (@id, @name, @email, @passwordHash, @avatar, @groupid, @hidden)',
+        'INSERT INTO user (id,name,email,passwordhash,avatar,groupid,hidden) VALUES (@id, @name, @email, @passwordhash, @avatar, @groupid, @hidden)',
     );
     const stmt_create_room: Sqlite.Statement<sqlite_room, void> = db.prepare(
         'INSERT INTO room (id,name,type, position) VALUES (@id, @name, @type, @position)',
     );
     const stmt_update_account: Sqlite.Statement<sqlite_user, void> = db.prepare(
-        'UPDATE user SET name = @name, avatar = @avatar, groupid = @groupid, hidden = @hidden, passwordHash = @passwordHash WHERE id = @id ',
+        'UPDATE user SET name = @name, avatar = @avatar, groupid = @groupid, hidden = @hidden, passwordhash = @passwordhash WHERE id = @id ',
     );
     const stmt_update_room: Sqlite.Statement<sqlite_room, void> = db.prepare(
         'UPDATE room SET name = @name, type = @type WHERE id = @id',

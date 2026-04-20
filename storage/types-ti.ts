@@ -7,7 +7,7 @@ import * as t from "ts-interface-checker";
 export const AccountStorage = t.iface([], {
   "id": "UserUUID",
   "name": "string",
-  "passwordHash": "string",
+  "password_hash": "string",
   "avatar": t.opt("string"),
   "email": "string",
   "group": "string",

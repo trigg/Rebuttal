@@ -6,9 +6,9 @@
     "type": "module",
     "scripts": {
         "build-webapp": "if [ ! -d \"webapp\" ]; then git clone --recurse-submodules git@github.com:RebuttalChat/RebuttalWebapp.git webapp ; fi ; cd webapp ;  git pull ; yarn ; yarn run build ; cd -",
-        "build-protocol-iface": "rm protocols/*/*-ti.ts; yarn ts-interface-builder protocols/*/*.ts",
+        "build-protocol-iface": "rm protocols/**/*-ti.ts; yarn ts-interface-builder protocols/**/*.iface.ts",
         "build-storage-iface": "rm storage/*-ti.ts; yarn ts-interface-builder storage/types.ts",
-        "run": "node index.ts",
+        "run": "yarn run build-protocol-iface && yarn run build-storage-iface && node index.ts",
         "test": "jest --forceExit --detectOpenHandles"
     },
     "author": "trigg <triggerhapp@gmail.com>",

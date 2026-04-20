@@ -21,17 +21,9 @@ import {
 import { type StorageInterface } from './storage/interface.ts';
 import { env } from 'process';
 import { v4 as uuidv4 } from 'uuid';
-import { type v0_stc_packet } from './protocols/v0/server_to_client.ts';
-import { type v1_stc_packet } from './protocols/v1/server_to_client.ts';
-import { type v1_shared_room, type v1_shared_user, type UserUUID, type RoomUUID } from './protocols/v1/shared.ts';
-import { createCheckers } from 'ts-interface-checker';
-import v0_stc_iface from './protocols/v0/server_to_client-ti.ts';
-import v0_shared_iface from './protocols/v0/shared-ti.ts';
-import v1_stc_iface from './protocols/v1/server_to_client-ti.ts';
-import v1_shared_iface from './protocols/v1/shared-ti.ts';
-
-const checker = createCheckers(v0_stc_iface, v1_stc_iface, v1_shared_iface, v0_shared_iface);
-type packet_all = v0_stc_packet | v1_stc_packet;
+import { type v1_shared_room, type v1_shared_user, type UserUUID, type RoomUUID } from './protocols/iface/v1/shared.iface.ts';
+import { type any_stc_packet } from './protocols/iface/all.iface.ts';
+import { checker } from './protocols/checker.ts';
 
 export interface config {
     storage: string;
@@ -71,7 +63,6 @@ export type rebuttalSocket = WebSocket & {
     suppress: boolean;
 };
 
-
 export interface rebuttal {
     config: config;
     storage: StorageInterface;
@@ -85,10 +76,10 @@ export interface rebuttal {
     listen(post: number, hostname: string, fn: () => void): void;
     close(fn: () => void): void;
 
-    sendTo(ws: rebuttalSocket, msg: packet_all): void;
-    sendToID(id: UserUUID, msg: packet_all): void;
-    sendToAll(wsList: rebuttalSocket[], msg: packet_all, me?: rebuttalSocket): void;
-    sendToRoom(id: RoomUUID, msg: packet_all): void;
+    sendTo(ws: rebuttalSocket, msg: any_stc_packet): void;
+    sendToID(id: UserUUID, msg: any_stc_packet): void;
+    sendToAll(wsList: rebuttalSocket[], msg: any_stc_packet, me?: rebuttalSocket): void;
+    sendToRoom(id: RoomUUID, msg: any_stc_packet): void;
     sendUpdateUsers(): Promise<void>;
     sendUpdateRooms(): Promise<void>;
     sendUpdatesMessages(id: RoomUUID): Promise<void>;
@@ -102,13 +93,12 @@ export interface rebuttal {
     setRoom(socket: rebuttalSocket, id: RoomUUID | null): Promise<void>;
     getGroups(): Promise<PermissionsStorage>;
 
-    chase(issues: unknown[]): void;
-
     presentCustomWindow(socket: rebuttalSocket, window: unknown): void; // TODO, Clean up, move to v1
 }
 
 export type rebuttalInternal = rebuttal & {
     wss: WebSocketServer;
+    verbose: boolean,
     startConnection(ws: rebuttalSocket): void;
     populateNewConfig(): Promise<void>;
     init(): void;
@@ -202,8 +192,14 @@ export async function create_rebuttal(config: config) {
     if (!port) {
         throw new Error('Port not set');
     }
-
+    let verbose = false;
+    for (const arg of process.argv) {
+        if (arg == "-v" || arg == "--verbose") {
+            verbose = true;
+        }
+    }
     const rebuttal: rebuttalInternal = {
+        verbose,
         config,
         storage,
         server,
@@ -247,7 +243,7 @@ export async function create_rebuttal(config: config) {
                 await this.storage.createAccount({
                     id: user_uuid,
                     name: 'root',
-                    passwordHash: '',
+                    password_hash: '',
                     email: 'root@localhost',
                     group: 'admin',
                 }, password);
@@ -336,7 +332,7 @@ export async function create_rebuttal(config: config) {
             }
         },
 
-        sendToID: function (id: UserUUID, message: packet_all) {
+        sendToID: function (id: UserUUID, message: any_stc_packet) {
 
             for (const client of Object.values<rebuttalSocket>(
                 this.connections,
@@ -346,31 +342,17 @@ export async function create_rebuttal(config: config) {
                 }
             }
         },
-        sendTo: function (connection: rebuttalSocket, message: packet_all) {
-            // TODO This checking is proabably too heavy and should be skipped in production
-            const valid = checker.v1_stc_packet.validate(message) == null ||
-                checker.v0_stc_packet.validate(message) == null;
-            if (!valid) {
-                console.log("v1 feedback");
-                console.log(JSON.stringify(message, null, "  "))
-                const issues = checker.v1_stc_packet.validate(message);
-                if (issues != null) {
-                    this.chase(issues);
-                }
-                console.log("v0 feedback");
-                const issues2 = checker.v0_stc_packet.validate(message);
-                if (issues2 != null) {
-                    this.chase(issues2)
-                }
-                throw new Error("Attempting to send invalid packet");
-
+        sendTo: function (connection: rebuttalSocket, message: any_stc_packet) {
+            if (this.verbose) {
+                console.log("stc : " + JSON.stringify(message));
             }
+            checker.any_stc_packet.check(message);
             connection.send(JSON.stringify(message));
         },
 
         sendToAll: function (
             clients: rebuttalSocket[],
-            message: packet_all,
+            message: any_stc_packet,
             ownsocket?: rebuttalSocket | null,
         ) {
             for (const client of clients) {
@@ -380,7 +362,7 @@ export async function create_rebuttal(config: config) {
             }
         },
 
-        sendToRoom: function (roomid: RoomUUID, message: packet_all) {
+        sendToRoom: function (roomid: RoomUUID, message: any_stc_packet) {
             for (const client of Object.values<rebuttalSocket>(
                 this.connections,
             )) {
@@ -670,15 +652,46 @@ export async function create_rebuttal(config: config) {
                     }
                     return;
                 }
+                if (!(data != null && typeof data == 'object' && ('type' in data) && typeof data.type == 'string')) {
+                    console.log(data);
+                    this.sendTo(ws, {
+                        type: 'error',
+                        message: 'Server error',
+                    });
+                    ws.close(
+                        3001,
+                        'Server error',
+                    );
+                }
+                if (this.verbose) {
+                    console.log("cts : " + JSON.stringify(data));
+                }
                 switch (ws.protocol_version) {
                     case 'v0':
                         protocolv0.handle(this, ws, data).catch((e) => {
                             console.log(e);
+                            this.sendTo(ws, {
+                                type: 'error',
+                                message: 'Server error',
+                            });
+                            ws.close(
+                                3001,
+                                'Server error',
+                            );
                         });
+
                         break;
                     case 'v1':
                         protocolv1.handle(this, ws, data).catch((e) => {
                             console.log(e);
+                            this.sendTo(ws, {
+                                type: 'error',
+                                message: 'Server error',
+                            });
+                            ws.close(
+                                3001,
+                                'Server error',
+                            );
                         });
                         break;
                     default:
@@ -694,6 +707,7 @@ export async function create_rebuttal(config: config) {
                             'Invalid protocol : "' + ws.protocol_version + '"',
                         );
                 }
+
             });
             event
                 .trigger('connectionnew', {
@@ -708,18 +722,6 @@ export async function create_rebuttal(config: config) {
                 .catch((e) => {
                     console.log(e);
                 });
-        },
-        chase: function (issues: unknown[]) {
-            for (const issue of issues) {
-                if (issue instanceof Object) {
-                    if ('path' in issue && 'message' in issue) {
-                        console.log((issue.path as string) + " " + (issue.message as string));
-                    }
-                    if ('nested' in issue) {
-                        this.chase(issue.nested as unknown[]);
-                    }
-                }
-            }
         }
     };
     await rebuttal.populateNewConfig();

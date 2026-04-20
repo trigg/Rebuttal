@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/consistent-type-assertions */
 /* eslint-disable @typescript-eslint/require-await */
 import fs from 'fs';
 import {
@@ -6,7 +7,7 @@ import {
     type PermissionsStorage,
     type pluginData,
 } from './types.ts';
-import { type v1_shared_message_real } from '../protocols/v1/shared.ts';
+import { type v1_shared_message_real } from '../protocols/iface/v1/shared.iface.ts';
 import { type StorageInterface } from './interface.ts';
 
 interface internalStorage {
@@ -74,7 +75,7 @@ export async function jsonstorage(file_name: string | null) {
 
         getAccountByLogin: async function (email, _password) {
             for (const user of storage.accounts) {
-                if (!user.passwordHash || user.passwordHash.length < 2) {
+                if (!user.password_hash || user.password_hash.length < 2) {
                     continue;
                 }
                 if (user.email == email) {

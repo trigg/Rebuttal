@@ -55,6 +55,10 @@ export default defineConfig([
                     leadingUnderscore: 'allow',
                 },
             ],
+            '@typescript-eslint/consistent-type-assertions': [
+                'error',
+                { assertionStyle: 'never' },
+            ],
         },
     },
     eslint.configs.recommended,

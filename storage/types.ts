@@ -1,9 +1,9 @@
-import { type UserUUID, type RoomUUID } from "../protocols/v1/shared.ts";
+import { type UserUUID, type RoomUUID } from "../protocols/iface/v1/shared.iface.ts";
 
 export interface AccountStorage {
     id: UserUUID;
     name: string;
-    passwordHash: string;
+    password_hash: string;
     avatar?: string;
     email: string;
     group: string;

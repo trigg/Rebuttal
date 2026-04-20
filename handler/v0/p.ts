@@ -1,37 +1,10 @@
 import { protocolv1 } from '../v1/p.ts';
 import event from '../../events.ts';
 import { type rebuttalSocket, type rebuttal } from '../../server.ts';
-import { type v0_cts_packet } from '../../protocols/v0/client_to_server.ts';
-import { createCheckers } from 'ts-interface-checker';
-import v0_cts_iface from '../../protocols/v0/client_to_server-ti.ts';
+import { type v0_cts_packet } from '../../protocols/iface/v0/client_to_server.iface.ts';
 import { v4 as uuidv4 } from 'uuid';
+import { checker } from '../../protocols/checker.ts';
 
-const checker = createCheckers(v0_cts_iface);
-
-/* Heavy handed get an error message to user and close connection */
-function invalid_packet(server: rebuttal, socket: rebuttalSocket, data: unknown) {
-    if (!(data instanceof Object && 'type' in data && typeof data.type == 'string')) {
-        console.log("v0 got malformed packet : ");
-        console.log(data);
-        return;
-    }
-    console.log('v0 got malformed packet : ' + data.type);
-    console.log(JSON.stringify(data));
-
-    const issues = checker.v0_cts_packet.validate(data);
-    if (issues != null) {
-        server.chase(issues);
-    }
-
-    server.sendTo(socket, {
-        type: 'error',
-        message: 'Malformed packet of type : "' + data.type + '"',
-    });
-    socket.close(
-        3001,
-        'Malformed packet of type : "' + data.type + '"',
-    );
-}
 
 export const protocolv0 = {
     handle: async function (
@@ -39,10 +12,8 @@ export const protocolv0 = {
         socket: rebuttalSocket,
         data: unknown,
     ) {
-        if (!checker.v0_cts_packet.test(data)) {
-            invalid_packet(server, socket, data);
-            return
-        }
+        checker.v0_cts_packet.check(data);
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         const packet = data as v0_cts_packet;
         switch (packet.type) {
             case 'signup':
@@ -74,7 +45,7 @@ export const protocolv0 = {
                             await server.storage.createAccount({
                                 id: user_uuid,
                                 name: packet.userName,
-                                passwordHash: '',
+                                password_hash: '',
                                 email: packet.email,
                                 group,
                             }, packet.password);
@@ -179,7 +150,6 @@ export const protocolv0 = {
                 }
                 return;
         }
-        invalid_packet(server, socket, data);
 
     },
 };

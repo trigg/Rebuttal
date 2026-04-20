@@ -50,6 +50,7 @@ describe('webserver works', () => {
 
     it('populates new storage', async () => {
         expect.hasAssertions();
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         const rebuttal_internal = rebuttal as rebuttalInternal;
         await rebuttal_internal?.populateNewConfig();
         const val = await rebuttal?.storage.getAllAccounts();
